@@ -1,0 +1,195 @@
+{
+ "title": "Практикум",
+ "shots": [
+  {
+   "id": "001",
+   "seconds": 6.042,
+   "prompt": "Extreme close-up, 85mm macro feel, shallow depth of field, of a sealed cylindrical glass specimen container standing on a black epoxy lab bench. Inside, a thick tar-black sample with an oily violet sheen shifts very slowly, as if breathing, and its glossy surface reflects a long white fluorescent tube. A hairline crack starts at the rim and creeps down the curved glass in tiny jerks, branching into thin silver lines that catch the light. Handheld camera barely breathing, drifting a few centimeters closer as the crack lengthens, until the fracture and the black mass fill the frame. Flat cool white-green overhead fluorescent light, hard specular streaks on the glass, deep black shadows inside the sample, fine digital grain and faint flicker banding. Sound: a steady low electrical hum of the ceiling lamps, a soft ventilation hiss, and a series of tiny dry ticks of splitting glass, each one sharp and close, timed to every jerk of the crack.",
+   "transition": "cut",
+   "beat": "ХУК (6 с): сверхкрупный план запечатанного стеклянного контейнера с тёмным маслянистым образцом под люминесцентной лампой; по стеклу с тихим тиканьем ползёт волосяная трещина, гул ламп."
+  },
+  {
+   "id": "002",
+   "seconds": 8.042,
+   "prompt": "Wide handheld shot at eye level across a modern university teaching laboratory with rows of black epoxy-topped lab benches, white overhead fluorescent ceiling panels, binocular microscopes, glass test tube racks, reagent bottles and desktop computers, a grey emergency exit door screen-right with a small square wired-glass viewing window. Students in white lab coats work silently, heads bowed over microscopes. In the far background the female student with a high red ponytail and freckles, wearing a green flannel shirt under a white lab coat, labels test tubes, and the stocky male student with a shaved head and a navy sweatshirt under an open white lab coat leans over a steel fume hood. The camera drifts slowly forward and left past the tall lanky male student with short curly brown hair and round wire-rimmed glasses, wearing a grey hoodie under a white lab coat, who adjusts a microscope, and settles on the young Korean college student with a sleek shoulder-length black bob and straight bangs, wearing a white lab coat over a plain light-blue cotton shirt, blue jeans and white sneakers, seated beside a sealed glass container with a dark sample. Flat green-tinted fluorescent top light, stark white coats. Sound: fluorescent hum, ventilation hiss, soft clinks of glass, the click of a microscope knob, a pen scratching paper.",
+   "transition": "cut",
+   "beat": "Общий план с рук (8 с): лаборатория, студенты тихо работают у микроскопов и пробирок; камера дрейфует к Соён за столом рядом с контейнером, Даниил за соседним столом, Алина и Глеб на дальнем плане."
+  },
+  {
+   "id": "003",
+   "seconds": 7.042,
+   "prompt": "Medium shot, 50mm handheld, from her right side at bench height: the young Korean college student with a sleek shoulder-length black bob and straight bangs, wearing a white lab coat over a plain light-blue cotton shirt, blue jeans and white sneakers, squeezes a glass pipette and lets one clear drop fall into a test tube. A sharp click sounds to her left; her hand freezes, she slowly turns her head toward the sealed glass container with the tar-black sample at the edge of the bench. For a heartbeat she stares, lips parted. The glass bursts outward and a thick glossy black mass with an oily violet sheen splashes onto her left shoulder and neck, clinging and stretching like wet tar. She flinches back, the pipette dropping, as the camera jolts with the impact. Cool white-green fluorescent top light, the black substance the darkest thing in frame against the white coat. Sound: fluorescent hum, the tiny drip, a sharp crack, a bright shattering burst of glass, a heavy wet slap of the substance, her sharp gasping inhale and the pipette clattering on epoxy.",
+   "transition": "cut",
+   "beat": "Средний план (7 с): Соён капает пипеткой в пробирку, слышит щелчок, поворачивает голову к контейнеру; стекло лопается, чёрное вещество выплёскивается и прилипает к её левому плечу и шее."
+  },
+  {
+   "id": "004",
+   "seconds": 5.042,
+   "prompt": "Continuing the same 50mm handheld medium shot from her right side at bench height, the young Korean college student with a sleek shoulder-length black bob and straight bangs, wearing a white lab coat over a plain light-blue cotton shirt, blue jeans and white sneakers, recoils backward off her stool, her right hand crossing her chest and clamping over the left side of her neck where the glossy tar-black mass clings. The metal lab stool tips over behind her and crashes onto the linoleum. Her palm drags through the substance and smears a thick oily black streak with a violet sheen across the collar of her white lab coat. The camera stumbles back with her, keeping her chest and face in frame as her hip bumps the edge of the next black epoxy bench and she freezes, eyes wide, mouth open. Cool white-green fluorescent top light, the black smear the darkest element against the stark white coat. Sound: the metallic crash and rattle of the falling stool, a wet sticky squelch under her palm, sneakers squeaking on linoleum, her short panicked gasps over the steady fluorescent hum.",
+   "transition": "continue",
+   "transition_seconds": 0.5,
+   "beat": "continue (5 с): Соён отшатывается назад, хватаясь за шею, табурет с грохотом падает, рука размазывает чёрную массу по воротнику халата."
+  },
+  {
+   "id": "005",
+   "seconds": 6.042,
+   "prompt": "Extreme close-up, 85mm, very shallow depth of field, on the left side of the neck of the young Korean college student with a sleek shoulder-length black bob and straight bangs, wearing a white lab coat over a plain light-blue cotton shirt; strands of black hair hang across pale skin beaded with sweat, the collar of the white coat smeared with glossy tar-black substance. The camera slowly pushes in as thin dark veins rise beneath the skin at the shoulder and branch upward, black-violet lines spreading along the neck, over the throbbing pulse, up to the hinge of the jaw and onto the cheek. Her throat tightens and swallows hard, the tendons standing out. The push-in ends with the branching veins filling the frame beneath her ear. Flat green-tinted fluorescent top light, realistic skin texture with pores and fine hairs, the veins the darkest marks in frame. Sound: her shallow ragged breathing close to the microphone, a dry hard swallow, a faint wet creak under the skin, the low fluorescent hum and ventilation hiss behind.",
+   "transition": "cut",
+   "beat": "Крупный план шеи (6 с): медленный наезд, тёмные вены ветвятся под кожей от плеча вверх по шее к челюсти и щеке, её прерывистое дыхание."
+  },
+  {
+   "id": "006",
+   "seconds": 4.042,
+   "prompt": "High-angle insert, 50mm, shallow depth of field, on a black epoxy-topped lab bench: the slim bare hand of the young Korean college student, the white lab coat cuff at her wrist streaked with tar-black substance, slams flat onto the tabletop beside a glass test tube rack. Her fingers splay and press down, knuckles whitening, trembling violently. The vibration travels through the bench and the clear glass test tubes in the rack shiver and tap against each other, the liquid inside rippling. Static handheld frame with a slight tremor. Cold fluorescent panels reflect as long white streaks on the glossy black epoxy, cool green cast over the pale skin. Sound: the flat slap of her palm, fingernails scraping across epoxy, a rapid high chattering of glass tubes in the rack, the fluorescent hum underneath.",
+   "transition": "cut",
+   "beat": "Деталь (4 с): дрожащие пальцы Соён упираются в чёрную столешницу, пробирки в штативе мелко звенят от дрожи."
+  },
+  {
+   "id": "007",
+   "seconds": 8.042,
+   "prompt": "Medium shot, 35mm handheld at chest height: the young Korean college student with a sleek shoulder-length black bob and straight bangs, wearing a white lab coat over a plain light-blue cotton shirt, blue jeans and white sneakers, hunches over a black epoxy bench in profile facing screen-left, both hands braced on the tabletop. Violent convulsions jerk her shoulders and arch her spine, her head snapping down, her skin turning greyish-pale and slick with sweat, black veins visible along her neck. From screen-left the tall lanky male student with short curly brown hair and round wire-rimmed glasses, wearing a grey hoodie under a white lab coat, edges closer and stops an arm's length away, one hand half-raised. A beat of stillness, he swallows, then speaks. Flat green fluorescent top light, hard shadows under their eyes. Sound: wet cracking of joints, her strangled breaths, a bench leg scraping, the fluorescent hum; he asks in Russian in a nervous breaking tenor: \"Соён, ты в порядке?\"",
+   "transition": "cut",
+   "beat": "Средний план (8 с): тело Соён сотрясают сильные судороги, кожа бледнеет и покрывается потом; Даниил осторожно подходит и спрашивает: «Соён, ты в порядке?»"
+  },
+  {
+   "id": "008",
+   "seconds": 7.042,
+   "prompt": "Close-up, 85mm, slightly low angle, shallow depth of field on the face of the young Korean college student with a sleek shoulder-length black bob and straight bangs, wearing a white lab coat over a plain light-blue cotton shirt; her head is bowed, bangs hanging over her eyes, pale grey skin wet with sweat, black-violet veins branching up her left cheek to the temple. Her trembling stops. The tension drains from her brow and jaw, her lips go slack. Slowly she raises her head into the light, and as her eyes come level with the lens the whites flood with murky black from the edges inward until both eyes are entirely clouded black. The camera pushes in slowly as she lifts her head, ending on her still, blank face. Cold white-green fluorescent top light; behind her an out-of-focus ceiling panel flickers once. Sound: her ragged breathing slows into one long hoarse throaty exhale, the hum of the lights, the sharp electric buzz and tick of the flickering tube.",
+   "transition": "cut",
+   "beat": "Крупный план лица (7 с): страх уходит из её лица, мышцы расслабляются, она медленно поднимает голову, и глаза заливает мутная чернота."
+  },
+  {
+   "id": "009",
+   "seconds": 9.042,
+   "prompt": "Wide handheld shot, 35mm at eye level across a modern university teaching laboratory with rows of black epoxy-topped lab benches, the grey emergency exit door screen-right. The young Korean college student with a sleek shoulder-length black bob and straight bangs, wearing a white lab coat over a plain light-blue cotton shirt, blue jeans and white sneakers, her eyes fully black, snaps around and lunges screen-left at the tall lanky male student with short curly brown hair and round wire-rimmed glasses, wearing a grey hoodie under a white lab coat. He throws himself backward and drops behind the next bench. She crashes into it and hammers the tabletop with her forearms again and again with unnatural force; a binocular microscope topples to the floor and glass flasks roll off and shatter. The camera jolts and whip-pans to follow, students in background leaping from their stools. Flat green fluorescent light, one panel flickering. Sound: heavy repeated thuds on epoxy, a metallic crash of the microscope, bursting glass, scraping stools, screams, her hoarse guttural exhales, his panicked breathing.",
+   "transition": "cut",
+   "beat": "Общий план с рук (9 с): Соён резко разворачивается и бросается на Даниила, он отскакивает за лабораторный стол, она раз за разом с неестественной силой бьётся о столешницу, микроскоп и колбы летят на пол."
+  },
+  {
+   "id": "010",
+   "seconds": 7.042,
+   "prompt": "Wide handheld shot, 35mm at eye level across a modern university teaching laboratory with rows of black epoxy-topped lab benches, the grey emergency exit door screen-right. In the middle ground the young Korean college student with a sleek shoulder-length black bob and straight bangs, wearing a white lab coat over a plain light-blue cotton shirt, blue jeans and white sneakers, her eyes fully black, is bent over a bench with both forearms raised for another blow, while the tall lanky male student with short curly brown hair and round wire-rimmed glasses, wearing a grey hoodie under a white lab coat, cowers behind it. In the background a dozen students in white lab coats stand frozen beside their stools, then all at once bolt screen-right toward the exit door. Her forearms stop dead in mid-air. Holding perfectly still, she slowly turns her head over her shoulder toward the fleeing students. The camera steadies and drifts slightly left to frame her turning profile. Flat green-white fluorescent top light, one ceiling panel flickering. Sound: a sudden silence over the hum of the lights, then sneakers squealing on the floor, stools clattering over, and one long hoarse exhale from her throat.",
+   "transition": "cut",
+   "beat": "Общий план (7 с): остальные студенты застывают, затем срываются к выходу справа; Соён мгновенно замирает посреди удара и медленно поворачивает голову им вслед."
+  },
+  {
+   "id": "011",
+   "seconds": 5.042,
+   "prompt": "Close-up, 85mm, three-quarter profile with shallow depth of field on the young Korean college student with a sleek shoulder-length black bob and straight bangs, wearing a white lab coat over a plain light-blue cotton shirt, her face turned toward screen-right. Her pale grey skin glistens with sweat; branching black-violet veins run from her left shoulder up her neck to her cheek and temple, and they swell and pulse slowly, darkening with each throb. Her murky, entirely black eyes stay locked screen-right, the pupils lost in the black, tracking without a blink as blurred white-coated figures rush past in the soft background. Her lips part slightly. The camera pushes in very slowly toward her eye. Hard white-green fluorescent top light carves shadows under her cheekbones, a faint oily violet sheen on the veins, the background flickering. Sound: the steady hum of the lights, distant running footsteps and panicked voices, and her slow wet guttural breathing close to the lens.",
+   "transition": "cut",
+   "beat": "Крупный план (5 с): неподвижное лицо Соён, тёмные вены пульсируют, чёрные глаза прикованы к бегущим студентам."
+  },
+  {
+   "id": "012",
+   "seconds": 9.042,
+   "prompt": "Wide handheld shot, 35mm, deep staging across the modern university teaching laboratory, the soft edge of a black epoxy bench blurred in the foreground and the focus set on the far bench by the steel fume hood. There the stocky male student with a shaved head and a navy sweatshirt under an open white lab coat stands frozen beside a sealed glass specimen container with a dark sample; a fine crack crawls across the glass. The container bursts, spraying glossy tar-black liquid with an oily violet sheen across his neck and jaw. He clutches his throat, staggers and collapses to the floor, his body arching and jerking in violent convulsions, heels drumming. Two nearby students in white lab coats stumble backward, knocking over a rack of test tubes. The camera jolts forward a step. Flat green fluorescent light, one panel stuttering overhead. Sound: a rapid tick of cracking glass, a sharp pop and wet splatter, his choked gurgling rasp, heels pounding the floor, shattering test tubes, a scream, then a shrill fire alarm erupts and keeps ringing.",
+   "transition": "cut",
+   "beat": "Общий план, фокус на заднем плане (9 с): у дальнего стола с тиканьем лопается второй контейнер, Глеб падает на пол и бьётся в сильных конвульсиях, студенты отшатываются, срабатывает сирена."
+  },
+  {
+   "id": "013",
+   "seconds": 6.042,
+   "prompt": "Low-angle close-up from floor level, 50mm with shallow depth of field, on the face of the stocky male student with a shaved head and a navy sweatshirt under an open white lab coat, lying on his side on the grey lab floor, cheek pressed to the surface, black liquid smeared on his jaw. His head jerks with convulsions as black-violet veins spread like cracks from his neck up across his jaw, cheek and scalp. His eyes roll and the whites fill with murky black until they are completely black. Then every movement stops at once: he lies utterly still, black eyes open, staring past the lens. The camera holds static, a slight handheld breath. Cold white-green fluorescent light from above, the underside of a bench and scattered glass shards glinting in the foreground. Sound: the fire alarm ringing shrilly, his wet joint-cracking spasms and bubbling moans, then abrupt silence from him under the continuing alarm and the buzz of a failing tube.",
+   "transition": "cut",
+   "beat": "Крупный план с низкой точки (6 с): лицо Глеба на полу, чёрные вены расползаются по шее и лицу, глаза чернеют, он резко замирает."
+  },
+  {
+   "id": "014",
+   "seconds": 9.042,
+   "prompt": "Handheld medium-wide shot, 35mm, tracking sideways screen-right along a narrow aisle between black epoxy-topped lab benches, the camera jolting with each step. The female student with a high red ponytail and freckles, wearing a green flannel shirt under a white lab coat, drags the tall lanky male student with short curly brown hair and round wire-rimmed glasses, wearing a grey hoodie under a white lab coat, by his sleeve toward the grey emergency exit door screen-right. Around them students snatch backpacks and hurl stools behind them. In the background, between the benches, the young Korean college student with a sleek shoulder-length black bob and straight bangs, wearing a white lab coat over a plain light-blue cotton shirt, and the stocky male student with a shaved head and a navy sweatshirt under an open white lab coat stalk after them with jerking strides, black eyes fixed forward. The fluorescent panel above them flickers and dies, plunging them into shadow. Sound: the fire alarm shrieking, stools crashing, footsteps pounding, and the red-haired girl shouting in Russian in a breathless sharp alto: \"Бежим, быстрее!\"",
+   "transition": "cut",
+   "beat": "Ручная камера в проходе (9 с): хаос, студенты хватают рюкзаки и швыряют стулья, Алина тащит Даниила за рукав по узкому проходу к аварийному выходу, Соён и Глеб преследуют их между столами, лампа над ними мигает и гаснет."
+  },
+  {
+   "id": "015",
+   "seconds": 6.042,
+   "prompt": "Medium shot, 35mm handheld, at the grey emergency exit door screen-right with its small square wired-glass viewing window. The female student with a high red ponytail and freckles, wearing a green flannel shirt under a white lab coat, and the tall lanky male student with short curly brown hair and round wire-rimmed glasses, wearing a grey hoodie under a white lab coat, throw their shoulders against a heavy wheeled lab table, faces straining, and shove it across the aisle. A beat later the young Korean college student with a sleek shoulder-length black bob and straight bangs, wearing a white lab coat over a plain light-blue cotton shirt, and the stocky male student with a shaved head and a navy sweatshirt under an open white lab coat slam into it, the table lurching. The two survivors twist free and slip out through the door. The camera jerks back with the impact. Half-darkness, one flickering fluorescent tube overhead. Sound: the red-haired girl shouts in Russian in a breathless alto: \"Толкай!\", casters grinding, a heavy metallic crash, guttural snarls, the fire alarm, the door bar clanking.",
+   "transition": "cut",
+   "beat": "Средний план у выхода (6 с): Алина и Даниил с усилием сдвигают тяжёлый передвижной лабораторный стол поперёк прохода как баррикаду, заражённые врезаются в него, выжившие выскальзывают в дверь."
+  },
+  {
+   "id": "016",
+   "seconds": 8.042,
+   "prompt": "Handheld medium-wide shot, 35mm, low angle down a narrow beige university corridor with scuffed linoleum floor. On frame-left a grey steel lab door with a small square wired-glass viewing window slams shut. The female student with a high red ponytail and freckles, wearing a green flannel shirt under a white lab coat, presses her back against the door. The tall lanky male student with short curly brown hair and round wire-rimmed glasses, wearing a grey hoodie under a white lab coat, stumbles beside her. Ceiling strobes flick on and pulse red over dim white night lights. Both slide down the wall to the floor, chests heaving, his glasses crooked, her hands trembling on her knees. The door shudders three times under heavy blows from inside, the wired glass rattling, then stays still. The camera settles and breathes, holding on their frozen faces as they stare at the door. Sound: the door bang, the fire alarm cutting out, ragged gasping breath, three deep muffled thuds on steel, a fading metallic rattle, then dead silence with only the faint electrical tick of the strobes.",
+   "transition": "cut",
+   "beat": "Коридор (8 с): дверь лаборатории захлопывается, красные аварийные огни начинают мигать, Алина и Даниил сползают по стене, тяжело дыша; из-за двери несколько глухих ударов, затем полная тишина."
+  },
+  {
+   "id": "017",
+   "seconds": 10.042,
+   "prompt": "Slow deliberate push-in at eye level on the small square wired-glass viewing window of a grey steel lab door, red emergency strobes pulsing across the steel and the scratched glass. Through the window the dark laboratory is lit only by one failing fluorescent tube that flickers green-white. In it stands the young Korean college student with a sleek shoulder-length black bob and straight bangs, wearing a white lab coat over a plain light-blue cotton shirt, blue jeans and white sneakers. Her skin is pale wet grey, branching black-violet veins climb from her left shoulder up her neck to her cheek and temple, the coat's left shoulder smeared with glossy tar-black. Her fully black eyes stare into the lens, motionless. As the window fills the frame, 85mm feel, she slowly tilts her head toward the glass, her breath fogging it. Her lips suddenly stretch into a wide smile, and in that instant the tube dies and the frame drops to total black. Sound: near silence, the faint buzzing of the flickering tube behind the glass, a soft strobe tick, one slow rasping exhale, then absolute silence on black.",
+   "transition": "cut",
+   "beat": "Финал (10 с): медленный наезд на маленькое смотровое окно в двери; в темноте лаборатории под мерцающей лампой неподвижно стоит Соён в белом халате и джинсах, бледное лицо в чёрных венах, чёрные глаза; она медленно наклоняет голову к стеклу, внезапно улыбается — резкая склейка в чёрное."
+  }
+ ],
+ "slug": "praktikum",
+ "kind": "film",
+ "format": "16:9",
+ "quality": "high",
+ "seed": 56778,
+ "language": "ru",
+ "logline": "Во время обычного лабораторного занятия в университете треснувший контейнер с образцом выпускает тёмное вещество, и тихая студентка Соён на глазах однокурсников превращается в нечто, что продолжает смотреть на них даже через закрытую дверь.",
+ "synopsis": "В залитой люминесцентным светом университетской лаборатории студенты молча выполняют практическую работу, пока на запечатанном стеклянном контейнере с тёмным образцом расползается трещина. Стекло лопается, и чёрное вещество впивается в плечо и шею студентки Ким Соён: под её кожей ползут тёмные вены, тело сотрясают судороги, а глаза становятся мутно-чёрными. Соён бросается на однокурсника Даниила и с нечеловеческой силой бьёт по лабораторному столу, за которым он укрылся, а затем замирает и медленно поворачивает голову к остальным. Лопается второй контейнер, и ещё один студент, Глеб, падает в конвульсиях и тоже обращается. Выжившие перегораживают проход тяжёлым столом, вырываются в коридор под мигающие красные аварийные огни и захлопывают дверь. В наступившей тишине камера приближается к смотровому окну двери: Соён стоит в темноте, наклоняет голову к стеклу и улыбается, после чего следует резкая склейка в чёрное.",
+ "style": {
+  "visual": "Ultra-realistic modern university chemistry-biology teaching lab shot as handheld documentary horror, practical makeup effects for veins and black eyes, physically plausible glass, liquid and body movement, never stylized.",
+  "palette": "Clinical cool white-green fluorescent light dominates; stark white lab coats as the brightest surfaces; the infection is a glossy tar-black with oily violet sheen, always the darkest element in frame; pale greyish skin tones once infected; emergency red appears only in the final act in the corridor.",
+  "lens": "35mm and 50mm handheld feel, moderate shallow depth of field on close-ups, 85mm for faces and eyes, fine natural digital grain, slight fluorescent flicker banding, realistic skin texture with pores and sweat.",
+  "lighting": "Daytime interior lit only by overhead fluorescent ceiling panels, flat and slightly green, hard top light under the eyes; one panel flickers after the chaos begins and the lab ends in near-darkness lit by a single failing tube; corridor lit by pulsing red emergency strobes over dim white night lights.",
+  "camera": "Handheld throughout with subtle breathing in calm moments, becoming jolting and reactive during attacks, quick whip pans to follow action, slow deliberate push-ins only for the infection close-ups and the final window shot; consistent screen direction with the exit door always screen-right.",
+  "sound": "Diegetic only: constant fluorescent hum, ventilation hiss, clinks of glass and pipettes, the tick of cracking glass, wet impact of the substance, ragged frightened breathing, stools scraping, falling equipment, wet joint-cracking convulsions, heavy thuds on metal and laminate, screams, a shrill fire alarm, then distant muffled knocking and silence. No music, no stylized stingers.",
+  "pace": "Slow, observational opening with longer held shots, tightening into rapid hard cuts during the transformation and panic, then a sudden drop into a long still final push-in ending on an abrupt hard cut to black."
+ },
+ "characters": [
+  {
+   "name": "Ким Соён",
+   "descriptor": "the young Korean college student with a sleek shoulder-length black bob and straight bangs, wearing a white lab coat over a plain light-blue cotton shirt, blue jeans and white sneakers",
+   "description": "Около 20 лет, хрупкого телосложения, среднего роста, без украшений, лицо без макияжа. Внешность, причёска, одежда и пропорции тела неизменны во всех кадрах. После заражения: бледная влажная кожа с серым оттенком, ветвящиеся чёрно-фиолетовые вены от левого плеча по шее к щеке и виску, полностью мутно-чёрные глаза без белков; халат на левом плече испачкан чёрным веществом.",
+   "voice": "До заражения: тихое испуганное дыхание, сдавленные всхлипы. После: только хриплые горловые выдохи, никаких слов."
+  },
+  {
+   "name": "Даниил",
+   "descriptor": "the tall lanky male student with short curly brown hair and round wire-rimmed glasses, wearing a grey hoodie under a white lab coat",
+   "description": "Около 21 года, однокурсник Соён за соседним столом. Первым подходит к ней и становится целью её нападения, затем спасается вместе с остальными.",
+   "voice": "Молодой нервный тенор, говорит по-русски, срывающимся голосом."
+  },
+  {
+   "name": "Алина",
+   "descriptor": "the female student with a high red ponytail and freckles, wearing a green flannel shirt under a white lab coat",
+   "description": "Около 20 лет, решительная. Во время паники тащит Даниила к аварийному выходу и первой толкает стол-баррикаду.",
+   "voice": "Резкий запыхавшийся альт, короткие команды по-русски."
+  },
+  {
+   "name": "Глеб",
+   "descriptor": "the stocky male student with a shaved head and a navy sweatshirt under an open white lab coat",
+   "description": "Около 22 лет, работает у дальнего стола рядом со вторым контейнером. Падает в конвульсиях и становится вторым заражённым: чёрные вены на шее и лице, чёрные глаза.",
+   "voice": "До заражения молчит; при обращении: задушенный хрип и булькающие стоны."
+  }
+ ],
+ "locations": [
+  {
+   "name": "Учебная лаборатория",
+   "descriptor": "a modern university teaching laboratory with rows of black epoxy-topped lab benches, white overhead fluorescent ceiling panels, binocular microscopes, glass test tube racks, reagent bottles, desktop computers, a steel fume hood and sealed glass specimen containers with dark samples, a grey emergency exit door screen-right with a small square wired-glass viewing window"
+  },
+  {
+   "name": "Коридор у лаборатории",
+   "descriptor": "a narrow beige university corridor outside the lab with scuffed linoleum floor, a grey steel lab door with a small square wired-glass viewing window, dim white night lights and pulsing red emergency strobe lights on the ceiling"
+  }
+ ],
+ "music": {
+  "file": null,
+  "volume": 0.15,
+  "duck": true,
+  "fade_in": 1.0,
+  "fade_out": 2.5,
+  "mood": "Намеренно без музыки по требованию продюсера: звуковая дорожка строится только на диегетическом звуке. Если студия всё же добавит слой, это едва различимый низкий электрический гул, сливающийся с лампами, без мелодии и без акцентов."
+ },
+ "captions": {
+  "enabled": false,
+  "position": "bottom",
+  "font_size": 0
+ },
+ "fade_in": 0.5,
+ "fade_out": 1.5,
+ "request": "Создайте фотореалистичную живую хоррор-сцену с зомби в современной университетской научной лаборатории во время обычного практического занятия. Центральная героиня — молодая корейская студентка колледжа, одетая в белый лабораторный халат поверх простой рубашки, синие джинсы и белые кроссовки. Сохраняйте её лицо, причёску, одежду и пропорции тела неизменными на протяжении всей сцены. Вокруг неё находятся несколько студентов, лабораторные столы, микроскопы, стеклянные пробирки, ёмкости с химикатами, компьютеры и научное оборудование. Используйте реалистичное люминесцентное освещение, практические эффекты, ручную камеру и правдоподобную физику.\n\nСтуденты тихо работают над экспериментом, когда запечатанный стеклянный контейнер с образцом внезапно трескается. Тёмное заражённое вещество вырывается наружу и прикрепляется к молодой женщине в области плеча и шеи. Она отшатывается назад от страха, а тёмные вены медленно распространяются под её кожей, пересекая шею и лицо. Её пальцы начинают дрожать, тело сотрясают violent tremors (сильные судороги), а кожа становится бледной и влажной.\n\nЕё испуганное выражение постепенно исчезает. Она поднимает голову, и её глаза медленно превращаются в глубокие мутно-чёрные глаза. Внезапно она поворачивается к ближайшему однокурснику и бросается на него. Он отчаянно отступает за лабораторный стол, пока она repeatedly slams against it (неоднократно бьёт по нему), двигаясь с неестественной силой.\n\nДругие студенты замирают, прежде чем броситься к выходу из лаборатории. Заражённая женщина внезапно становится полностью неподвижной, затем медленно поворачивает голову в их сторону. Её тёмные вены пульсируют на лице, а чёрные глаза остаются прикованы к студентам.\n\nНа заднем плане трескается ещё один стеклянный контейнер с образцом. Второй заражённый студент внезапно падает на пол, сильно конвульсируя, тёмные вены распространяются по его шее и лицу, а глаза чернеют. Паника охватывает всю лабораторию.\n\nСтуденты хватают рюкзаки, стулья и лабораторное оборудование, пытаясь сбежать. Один студент тянет другого к аварийному выходу, пока заражённые преследуют их через узкие проходы. Тяжёлый лабораторный стол придвигают к двери как временную баррикаду.\n\nВыжившие наконец достигают коридора и захлопывают дверь лаборатории. Красные аварийные огни начинают мигать, пока они переводят дух.\n\nВнутри лаборатории всё становится тихим.\n\nКамера медленно приближается к маленькому смотровому окну в двери. Заражённая студентка стоит неподвижно в темноте, всё ещё в своём белом лабораторном халате и джинсах. Её бледное лицо, выступающие тёмные вены и полностью чёрные глаза чётко видны.\n\nОна медленно наклоняет голову к окну.\n\nЗатем внезапно улыбается.\n\nРезкий переход к чёрному экрану.\n\nАУДИО: Реалистичная атмосфера лаборатории, гул люминесцентных ламп, треск стекла, падающее оборудование, шаги, испуганное дыхание, крики, сигнализация, конвульсии, удары и дальние стуки. Никакой музыки или преувеличенных звуковых эффектов.\n\nСТИЛЬ: Ультра-реалистич",
+ "version": 2
+}

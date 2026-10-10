@@ -43,11 +43,11 @@ def test_attempts_chain_skips_dfr_for_long_conditioned_shots():
     film = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(film)
     chain = film.attempts_for(True, "start.png", (704, 1280), frames=193)
-    assert [c["pipeline"] for c in chain] == ["distilled", "dfr", "distilled"]
-    assert chain[1].get("no_cond") is True
+    assert [c["pipeline"] for c in chain] == ["distilled", "distilled"]
+    assert all(c["image"] == "start.png" and not c.get("no_cond") for c in chain)
     chain = film.attempts_for(True, "start.png", (704, 1280), frames=121)
-    assert [c["pipeline"] for c in chain] == ["dfr", "distilled", "dfr", "distilled"]
-    assert [c["pipeline"] for c in film.attempts_for(True, None, (704, 1280), 121, extra_conditioned=True)] == ["distilled", "dfr", "distilled"]
+    assert [c["pipeline"] for c in chain] == ["dfr", "distilled", "distilled"]
+    assert [c["pipeline"] for c in film.attempts_for(True, None, (704, 1280), 121, extra_conditioned=True)] == ["distilled", "distilled"]
     assert [c["pipeline"] for c in film.attempts_for(False, None, (704, 1280), 193)] == ["distilled"]
 
 

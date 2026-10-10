@@ -24,7 +24,7 @@ TEXT_WORDS = re.compile(r"\b(text reads|sign (that )?says|caption|subtitle|title
 NEGATIVE = re.compile(r"\b(no|without|don't|do not|never|avoid)\b", re.I)
 SLUGLINE = re.compile(r"(^|\n)\s*(shot|scene|cut|frame)\s*\d*\s*[:\-]|^\s*[-*•]\s", re.I | re.M)
 MOOD_ONLY = re.compile(r"\b(tense|eerie|dread|ominous|magical|epic|beautiful|stunning|cinematic masterpiece)\b", re.I)
-LIGHT_WORDS = re.compile(r"\b(light|lit|glow|shadow|sun|neon|lamp|lantern|dusk|dawn|overcast|golden hour|"
+LIGHT_WORDS = re.compile(r"\b(light|lighting|lit|glow|shadow|sun|neon|lamp|lantern|dusk|dawn|overcast|golden hour|"
                          r"backlit|rim light|moonlight|fluorescent|candle|flicker)\b", re.I)
 PRONOUN_START = re.compile(r"^\s*(he|she|they|it|his|her|their)\b", re.I)
 CYRILLIC = re.compile(r"[А-Яа-яЁё]")
@@ -96,7 +96,7 @@ def lint_shot(shot: Shot, high: bool, known_characters: list[str] | None = None,
     if shot.seconds < MIN_SHOT_SECONDS - 0.01 or shot.frames > max_frames(high):
         add("error", "duration", f"длительность {shot.seconds} с вне диапазона {MIN_SHOT_SECONDS:.0f}..{max_seconds(high):.0f} с")
     if descriptors and re.search(r"\b(he|she|they|her|his)\b", p, re.I) and not any(d.lower() in p.lower() for d in descriptors):
-        add("warn", "descriptor_missing", "в промпте есть местоимение, но нет ни одного постоянного описания персонажа "
+        add("error", "descriptor_missing", "в промпте есть местоимение, но нет ни одного постоянного описания персонажа "
             "(descriptor) — модель не удержит внешность между сценами")
     if shot.caption and len(shot.caption) > 60:
         add("warn", "caption_long", "субтитр длиннее 60 символов — на телефоне не прочитать")
@@ -108,13 +108,41 @@ def _cyrillic_only_in_quotes(p: str) -> bool:
     return not CYRILLIC.search(outside)
 
 
+def lint_motion(shot: Shot) -> list[Issue]:
+    """Lexical checks for missing choreography, not a guarantee of visual quality."""
+    checks = (
+        ("motion_action", r"\b(slid\w*|rotat\w*|scal\w*|unfold\w*|expand\w*|contract\w*|"
+         r"morph\w*|mov\w*|orbit\w*|roll\w*|bounc\w*|ris\w*|fall\w*|assembl\w*|"
+         r"reveal\w*|draw\w*|trac\w*|flow\w*|sweep\w*|puls\w*|spin\w*|spun|grow\w*|shrink\w*)\b",
+         "Опишите основное движение объекта и его траекторию (slides toward the center, rotates clockwise)."),
+        ("motion_timing", r"\b(initially|then|finally|first|next|before|after|during|"
+         r"accelerat\w*|decelerat\w*|eas\w*|stagger\w*|constant speed)\b",
+         "Укажите последовательность движения и характер скорости: initially / then / finally, decelerates."),
+        ("motion_end_state", r"\b(settl\w*|hold\w*|rest\w*|final\w*|end\w*|return\w*|"
+         r"stops?|remain\w*|loop\w*)\b",
+         "Опишите конечную композицию: где объекты останавливаются или как возвращаются в начало лупа."),
+    )
+    return [Issue(shot.id, "error", code, message) for code, pattern, message in checks
+            if not re.search(pattern, shot.prompt, re.I)]
+
+
 def lint_plan(plan: Plan, default_quality: str = "fast") -> list[Issue]:
     high = plan.is_high(default_quality)
     names = [c.get("name", "") for c in plan.characters if c.get("name")]
     descriptors = [c.get("descriptor", "") for c in plan.characters if c.get("descriptor")]
+    anchor = (plan.style or {}).get("anchor") or ""
+    anchor_key = re.sub(r"[^a-z0-9]+", " ", anchor.lower()).strip()[:60]
     issues: list[Issue] = []
     for i, s in enumerate(plan.shots):
         issues += lint_shot(s, high, names, descriptors)
+        if anchor_key and anchor_key not in re.sub(r"[^a-z0-9]+", " ", s.prompt.lower()):
+            issues.append(Issue(s.id, "warn", "anchor_missing", "в промпте нет якорного предложения мира (style.anchor) — "
+                                "сцена может выглядеть как другой фильм; studio review --fix вставит его"))
+        if i > 0 and plan.shots[i - 1].direction.get("end") and s.direction and not s.direction.get("start"):
+            issues.append(Issue(s.id, "warn", "no_start_state", "у сцены нет direction.start — не зафиксировано, из какого "
+                                "состояния она начинается"))
+        if plan.kind == "motion":
+            issues += lint_motion(s)
         if high and is_conditioned(s, i, plan.loop and i == len(plan.shots) - 1) and s.frames > MAX_FRAMES_HIGH_CONDITIONED:
             issues.append(Issue(s.id, "warn", "dfr_conditioned_length",
                                 f"сцена со стартовым кадром длиннее 5 с ({s.seconds} с): DFR на ней падает, рендер пойдёт "

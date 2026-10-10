@@ -14,13 +14,14 @@ from __future__ import annotations
 import json
 import math
 import pathlib
+import re
 import time
 from dataclasses import dataclass
 
 from .audio import library_summary
-from .knowledge import KIND_PRESETS, LTX_PROMPT_RULES, STYLE_REFERENCE
+from .knowledge import KIND_PRESETS, LTX_PROMPT_RULES, STYLE_REFERENCE, MOTION_PROMPT_RULES, DIRECTOR_RULES
 from .lint import Issue, errors_only, issues_by_shot, lint_plan
-from .llm import LLM
+from .llm import LLM, LLMError
 from .schema import (FORMATS, MIN_SHOT_SECONDS, Captions, Music, Plan, Shot, Sfx, clamp_seconds, is_conditioned,
                      max_seconds, normalize_durations, slugify, validate)
 
@@ -72,7 +73,10 @@ def system_prompt(req: PlanRequest, high: bool) -> str:
            "on longer conditioned clips): split a long take as 8 s + 5 s + 5 s ... rather than 8 s + 8 s." if high else ""),
         LTX_PROMPT_RULES,
         STYLE_REFERENCE,
+        DIRECTOR_RULES,
     ]
+    if req.kind == "motion":
+        parts.append(MOTION_PROMPT_RULES)
     if req.loop:
         parts.append("LOOP MODE: the piece must play as a seamless loop. The LAST shot must end in exactly the visual state "
                      "the FIRST shot begins with: same location, framing, subject position, weather and light (the studio "
@@ -100,7 +104,9 @@ Return JSON exactly in this shape:
  "title": str,
  "logline": str,                       // one sentence
  "synopsis": str,                      // 3-6 sentences, what literally happens
- "style": {"visual": str, "palette": str, "lens": str, "lighting": str, "camera": str, "sound": str, "pace": str},
+ "creative_brief": {"must_keep": [str], "avoid": [str], "assumptions": [str],
+                    "visual_anchors": [str], "loop_anchor": str|null},
+ "style": {"anchor": str, "visual": str, "palette": str, "lens": str, "lighting": str, "camera": str, "sound": str, "pace": str},
  "characters": [{"name": str, "descriptor": str, "description": str, "voice": str}],   // descriptor = exact phrase for prompts
  "locations": [{"name": str, "descriptor": str}],
  "music": {"file": str|null, "mood": str, "volume": 0.15-0.35, "duck": bool} ,   // file from the library or null
@@ -115,6 +121,7 @@ SHOTS_SCHEMA = """\
 Return JSON exactly in this shape:
 {"shots": [
   {"beat": str,                       // the beat you are realizing (copy from the outline)
+   "direction": {"start": str, "action": str, "camera": str, "end": str},   // start = previous shot's end (state ledger)
    "seconds": number,                 // within the shot-length rules
    "transition": "cut"|"continue"|"dissolve",
    "transition_seconds": number,      // only for dissolve, 0.4-1.2
@@ -126,13 +133,54 @@ Return JSON exactly in this shape:
 Rules: the sum of seconds for this act must match the act duration (±10%). The first shot of the whole film is
 "cut". A "continue" shot must begin from the end state of the previous shot. Keep every recurring character's
 descriptor identical across shots. Vary shot sizes and angles. Sound description is mandatory in every prompt.
+STATE LEDGER: direction.start of every shot restates the direction.end of the previous shot (given below for
+all earlier shots), or names the time/place jump explicitly. The prompt body does NOT include the world anchor
+sentence (the studio inserts style.anchor verbatim); write the body as 60-150 words.
 """
 
 REVISE_SCHEMA = """\
-Return JSON: {"shots": [{"id": str, "prompt": str, "seconds": number, "caption": str|null}]} — only the shots you were
-asked to fix, same ids. Keep the story beat and continuity; fix exactly the listed problems while obeying every
+Return JSON: {"shots": [{"id": str, "prompt": str, "seconds": number, "caption": str|null,
+"direction": {"start": str, "action": str, "camera": str, "end": str}}]} — only the shots you were
+asked to fix, same ids. Keep the world anchor sentence and the character descriptors verbatim; direction.start
+must match the previous shot's direction.end. Keep the story beat and continuity; fix exactly the listed problems while obeying every
 prompt rule (one English paragraph, 70-180 words, camera + light + sound, no on-screen text, no negatives).
 """
+
+
+def ledger(shots: list[dict]) -> list[dict]:
+    """Компактная история: бит и конечное состояние каждой сцены (для контекста следующих актов)."""
+    out = []
+    for i, s in enumerate(shots):
+        d = s.get("direction") or {}
+        out.append({"n": i + 1, "beat": s.get("beat"), "seconds": s.get("seconds"), "end": d.get("end") or s.get("end_state")})
+    return out
+
+
+def inject_anchor(prompt: str, anchor: str) -> str:
+    """Вставляет якорное предложение мира после первой фразы промпта (кадр -> мир -> действие).
+
+    Если якорь уже есть (модель скопировала его), ничего не меняет.
+    """
+    anchor = (anchor or "").strip()
+    prompt = (prompt or "").strip()
+    if not anchor or not prompt:
+        return prompt
+    norm = lambda t: re.sub(r"[^a-z0-9]+", " ", t.lower()).strip()  # noqa: E731
+    if norm(anchor)[:60] in norm(prompt):
+        return prompt
+    if not anchor.endswith((".", "!", "?")):
+        anchor += "."
+    m = re.search(r"[.!?](\s+)", prompt)
+    if m:
+        return prompt[: m.start() + 1] + " " + anchor + prompt[m.start() + 1:]
+    return prompt + " " + anchor
+
+
+def ensure_anchor(plan: Plan) -> None:
+    anchor = (plan.style or {}).get("anchor")
+    if anchor:
+        for s in plan.shots:
+            s.prompt = inject_anchor(s.prompt, anchor)
 
 
 class Planner:
@@ -163,26 +211,88 @@ class Planner:
         raw_shots: list[dict] = []
         prev_tail: list[dict] = []
         for ai, act in enumerate(acts):
-            got = self._write_act(system, req, outline, act, ai, prev_tail, high)
+            got = self._write_act(system, req, outline, act, ai, prev_tail, high,
+                                  opening=raw_shots[0] if raw_shots else None, history=raw_shots)
             raw_shots += got
             prev_tail = got[-2:]
             self.log(f"  акт {ai + 1}/{len(acts)} «{act.get('name')}»: {len(got)} сцен")
 
         plan = self._build_plan(req, outline, raw_shots, fmt, high)
         self._fit_duration(plan, target, high)
+        self.director_review(plan, system)
+        ensure_anchor(plan)
         plan = self.refine(plan, system, rounds=2)
         problems = validate(plan, req.quality)
         if problems:
             self.log("ВНИМАНИЕ, план требует правки: " + "; ".join(problems))
         return plan
 
+    def director_review(self, plan: Plan, system: str | None = None) -> Plan:
+        """Semantic text review; never claims to evaluate rendered frames."""
+        if system is None:
+            system = system_prompt(PlanRequest(request=plan.request or plan.title, kind=plan.kind,
+                                   language=plan.language, quality=plan.quality or "high", loop=plan.loop),
+                                   plan.is_high("high"))
+        self.log("Режиссёрская проверка: замысел, постановка, непрерывность и выполнимость сцен")
+        # Bounded batches with adjacent shots and a global opening/ending for long films.
+        pending = {}
+        notes = []
+        for start in range(0, len(plan.shots), SHOTS_PER_CALL):
+            batch = plan.shots[start:start + SHOTS_PER_CALL]
+            context = {
+                "request": plan.request, "creative_brief": plan.creative_brief, "style": plan.style,
+                "characters": plan.characters, "locations": plan.locations, "loop": plan.loop,
+                "format": plan.format, "opening": vars(plan.shots[0]) | {"sfx": []},
+                "ending": vars(plan.shots[-1]) | {"sfx": []},
+                "previous": plan.shots[start - 1].prompt if start else None,
+                "next": plan.shots[start + len(batch)].prompt if start + len(batch) < len(plan.shots) else None,
+                "shots": [{"id": s.id, "seconds": s.seconds, "beat": s.beat, "prompt": s.prompt,
+                           "direction": s.direction, "transition": s.transition, "image": s.image} for s in batch],
+            }
+            user = ("Review this planned sequence against the ORIGINAL REQUEST, not generic cinematic taste. "
+                    "Check missing or invented requirements, appearance and spatial continuity, contradictory camera "
+                    "moves, action overload for the actual seconds, concrete light/materials, audio, and loop closure. "
+                    "Fix only defective prompts and direction; keep IDs, beats, duration, transitions and intent. "
+                    "Treat image paths as metadata, not images you have seen. Do not claim visual quality scores. "
+                    "If a problem requires a new shot, a reference image or different timing, report it in notes. "
+                    "Return JSON {\"shots\": [{\"id\": str, \"prompt\": str, \"direction\": "
+                    "{\"start\": str, \"action\": str, \"camera\": str, \"end\": str}}], "
+                    "\"notes\": [str]}. shots contains only necessary corrections; empty is valid. "
+                    f"Notes language: {plan.language}.\n" + json.dumps(context, ensure_ascii=False))
+            res = self._ask("director_review", system, user)
+            if not isinstance(res.get("shots"), list) or not isinstance(res.get("notes"), list):
+                raise LLMError("режиссёрская проверка: ожидаются списки shots и notes")
+            allowed = {s.id for s in batch}
+            for fix in res["shots"]:
+                if (not isinstance(fix, dict) or fix.get("id") not in allowed
+                        or fix["id"] in pending or not isinstance(fix.get("prompt"), str)
+                        or not fix["prompt"].strip()):
+                    raise LLMError("режиссёрская проверка вернула неизвестную/повторную сцену или пустой промпт")
+                if "direction" in fix and (not isinstance(fix["direction"], dict)
+                        or any(not isinstance(v, str) for v in fix["direction"].values())):
+                    raise LLMError("режиссёрская проверка: direction должен быть объектом строк")
+                pending[fix["id"]] = fix
+            if any(not isinstance(n, str) for n in res["notes"]):
+                raise LLMError("режиссёрская проверка: notes должен содержать строки")
+            notes.extend(res["notes"])
+        for shot in plan.shots:
+            if shot.id in pending:
+                fix = pending[shot.id]
+                shot.prompt = fix["prompt"].strip()
+                shot.direction = fix.get("direction", shot.direction)
+        plan.review_notes = list(dict.fromkeys(notes))
+        for note in plan.review_notes:
+            self.log("Режиссёрская заметка: " + note)
+        return plan
+
     def refine(self, plan: Plan, system: str | None = None, rounds: int = 2) -> Plan:
         """Линт + точечные исправления моделью. Можно вызывать для готового плана (studio review)."""
         if system is None:
             req = PlanRequest(request=plan.request or plan.title, kind=plan.kind, language=plan.language,
-                              quality=plan.quality or "high")
+                              quality=plan.quality or "high", loop=plan.loop)
             system = system_prompt(req, plan.is_high("high"))
         for rnd in range(rounds):
+            ensure_anchor(plan)          # правки модели могли потерять якорь мира
             issues = lint_plan(plan, plan.quality or "high")
             errs = errors_only(issues)
             if not errs:
@@ -197,12 +307,15 @@ class Planner:
                 if f:
                     if f.get("prompt"):
                         s.prompt = str(f["prompt"]).strip()
+                    if isinstance(f.get("direction"), dict):
+                        s.direction = {k: str(v) for k, v in f["direction"].items()}
                     if f.get("seconds"):
                         idx = plan.shots.index(s)
                         s.seconds = clamp_seconds(float(f["seconds"]), plan.is_high("high"),
                                                   conditioned=is_conditioned(s, idx, plan.loop and idx == len(plan.shots) - 1))
                     if "caption" in f and plan.captions.enabled:
                         s.caption = (str(f["caption"]).strip() or None) if f["caption"] else s.caption
+        ensure_anchor(plan)
         remaining = errors_only(lint_plan(plan, plan.quality or "high"))
         if remaining:
             self.log("Остались проблемы в промптах: " + "; ".join(str(i) for i in remaining[:8]))
@@ -236,17 +349,25 @@ class Planner:
         return self._ask("outline", system, user)
 
     def _write_act(self, system: str, req: PlanRequest, outline: dict, act: dict, index: int,
-                   prev_tail: list[dict], high: bool) -> list[dict]:
+                   prev_tail: list[dict], high: bool, opening: dict | None = None,
+                   history: list[dict] | None = None) -> list[dict]:
         beats = act.get("beats") or []
         act_seconds = int(act.get("seconds") or 0)
-        context = {k: outline.get(k) for k in ("title", "logline", "synopsis", "style", "characters", "locations")}
-        user = (f"FILM CONTEXT:\n{json.dumps(context, ensure_ascii=False)}\n\n"
+        context = {k: outline.get(k) for k in ("title", "logline", "synopsis", "style", "characters", "locations", "creative_brief")}
+        user = (f"ORIGINAL PRODUCER REQUEST: {req.request}\nPROJECT NOTES: {req.notes}\n"
+                f"FILM CONTEXT:\n{json.dumps(context, ensure_ascii=False)}\n\n"
                 f"ALL ACTS (for orientation): {json.dumps([{'name': a.get('name'), 'seconds': a.get('seconds')} for a in outline.get('acts', [])], ensure_ascii=False)}\n\n"
                 f"NOW WRITE ACT {index + 1}: \"{act.get('name')}\", {act_seconds} seconds, beats:\n"
                 + "\n".join(f"{i + 1}. {b}" for i, b in enumerate(beats)))
+        if req.loop and opening:
+            user += "\nLOOP OPENING TO RETURN TO:\n" + json.dumps(opening, ensure_ascii=False)
+        if history:
+            user += "\n\nSTATE LEDGER OF ALL EARLIER SHOTS (beat and end state; your first shot starts from the last end state):\n" \
+                    + json.dumps(ledger(history), ensure_ascii=False)
         if prev_tail:
-            user += ("\n\nLAST SHOTS OF THE PREVIOUS ACT (for continuity, do not repeat them):\n"
-                     + json.dumps([{"seconds": s.get("seconds"), "prompt": s.get("prompt")} for s in prev_tail], ensure_ascii=False))
+            user += ("\n\nLAST SHOTS OF THE PREVIOUS ACT IN FULL (for continuity, do not repeat them):\n"
+                     + json.dumps([{"seconds": s.get("seconds"), "prompt": s.get("prompt"), "direction": s.get("direction")}
+                                   for s in prev_tail], ensure_ascii=False))
         else:
             user += "\n\nThis is the beginning of the film: the first shot has transition \"cut\"."
         want_caps = req.captions if req.captions is not None else _preset(req.kind)["captions"]
@@ -262,8 +383,12 @@ class Planner:
                 u = user.replace(f"{act_seconds} seconds, beats:\n" + "\n".join(f"{i + 1}. {b}" for i, b in enumerate(beats)),
                                  f"{part_secs} seconds, beats:\n" + "\n".join(f"{start + i + 1}. {b}" for i, b in enumerate(chunk)))
                 if shots:
-                    u += "\n\nPREVIOUS SHOTS OF THIS ACT:\n" + json.dumps(
-                        [{"seconds": s.get("seconds"), "prompt": s.get("prompt")} for s in shots[-2:]], ensure_ascii=False)
+                    u += "\n\nSTATE LEDGER OF THIS ACT SO FAR:\n" + json.dumps(ledger(shots), ensure_ascii=False)
+                    u += "\n\nPREVIOUS SHOTS OF THIS ACT IN FULL:\n" + json.dumps(
+                        [{"seconds": s.get("seconds"), "prompt": s.get("prompt"), "direction": s.get("direction")}
+                         for s in shots[-2:]], ensure_ascii=False)
+                    if req.loop and not opening:
+                        u += "\nLOOP OPENING TO RETURN TO:\n" + json.dumps(shots[0], ensure_ascii=False)
                 res = self._ask(f"shots_act{index + 1}_{start}", system, u)
                 shots += list(res.get("shots") or [])
             return shots
@@ -278,9 +403,15 @@ class Planner:
             shot = next((s for s in plan.shots if s.id == sid), None)
             if shot is None:
                 continue
+            idx = plan.shots.index(shot)
             items.append({"id": sid, "seconds": shot.seconds, "prompt": shot.prompt, "caption": shot.caption,
+                          "direction": shot.direction, "transition": shot.transition,
+                          "previous_prompt": plan.shots[idx - 1].prompt if idx else None,
+                          "previous_end_state": (plan.shots[idx - 1].direction or {}).get("end") if idx else None,
                           "problems": [f"{i.code}: {i.message}" for i in iss]})
-        user = (f"FILM: {plan.title}. Style: {json.dumps(plan.style, ensure_ascii=False)}. "
+        user = (f"ORIGINAL REQUEST: {plan.request}\nCREATIVE BRIEF: {json.dumps(plan.creative_brief, ensure_ascii=False)}\n"
+                f"WORLD ANCHOR (must stay verbatim in every prompt): {plan.style.get('anchor') or '(none)'}\n"
+                f"FILM: {plan.title}. Style: {json.dumps(plan.style, ensure_ascii=False)}. "
                 f"Characters: {json.dumps(plan.characters, ensure_ascii=False)}\n\n"
                 f"Fix these shots:\n{json.dumps(items, ensure_ascii=False, indent=1)}\n\n{REVISE_SCHEMA}")
         res = self._ask("revise", system, user)
@@ -308,7 +439,7 @@ class Planner:
                               transition_seconds=float(r.get("transition_seconds") or 0.5),
                               caption=(str(r["caption"]).strip() or None) if (want_caps and r.get("caption")) else None,
                               narration=(str(r["narration"]).strip() or None) if r.get("narration") else None,
-                              sfx=sfx, beat=r.get("beat")))
+                              sfx=sfx, beat=r.get("beat"), direction=dict(r.get("direction") or {})))
         if not shots:
             raise RuntimeError("модель не вернула ни одной сцены")
         music = None
@@ -331,7 +462,8 @@ class Planner:
                     logline=outline.get("logline"), synopsis=outline.get("synopsis"), style=dict(outline.get("style") or {}),
                     characters=characters, locations=list(outline.get("locations") or []),
                     series=(req.series_bible or {}).get("slug"), episode=req.episode, music=music,
-                    captions=Captions(enabled=bool(want_caps)), request=req.request, loop=req.loop)
+                    captions=Captions(enabled=bool(want_caps)), request=req.request, loop=req.loop,
+                    creative_brief=dict(outline.get("creative_brief") or {}) | {"project_notes": req.notes})
         if req.kind == "short":
             plan.fade_in, plan.fade_out = 0.0, 0.4
         if req.loop:

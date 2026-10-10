@@ -115,9 +115,11 @@ def cmd_review(args, cfg):
         print(str(i))
     if not issues and not problems:
         print("Замечаний нет.")
-    if args.fix and (issues or problems):
+    if args.fix:
         llm = _llm(cfg)
-        plan = Planner(llm, log=_log).refine(plan, rounds=2)
+        planner = Planner(llm, log=_log)
+        planner.director_review(plan)
+        plan = planner.refine(plan, rounds=2)
         plan.save(path)
         print(f"\nИсправленный план сохранён: {path}")
 
@@ -291,7 +293,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     def add_plan_args(sp):
         sp.add_argument("request", help="что снимаем, своими словами (на любом языке)")
-        sp.add_argument("--kind", choices=KINDS, default="film", help="short | aesthetic | film | episode")
+        sp.add_argument("--kind", choices=KINDS, default="film", help="short | aesthetic | film | episode | motion")
         sp.add_argument("--duration", type=int, help="целевой хронометраж, секунд")
         sp.add_argument("--format", choices=FORMATS, help="соотношение сторон (по умолчанию из пресета)")
         sp.add_argument("--quality", choices=("fast", "high"), help="качество рендера (по умолчанию из конфига)")

@@ -7,6 +7,35 @@ LTX-2.5 (multishot, диффузионный декодер), практичес
 """
 from __future__ import annotations
 
+DIRECTOR_RULES = """\
+DIRECTOR'S CONTRACT — applies to films, shorts, aesthetic pieces, episodes and loops.
+The producer's literal request and per-project notes take priority over genre defaults and standing preferences.
+Preserve requested subject, count, appearance, setting, action, ending, camera, style and exclusions. Translate
+exclusions into positive visible descriptions in the video prompt; retain the exclusions in the creative brief.
+Do not invent rain, neon, slow motion, shallow focus, glamour, extra people, dialogue or camera moves merely
+to make a shot 'cinematic'. Fill unspecified details conservatively and record them as assumptions, not requests.
+
+First extract a creative_brief: must_keep (explicit requirements), avoid (explicit exclusions), assumptions
+(your choices), visual_anchors (reusable concrete descriptors for subjects, props, location and lighting),
+and loop_anchor (opening composition and motion phase to return to, or null). Keep these human-readable.
+For every shot, first plan direction: start (visible opening state), action (one primary achievable action),
+camera (framing plus at most one motivated move), end (visible closing state). Then compile that staging into
+the English LTX paragraph. The renderer only receives prompt: never leave essential direction only in metadata.
+Prefer 4–8 purposeful sentences over adjective lists. Resolution tags, 'masterpiece', 'award-winning', '8K'
+and repetition are not substitutes for composition. Use an explicit subject, spatial relationships, motivated
+lighting and tactile material details that fit the requested style. A quiet held frame is a valid beat.
+For 3–5 seconds, use one action with a small reaction; for longer shots allow a simple ordered progression.
+Avoid simultaneous complex hand interactions, transformations and camera orbits unless explicitly requested.
+Place subjects in foreground/midground/background only when useful. Make cuts motivated by story or motion;
+vary scale when useful, never for its own sake. Preserve screen direction, props, costume and light across cuts.
+For image-conditioned shots, respect the supplied composition and focus on subsequent motion and sound.
+
+For loops, design cyclical reversible action from the outline onward; the closing frame and motion phase must
+match the opening, including camera, pose, framing and light. Avoid an irreversible story ending in a loop.
+Use at least two clips for this studio's last-frame loop conditioning. The last act must know the opening shot.
+Do not describe the next clip as remembering earlier prompts: each independent cut repeats essential anchors.
+"""
+
 LTX_PROMPT_RULES = """\
 # How to write a prompt for LTX-2.5 (one prompt = one generated clip, 3-10 s)
 
@@ -45,12 +74,34 @@ holding identity, lighting and voice. Write it as one chronological paragraph: a
 ("A hard cut to ...", "A match cut connects ..."), re-establish the framing completely, re-identify the
 character with the same descriptor, and say what the sound does across the cut. Use at most 3 shots per clip.
 
+CONTINUITY BETWEEN SHOTS (the most common failure of AI films: every clip looks like a different movie):
+- The video model renders every shot independently and remembers nothing. Everything that must stay the same
+  has to be written again in every prompt: the WORLD ANCHOR sentence (location, time, weather, light logic,
+  palette, lens; the studio inserts style.anchor verbatim into every prompt, so do not paraphrase it inside
+  the prompt body) and every recurring character's full descriptor, word for word, every time they appear.
+- Track STATE through direction.start and direction.end: where each character is, body position, what they
+  hold, wet/dry, clean/dirty, injuries, clothing, visible emotion, where the light comes from, weather
+  intensity, where the camera sits. direction.start of a shot MUST restate direction.end of the previous shot
+  unless there is an explicit time or place jump, which the prompt must name ("Later that night, the same
+  pier"). Props do not teleport, wounds do not heal, rain does not stop between shots.
+- The first sentence of a prompt establishes the inherited state (who is in frame, pose, props, condition)
+  before any new action starts.
+- Keep the same camera language (lens feel, handheld vs locked) and grade across the whole piece unless the
+  story motivates a change.
+
 Continuity between clips (the studio handles this technically): if a shot is marked transition="continue",
 the clip will start from the exact last frame of the previous clip, so its prompt must begin from the end state of
 the previous action and continue the same camera setup or motivate a new move from it.
 """
 
 KIND_PRESETS: dict[str, dict] = {
+    "motion": {
+        "label": "моушен-дизайн",
+        "default_seconds": 15, "min_seconds": 6, "max_seconds": 90,
+        "default_format": "16:9", "shot_seconds": (3, 8), "captions": False,
+        "brief": "A designed graphic animation: a clear visual idea, controlled choreography and a readable final composition. "
+                 "Use graphic objects rather than a dramatic character story. Each clip develops one main transformation.",
+    },
     "short": {
         "label": "вертикальный шортс (TikTok / Reels / Shorts)",
         "default_seconds": 45, "min_seconds": 12, "max_seconds": 90,
@@ -100,8 +151,48 @@ KIND_PRESETS: dict[str, dict] = {
     },
 }
 
+MOTION_PROMPT_RULES = """\
+MOTION DESIGN — specialize the film rules and JSON schemas above for graphic animation.
+Plan a visual progression (establish, transform, resolve), not a character drama. Characters and locations may
+be empty arrays. Keep the existing style fields: visual = 2D vector-like / 2.5D / 3D material treatment;
+palette = named colors and their roles; lens = orthographic or perspective and depth; lighting = flat uniform
+color for 2D or a coherent studio light for 3D; camera = locked framing by default; pace = motion rhythm.
+Keep this design system consistent across clips. Do not introduce film grain, handheld shake, actors or
+photographic lenses unless requested. The instruction to vary angles does not apply to graphic compositions.
+
+For EVERY prompt describe:
+1. Composition: background, exact small object count, shapes, materials, palette, scale and starting positions.
+2. One dominant animation: object + concrete verb + direction/path + destination (slide, rotate, scale, unfold).
+3. Timing: initially / then / finally within the supplied clip duration. Describe easing visibly: accelerates,
+   decelerates, overshoots slightly and settles, or moves at constant speed. Stagger multiple objects clearly.
+4. End state: explicitly say where objects settle or hold and what remains visible in the final composition.
+5. Camera and sound: separate object motion from camera motion; finish with synchronized clicks, swishes,
+   tonal pulses or deliberate silence. A flat-color design may use uniform flat lighting.
+Prefer a small number of simple forms and one transformation over many simultaneous events. Preserve object
+count, palette and material throughout, except for an explicitly planned transformation. Use natural language,
+not animation software commands or cubic-bezier syntax. Relative phases should survive duration adjustment.
+For continue transitions, repeat the previous end composition as the new start. For loops, return to the
+initial positions, scale, orientation, lighting and motion phase, with compatible velocity across the seam.
+Exact typography and brand marks belong in post-production: generate a clean reserved area instead of asking
+the video model to draw lettering or a logo. Captions may use the studio caption field when enabled; it is
+not a kinetic typography engine. Never promise pixel-exact geometry, timing or readable generated text.
+
+Example of a single clip prompt:
+A static orthographic wide shot frames three coral matte discs aligned along the left edge of an ivory
+background, with generous empty space on the right. Uniform flat lighting keeps their colors solid and their
+edges crisp. Initially the discs rest at equal vertical intervals. Then each disc slides horizontally toward
+the center in a staggered sequence, the upper disc leading. Each accelerates gently, decelerates near its
+destination and settles into a centered vertical stack with equal spacing. Finally the three discs hold
+their final positions while the camera remains locked. A soft click accompanies each arrival; the sound
+decays into silence during the final hold.
+"""
+
 STYLE_REFERENCE = """\
 Style bible fields you must fill (short, concrete, reusable in every prompt):
+- anchor: ONE sentence of 25-40 words, present tense, literal, that the studio pastes verbatim into every prompt:
+  the location as the camera sees it, time of day, weather, light logic, palette, lens/grain feel (e.g. "A narrow
+  wooden pier at night in a storm, black sea behind, lit only by a swinging brass lantern and distant lightning,
+  cold teal shadows with warm amber highlights, shot on a 35mm cinema lens with fine grain.").
 - visual: overall look in one sentence (e.g. "wet neon-lit Tokyo alleys shot on anamorphic lenses, cinematic realism").
 - palette: 3-5 colors and how they are used.
 - lens: focal length feel, depth of field, grain/texture.

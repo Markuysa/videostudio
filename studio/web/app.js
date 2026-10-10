@@ -4,8 +4,8 @@ const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt
 const fmtDur = s => { if (s == null) return "—"; s = Math.round(s); return s >= 60 ? `${Math.floor(s/60)} min ${s%60} s` : `${s} s`; };
 const fmtAgo = t => { if (!t) return ""; const d = (Date.now()/1000 - t); if (d < 60) return "just now"; if (d < 3600) return `${Math.floor(d/60)} min ago`; if (d < 86400) return `${Math.floor(d/3600)} h ago`; return new Date(t*1000).toLocaleDateString("en-GB"); };
 const fmtSize = b => b > 1e9 ? (b/1e9).toFixed(2)+" GB" : (b/1e6).toFixed(1)+" MB";
-const KIND_LABEL = {short:"Short", aesthetic:"Aesthetic", film:"Film", episode:"Episode"};
-const KIND_DESC = {short:"9:16, hook, captions, 15–60 s", aesthetic:"mood piece under music, long takes", film:"drama, 2–10 min", episode:"episode from a series bible"};
+const KIND_LABEL = {motion:"Motion design", short:"Short", aesthetic:"Aesthetic", film:"Film", episode:"Episode"};
+const KIND_DESC = {motion:"graphic animation, controlled motion, 6–90 s", short:"9:16, hook, captions, 15–60 s", aesthetic:"mood piece under music, long takes", film:"drama, 2–10 min", episode:"episode from a series bible"};
 const STATUS = {queued:["queued","chip"], running:["running","chip accent"], done:["done","chip good"], error:["error","chip bad"], stopped:["stopped","chip warn"]};
 
 let state = null, view = "studio", modalJob = null, pollTimer = null;
@@ -110,13 +110,13 @@ document.addEventListener("click", e => {
 });
 
 /* ---------- Studio (home) ---------- */
-const DURATIONS = {short: [15, 30, 45, 60], aesthetic: [30, 45, 60, 90], film: [120, 180, 300, 480], episode: [90, 120, 180, 300]};
-const DUR_DEFAULT = {short: 45, aesthetic: 45, film: 180, episode: 120};
-const KIND_ICON = {short: "📱", aesthetic: "🌙", film: "🎬", episode: "📺"};
+const DURATIONS = {motion: [6, 15, 30, 60], short: [15, 30, 45, 60], aesthetic: [30, 45, 60, 90], film: [120, 180, 300, 480], episode: [90, 120, 180, 300]};
+const DUR_DEFAULT = {motion: 15, short: 45, aesthetic: 45, film: 180, episode: 120};
+const KIND_ICON = {motion: "◈", short: "📱", aesthetic: "🌙", film: "🎬", episode: "📺"};
 function durLabel(s) { return s < 120 ? `${s} s` : `${Math.round(s / 60)} min`; }
 function estimate() {
   const secs = +form.duration || DUR_DEFAULT[form.kind];
-  const [lo, hi] = ({short: [3, 8], aesthetic: [5, 10], film: [4, 10], episode: [4, 10]})[form.kind];
+  const [lo, hi] = ({motion: [3, 8], short: [3, 8], aesthetic: [5, 10], film: [4, 10], episode: [4, 10]})[form.kind];
   const shots = Math.max(1, Math.round(secs / ((lo + hi) / 2)));
   const high = (form.quality || state.config.quality) === "high";
   const minutes = shots * (high ? 3.2 : 1.3) + 6;
@@ -133,11 +133,13 @@ function viewStudio() {
   <div class="hero">
     <div class="card compose">
       <textarea id="f-request" placeholder="For example: an aesthetic short about a rainy evening in Tokyo — a girl with a red umbrella walks down a neon street, lo-fi mood">${esc(form.request)}</textarea>
+      ${form.kind === "motion" ? `<p class="muted small">Describe: objects → 2D/3D style and materials → palette → starting layout → movement and acceleration → final layout. Example: three coral discs slide from the left, decelerate and settle into a centered stack on an ivory background; static camera, soft clicks. Exact text and logos need separate compositing.</p>` : ""}
       ${segHtml("kind", Object.keys(KIND_LABEL).map(k => ({value: k, label: KIND_LABEL[k], icon: KIND_ICON[k]})), form.kind)}
+      <label><span>Creative direction · what must stay exact</span><textarea id="f-notes" placeholder="Visual style and references in words; subject appearance; must-have details; unwanted elements; camera; ending or loop. Example: natural overcast light, muted colors, locked camera, no neon or dialogue.">${esc(form.notes)}</textarea></label>
       <div class="row dur">
         <span class="muted small">Duration</span>
         ${segHtml("duration", [...presets.map(d => ({value: d, label: durLabel(d)})), {value: "custom", label: "custom"}], custom ? "custom" : form.duration)}
-        <input id="f-duration" class="num" type="number" min="10" max="900" value="${esc(form.duration)}" ${custom ? "" : "hidden"}>
+        <input id="f-duration" class="num" type="number" min="6" max="900" value="${esc(form.duration)}" ${custom ? "" : "hidden"}>
         <span class="muted small right" id="estimate">${estimate()}</span>
       </div>
       <div class="row actions">
@@ -155,7 +157,6 @@ function viewStudio() {
           <div class="field"><span>Series</span>${selectHtml("series", [{value: "", label: "—"}, ...state.series.map(x => ({value: x.slug, label: x.title}))], form.series)}</div>
           <label><span>File name</span><input id="f-name" placeholder="auto" value="${esc(form.name)}"></label>
         </div>
-        <label><span>Notes for the planner</span><input id="f-notes" placeholder="e.g. no dialogue, end on a close-up, more rain" value="${esc(form.notes)}"></label>
         <div class="row">${toggleHtml("f-loop", form.loop, "Seamless loop: the end flows into the beginning")}</div>
       </div>
     </div>
@@ -257,11 +258,13 @@ async function openPlan(name, tab = "shots") {
     : tab === "issues" ? (d.problems.length || d.issues.length ? `${d.problems.map(x => `<div class="issue error">⛔ ${esc(x)}</div>`).join("")}${d.issues.map(i => `<div class="issue ${i.level}">${i.level === "error" ? "✖" : "▲"} shot ${esc(i.shot)} · ${esc(i.code)}: ${esc(i.message)}</div>`).join("")}` : `<div class="empty">No issues</div>`)
     : p ? `<div class="kv" style="margin-bottom:14px"><div>Logline</div><div>${esc(p.logline || "—")}</div><div>Synopsis</div><div>${esc(p.synopsis || "—")}</div>
         <div>Style</div><div class="small">${Object.entries(p.style || {}).map(([k, v]) => `<b>${esc(k)}</b>: ${esc(v)}`).join(" · ") || "—"}</div>
+        <div>Creative brief</div><div class="small">${Object.entries(p.creative_brief || {}).map(([k, v]) => `<b>${esc(k)}</b>: ${esc(Array.isArray(v) ? v.join("; ") : v || "—")}`).join("<br>") || "—"}</div>
+        <div>Director review</div><div class="small">${(p.review_notes || []).map(esc).join("<br>") || "—"}</div>
         <div>Characters</div><div class="small">${(p.characters || []).map(c => `<b>${esc(c.name)}</b> — ${esc(c.descriptor || c.description || "")}`).join("<br>") || "—"}</div>
         <div>Music</div><div>${p.music ? esc(p.music.file || "(no track chosen)") + (p.music.mood ? " · " + esc(p.music.mood) : "") : "—"}</div></div>
-        <div class="shots">${p.shots.map((s, i) => `<div class="shot"><div class="head"><span class="id">${esc(s.id)}</span><span class="chip">${s.seconds} s</span>${i ? `<span class="chip ${s.transition === "continue" ? "blue" : s.transition === "dissolve" ? "accent" : ""}">${s.transition || "cut"}</span>` : ""}${s.caption ? `<span class="chip warn">💬 ${esc(s.caption)}</span>` : ""}${(s.sfx || []).map(x => `<span class="chip">🔊 ${esc(x.file.split("/").pop())}</span>`).join("")}${s.beat ? `<span class="muted small">${esc(s.beat)}</span>` : ""}</div><p>${esc(s.prompt)}</p></div>`).join("")}</div>` : `<div class="issue error">${esc(d.error)}</div>`;
+        <div class="shots">${p.shots.map((s, i) => `<div class="shot"><div class="head"><span class="id">${esc(s.id)}</span><span class="chip">${s.seconds} s</span>${i ? `<span class="chip ${s.transition === "continue" ? "blue" : s.transition === "dissolve" ? "accent" : ""}">${s.transition || "cut"}</span>` : ""}${s.caption ? `<span class="chip warn">💬 ${esc(s.caption)}</span>` : ""}${(s.sfx || []).map(x => `<span class="chip">🔊 ${esc(x.file.split("/").pop())}</span>`).join("")}${s.beat ? `<span class="muted small">${esc(s.beat)}</span>` : ""}</div><p>${esc(s.prompt)}</p>${Object.keys(s.direction || {}).length ? `<details><summary>Shot direction</summary><div class="small">${Object.entries(s.direction).map(([k,v]) => `<b>${esc(k)}</b>: ${esc(v)}`).join("<br>")}</div></details>` : ""}</div>`).join("")}</div>` : `<div class="issue error">${esc(d.error)}</div>`;
   openModal(`<div class="row between"><div><h3 style="margin:0">${esc(p ? p.title : name)}</h3><div class="small muted mono">${esc(d.path || name)}</div></div>
-    <div class="row"><button class="small" data-review="${esc(name)}" title="Linter + prompt fixes by the model">✨ Fix prompts</button><button class="small primary" data-render="${esc(name)}">🎬 Render</button><button class="small danger" data-del-plan="${esc(name)}">Delete</button><button class="small ghost" id="pm-close">Close</button></div></div>
+    <div class="row"><button class="small" data-review="${esc(name)}" title="Director review against your request, continuity checks and prompt fixes">✨ Fix prompts</button><button class="small primary" data-render="${esc(name)}">🎬 Render</button><button class="small danger" data-del-plan="${esc(name)}">Delete</button><button class="small ghost" id="pm-close">Close</button></div></div>
     ${d.summary ? `<pre class="small muted" style="white-space:pre-wrap;margin:10px 0 0">${esc(d.summary)}</pre>` : ""}
     <div class="tabs" style="margin-top:12px">${[["shots","Shots"],["issues",`Check ${errs ? `<span class="chip bad">${errs}</span>` : ""} ${warns ? `<span class="chip warn">${warns}</span>` : ""}`],["json","JSON"]].map(([k, l]) => `<div class="tab ${tab === k ? "active" : ""}" data-plan-tab="${k}" data-plan-name="${esc(name)}">${l}</div>`).join("")}</div>
     ${body}`);

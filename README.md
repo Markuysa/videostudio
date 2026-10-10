@@ -10,8 +10,90 @@ python studio.py make "Aesthetic short: rainy evening in Tokyo, a girl with a re
 ```
 
 Formats: `short` (vertical short with a hook and captions), `aesthetic` (mood piece under music),
-`film` (short film with dramatic structure), `episode` (series episode driven by a character bible).
+`film` (short film with dramatic structure), `episode` (series episode driven by a character bible),
+`motion` (graphic animation with deliberate choreography, 6–90 s, default 15 s / 16:9).
 Add `--loop` for a seamless loop: the last shot is conditioned on the first frame of the film.
+
+## Directing films, shorts and loops
+
+The planner now carries your original request and project notes into every act and repair pass.
+It extracts a `creative_brief` (requirements, exclusions, assumptions and recurring visual anchors),
+then stages each shot as `direction.start/action/camera/end` before writing the LTX prompt.
+A separate director review checks the text against your intent, continuity, actual shot durations and
+loop closure before the existing prompt lint/repair. This adds one LLM call per batch of up to 12 shots.
+It does not evaluate rendered video or guarantee aesthetics. Unresolved issues are saved in `review_notes`.
+The web form exposes **Creative direction**, and the plan viewer shows the brief, review notes and shot direction.
+
+```bash
+python studio.py plan "Зацикленное видео: рыжий кот дремлет у окна, рядом колышется льняная штора" \
+    --kind aesthetic --duration 15 --loop --name cat_window \
+    --notes "Камера неподвижна. Пасмурный дневной свет, натуральная шерсть, приглушённые кремовые и рыжие цвета. Кот остаётся на месте; дыхание и штора возвращаются в исходную фазу. Без неона, речи и смены локации."
+python studio.py review plans/cat_window.json --fix
+```
+
+`review --fix` runs the director review even when lexical lint is clean. Review notes identify problems
+that require a reference frame, new shot or timing change rather than pretending a prompt edit solves them.
+For tighter composition and character control, supply a chosen opening image via a shot's `image` field
+in the plan JSON. Paths are relative to the plan file, or absolute. Reference images are packaged and copied
+to RunPod automatically; missing files fail before GPU allocation. Updating an image invalidates its clip cache.
+Fallbacks retain image conditioning; failed conditioning is reported as a failed shot rather than replaced
+with unrelated text-to-video footage. Loops require at least two clips in the current renderer.
+
+The LTX-specific instructions follow the [official prompting guide](https://docs.ltx.io/open-source-model/usage-guides/prompting-guide):
+concrete chronological action, clear framing, coherent light and sound. The studio uses single-paragraph
+prompts as its own production convention. A better prompt cannot replace an approved reference image or
+reviewing actual generated motion. Use Script only, inspect the plan, then render a short representative scene
+before committing GPU time to a long film.
+
+Local video alternatives to benchmark (checked 2026-10-10; recommendations, **not integrated render backends**):
+
+| Model | Suggested comparison | Official hardware guidance |
+|---|---|---|
+| [Wan2.2 I2V-A14B](https://github.com/Wan-Video/Wan2.2) | First candidate to compare on reference-driven film shots | Official single-GPU 720p example: at least 80 GB VRAM |
+| [Wan2.2 TI2V-5B](https://github.com/Wan-Video/Wan2.2) | Lower-memory text/image-to-video alternative | Official offloaded 720p example: at least 24 GB VRAM |
+| [HunyuanVideo-1.5](https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5) | Another local T2V/I2V candidate | Documented minimum 14 GB with offloading; actual needs depend on settings |
+
+Compare the same briefs and reference frames with several seeds. Judge identity, requested action, material
+detail, camera stability and temporal artifacts separately; model-specific prompts should describe the same
+intent rather than blindly reuse LTX formatting. The project still renders with LTX-2.5; these alternatives
+need their own inference adapters and audio/loop handling. Video generation remains on your GPU / RunPod;
+the planner's LLM provider remains configurable separately (Anthropic or local Ollama).
+
+## Shot-to-shot continuity
+
+The video model renders every shot independently and remembers nothing, so continuity is built into the
+text deterministically rather than requested politely:
+
+- **World anchor.** The outline produces `style.anchor`: one literal sentence (location, time, weather, light
+  logic, palette, lens). The studio inserts it verbatim into every prompt right after the framing sentence,
+  and re-inserts it after the director review and after prompt repairs.
+- **State ledger.** Every shot carries `direction.start/action/camera/end`. When an act is written, the model
+  receives the beat and end state of *all* earlier shots plus the last two shots in full, and `direction.start`
+  must restate the previous `direction.end` unless the prompt names a time or place jump.
+- **Character descriptors.** A pronoun without any character descriptor in the prompt is now a lint error, so
+  the repair pass rewrites it with the verbatim descriptor. A missing anchor is a warning that `review --fix`
+  resolves.
+
+## Motion design
+
+Choose **Motion design** in the web interface and use **Script only** to inspect the prompts before rendering.
+Describe the objects, 2D/3D treatment and materials, palette, starting layout, movement, speed changes and
+final layout. You can write the brief in Russian; the planner produces English video prompts.
+
+```bash
+python studio.py plan "Три коралловых матовых диска на фоне цвета слоновой кости. Плоская 2D-графика, статичная камера. Диски по очереди скользят слева к центру, замедляются и замирают в вертикальном стеке с равными интервалами. Мягкий щелчок при каждой остановке." \
+    --kind motion --duration 6 --name coral_discs
+python studio.py review plans/coral_discs.json --fix
+python studio.py render plans/coral_discs.json
+```
+
+For a loop, add `--loop` and describe how the objects return to their starting positions and orientations.
+Use `--format 9:16` for vertical graphics. The planner keeps one design system across clips and describes
+one main transformation per clip, including timing, easing, end composition, camera and sound.
+Motion-specific lint checks flag missing action, timing and end-state language for automatic repair.
+These are text heuristics, not visual verification: inspect the generated plan and preview the rendered clips.
+Exact text, logos and kinetic typography require separate compositing; the existing caption option is a
+simple overlay. Generative video does not guarantee exact geometry or frame-accurate animation.
 
 ## Installation
 
@@ -125,7 +207,7 @@ is deleted automatically even if the laptop goes to sleep (`max_hours`). Results
 volume: `studio.py fetch <slug>`.
 
 `remote/film.py` renders every shot with a fallback chain: DFR (1080p, detailing) → distilled at the
-same resolution with the same start frame → DFR without a frame → fast mode. This fixed the originally
+same resolution with the same start/end frames → fast mode retaining those frames. This handles the originally
 failing shot 002 (CUBLAS / illegal memory access in the DFR keyframe decoder with an input image at
 193+ frames; 121 frames pass at any conditioning strength, so the planner keeps `continue` shots in
 `high` mode at 5 s or less, and long shots with a start frame go straight to distilled 1080p). DFR also

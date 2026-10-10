@@ -7,10 +7,12 @@ from tests.test_lint import GOOD
 
 OUTLINE = {
     "title": "Красный зонт", "logline": "Девушка ищет кота в неоновом Токио.", "synopsis": "Дождь. Поиск. Встреча.",
-    "style": {"visual": "neon rain", "palette": "red, teal", "lens": "anamorphic", "lighting": "neon", "camera": "slow",
+    "style": {"anchor": "A narrow neon-lit Tokyo alley at night in heavy rain, wet black asphalt doubling every sign, "
+                        "cold teal shadows with magenta highlights, shot on an anamorphic lens with fine grain.",
+              "visual": "neon rain", "palette": "red, teal", "lens": "anamorphic", "lighting": "neon", "camera": "slow",
               "sound": "rain", "pace": "slow"},
-    "characters": [{"name": "Мика", "descriptor": "a young woman in a red raincoat with a red umbrella", "description": "x",
-                    "voice": "soft"}],
+    "characters": [{"name": "Старик", "descriptor": "an old fisherman with a wet grey beard, yellow oilskin coat and a brass lantern",
+                    "description": "x", "voice": "hoarse"}],
     "locations": [{"name": "Улица", "descriptor": "a narrow neon-lit Tokyo alley"}],
     "music": {"file": "assets/music/lofi_rain.mp3", "mood": "lo-fi", "volume": 0.25, "duck": True},
     "acts": [{"name": "Поиск", "seconds": 16, "beats": ["Мика идёт по улице", "Кот под навесом"]},
@@ -40,6 +42,7 @@ def test_planner_builds_valid_plan_and_fixes_bad_prompt():
         OUTLINE,                                   # outline
         shots_response(2, first_bad=True),         # act 1
         shots_response(1),                         # act 2
+        {"shots": [], "notes": []},                 # director review
         {"shots": [{"id": "001", "prompt": GOOD, "seconds": 8, "caption": "Токио"}]},   # revise
     ])
     req = PlanRequest(request="Эстетичный шортс про Токио", kind="aesthetic", seconds=24, quality="high",
@@ -48,12 +51,13 @@ def test_planner_builds_valid_plan_and_fixes_bad_prompt():
     assert plan.title == "Красный зонт" and plan.kind == "aesthetic" and plan.format == "9:16"
     assert [s.id for s in plan.shots] == ["001", "002", "003"]
     assert plan.shots[0].transition == "cut" and plan.shots[1].transition == "continue"
-    assert plan.shots[0].prompt == GOOD                      # исправлено раундом правок
+    assert plan.shots[0].prompt.startswith(GOOD.split(". ")[0] + ".")   # исправлено раундом правок
+    assert all("Tokyo alley at night in heavy rain" in s.prompt for s in plan.shots)   # якорь мира в каждой сцене
     assert plan.music and plan.music.file == "assets/music/lofi_rain.mp3"
     assert plan.shots[0].sfx[0].file == "assets/sfx/thunder.wav"
     assert plan.captions.enabled and plan.shots[0].caption == "Токио"
     assert validate(plan, "high") == []
-    assert len(llm.calls) == 4
+    assert len(llm.calls) == 5
     # системный промпт содержит правила LTX и библиотеку
     system = llm.calls[0][0]
     assert "LTX-2.5" in system and "lofi_rain.mp3" in system
@@ -61,7 +65,7 @@ def test_planner_builds_valid_plan_and_fixes_bad_prompt():
 
 
 def test_planner_rescales_duration_and_drops_unknown_sfx():
-    llm = FakeLLM(responses=[OUTLINE, shots_response(2), shots_response(1)])
+    llm = FakeLLM(responses=[OUTLINE, shots_response(2), shots_response(1), {"shots": [], "notes": []}])
     req = PlanRequest(request="x", kind="aesthetic", seconds=60, quality="fast", library=None, music="none")
     plan = Planner(llm, log=lambda *_: None).plan(req)
     total = sum(s.seconds for s in plan.shots)

@@ -109,9 +109,8 @@ def attempts_for(high: bool, image: str | None, w_fast: tuple[int, int], frames:
 
     DFR с кадром-условием падает в keyframe-декодере на 193+ кадрах (CUBLAS/illegal memory access;
     проверено: 121 кадр проходит при любой силе условия). Поэтому для длинных сцен с условием DFR не
-    пробуем вовсе, а идём сразу в distilled того же разрешения (сохраняет непрерывность), затем DFR
-    без условий (теряет непрерывность, но держит качество), затем быстрый режим.
-    Шаг с ``no_cond`` убирает все кадры-условия (и стартовый, и финальный для лупа).
+    пробуем вовсе, а идём сразу в distilled того же разрешения, затем быстрый режим.
+    Все попытки сохраняют опорные кадры: отказ сцены лучше незаметной потери замысла.
     """
     if not high:
         return [{"pipeline": "distilled", "image": image, "size": None}]
@@ -122,8 +121,6 @@ def attempts_for(high: bool, image: str | None, w_fast: tuple[int, int], frames:
     if not (conditioned and frames > MAX_FRAMES_HIGH_CONDITIONED) and not extra_conditioned:
         chain.append({"pipeline": "dfr", "image": image, "size": None})
     chain.append({"pipeline": "distilled", "image": image, "size": None})
-    if conditioned:
-        chain.append({"pipeline": "dfr", "image": None, "size": None, "no_cond": True})
     chain.append({"pipeline": "distilled", "image": image, "size": w_fast})
     return chain
 
@@ -149,8 +146,10 @@ def render_shots(plan: Plan, proj: pathlib.Path, high: bool, w: int, h: int, log
         if image and not os.path.isabs(image):
             image = str((plan_dir / image).resolve())
         if image and not os.path.exists(image):
-            log(f"  сцена {s.id}: картинка {image} не найдена, генерирую по тексту")
-            image = None
+            log(f"  сцена {s.id}: опорный кадр {image} не найден; сцена пропущена вместо потери композиции")
+            failed.append(s.id)
+            prev_clip = None
+            continue
         cont = s.transition == "continue" and i > 0 and not image
         loop_last = plan.loop and i == len(plan.shots) - 1 and len(plan.shots) > 1
         if loop_last and high and frames > MAX_FRAMES_HIGH_CONDITIONED:
@@ -159,6 +158,10 @@ def render_shots(plan: Plan, proj: pathlib.Path, high: bool, w: int, h: int, log
         # ключ кэша: формат для обычных сцен не меняем (иначе все клипы на томе перерендерятся);
         # элемент для лупа добавляем только финальной сцене лупа
         key_parts = [s.prompt, frames, high, w, h, plan.seed, image, s.image_strength, prev_key if cont else ""]
+        if image:
+            key_parts.append(hashlib.sha256(pathlib.Path(image).read_bytes()).hexdigest())
+        if image or cont or loop_last:
+            key_parts.append("preserve-conditioning-v1")
         if loop_last:
             key_parts.append(first_key)
         key = hashlib.sha1(json.dumps(key_parts, ensure_ascii=False).encode()).hexdigest()[:10]
@@ -175,19 +178,25 @@ def render_shots(plan: Plan, proj: pathlib.Path, high: bool, w: int, h: int, log
             continue
         if cont:
             if prev_clip is None:
-                log(f"  сцена {s.id}: предыдущая сцена не получилась, продолжать нечего — рендерю по тексту")
-                cont = False
+                log(f"  сцена {s.id}: предыдущая сцена не получилась; продолжение пропущено")
+                failed.append(s.id)
+                continue
             else:
                 png = clips_dir / f"shot_{s.id}_{key}_start.png"
                 if last_frame(prev_clip, png, logf):
                     image = str(png)
                 else:
                     log(f"  сцена {s.id}: не смог вытащить последний кадр предыдущей сцены")
-                    cont = False
+                    failed.append(s.id)
+                    prev_clip = None
+                    continue
         end_image = None
         if loop_last:
             if first_clip is None:
                 log(f"  сцена {s.id}: первая сцена не получилась, луп замкнуть нечем")
+                failed.append(s.id)
+                prev_clip = None
+                continue
             else:
                 png = clips_dir / f"shot_{s.id}_{key}_loop_end.png"
                 if first_frame(first_clip, png, logf):
@@ -195,6 +204,9 @@ def render_shots(plan: Plan, proj: pathlib.Path, high: bool, w: int, h: int, log
                     log(f"  сцена {s.id}: замыкаю луп — последний кадр = первый кадр сцены {plan.shots[0].id}")
                 else:
                     log(f"  сцена {s.id}: не смог вытащить первый кадр фильма, луп не замкнётся")
+                    failed.append(s.id)
+                    prev_clip = None
+                    continue
         if high and ((image and frames > MAX_FRAMES_HIGH_CONDITIONED) or end_image):
             log(f"  сцена {s.id}: {'условие на последний кадр' if end_image else f'{frames} кадров с кадром-условием'} — "
                 "DFR на этом падает, сразу distilled 1080p")

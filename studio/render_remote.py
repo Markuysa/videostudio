@@ -8,6 +8,7 @@ report.json, manifest.json, render.log и нормализованные кли�
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import pathlib
 import re
@@ -16,6 +17,7 @@ import shutil
 import subprocess
 import sys
 import time
+import tempfile
 import urllib.error
 import urllib.request
 
@@ -107,7 +109,8 @@ class Remote:
     def put(self, local: pathlib.Path, remote: str) -> None:
         if FAKE_SSH:
             if local.is_dir():
-                shutil.copytree(local, remote, dirs_exist_ok=True)
+                destination = pathlib.Path(remote) / local.name if remote.endswith("/") else pathlib.Path(remote)
+                shutil.copytree(local, destination, dirs_exist_ok=True)
             else:
                 pathlib.Path(remote).parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy(local, remote)
@@ -284,10 +287,20 @@ def upload_studio(remote: Remote, plan_path: pathlib.Path) -> str:
     check = remote.run(f"grep -c 'def attempts_for' {REMOTE_STUDIO}/remote/film.py && test ! -d {REMOTE_STUDIO}/remote/remote")
     if check.returncode != 0:
         raise RenderError("студия на Pod загрузилась неправильно (вложенная папка remote/remote)")
-    remote.put(plan_path, f"/workspace/film/plans/{plan_path.name}")
+    # Keep local absolute image paths out of the Pod plan; upload a portable copy.
+    portable = load_plan(plan_path)
+    for shot in portable.shots:
+        if shot.image:
+            _, relative = reference_asset(shot.image, plan_path)
+            shot.image = str(relative)
+    with tempfile.TemporaryDirectory() as folder:
+        copy_path = pathlib.Path(folder) / plan_path.name
+        portable.save(copy_path)
+        remote.put(copy_path, f"/workspace/film/plans/{plan_path.name}")
     assets = plan_path.parent / f"{plan_path.stem}_assets"
     if assets.is_dir():
-        remote.put(assets, f"/workspace/film/plans/{assets.name}")
+        # scp merges into the existing basename when the destination is its parent.
+        remote.put(assets, "/workspace/film/plans/")
     # очищаем кэш байткода, чтобы Pod не подхватил старые .pyc
     remote.run(f"find {REMOTE_STUDIO} -name __pycache__ -type d -exec rm -rf {{}} + 2>/dev/null; true")
     return f"/workspace/film/plans/{plan_path.name}"
@@ -312,9 +325,27 @@ def plan_assets_dir(plan_path: pathlib.Path) -> pathlib.Path:
     return plan_path.parent / f"{plan_path.stem}_assets"
 
 
+def reference_asset(image: str, plan_path: pathlib.Path) -> tuple[pathlib.Path, pathlib.Path]:
+    src = pathlib.Path(image)
+    if not src.is_absolute():
+        src = plan_path.parent / src
+    src = src.resolve()
+    name = hashlib.sha256(str(src).encode()).hexdigest()[:16] + src.suffix.lower()
+    return src, pathlib.Path(f"{plan_path.stem}_assets") / "references" / name
+
+
 def collect_plan_assets(plan: Plan, plan_path: pathlib.Path, root: pathlib.Path, log_fn=log) -> None:
-    """Копирует музыку и sfx, на которые ссылается план, в <plan>_assets/, чтобы они уехали на Pod."""
+    """Собирает аудио и опорные кадры в <plan>_assets/ перед выделением GPU."""
     assets = plan_assets_dir(plan_path)
+    for shot in plan.shots:
+        if shot.image:
+            src, relative = reference_asset(shot.image, plan_path)
+            if not src.is_file():
+                raise RenderError(f"Сцена {shot.id}: опорный кадр не найден: {src}")
+            dst = plan_path.parent / relative
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            if src != dst.resolve():
+                shutil.copyfile(src, dst)
     files = []
     if plan.music and plan.music.file:
         files.append(plan.music.file)

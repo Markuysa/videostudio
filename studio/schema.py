@@ -16,7 +16,7 @@ FPS = 24
 SIZES_FAST = {"16:9": (1280, 704), "9:16": (704, 1280), "1:1": (960, 960), "4:5": (896, 1120), "21:9": (1536, 640)}
 SIZES_HIGH = {"16:9": (1920, 1088), "9:16": (1088, 1920), "1:1": (1088, 1088), "4:5": (1024, 1280), "21:9": (1920, 832)}
 FORMATS = tuple(SIZES_FAST)
-KINDS = ("short", "aesthetic", "film", "episode")
+KINDS = ("short", "aesthetic", "film", "episode", "motion")
 TRANSITIONS = ("cut", "continue", "dissolve")
 QUALITIES = ("fast", "high")
 
@@ -107,6 +107,7 @@ class Shot:
     sfx: list[Sfx] = field(default_factory=list)
     beat: str | None = None            # короткое описание смысла сцены (для людей и LLM)
     notes: str | None = None
+    direction: dict = field(default_factory=dict)  # постановка: start/action/camera/end, не текст для рендера
 
     @property
     def frames(self) -> int:
@@ -132,6 +133,7 @@ class Shot:
             sfx=[Sfx.from_dict(x) for x in (d.get("sfx") or [])],
             beat=d.get("beat") or None,
             notes=d.get("notes") or None,
+            direction=dict(d.get("direction") or {}),
         )
 
 
@@ -195,6 +197,8 @@ class Plan:
     request: str | None = None
     version: int = 2
     source_path: str | None = None
+    creative_brief: dict = field(default_factory=dict)
+    review_notes: list[str] = field(default_factory=list)
 
     # ---------- производные ----------
     @property
@@ -264,6 +268,7 @@ class Plan:
             music=Music.from_dict(d.get("music")), captions=Captions.from_dict(d.get("captions")),
             fade_in=float(d.get("fade_in", 0.5)), fade_out=float(d.get("fade_out", 1.5)),
             loop=bool(d.get("loop", False)), request=d.get("request"), version=int(d.get("version", 1)), source_path=source_path,
+            creative_brief=dict(d.get("creative_brief") or {}), review_notes=list(d.get("review_notes") or []),
         )
         if plan.music and d.get("music_volume") is not None:   # совместимость с версией 1
             plan.music.volume = float(d["music_volume"])
@@ -284,6 +289,8 @@ def validate(plan: Plan, default_quality: str = "fast") -> list[str]:
     """Жёсткие проблемы, с которыми рендерить нельзя (или бессмысленно)."""
     problems: list[str] = []
     high = plan.is_high(default_quality)
+    if plan.loop and len(plan.shots) < 2:
+        problems.append("для замыкания лупа нужны минимум две сцены")
     ids = [s.id for s in plan.shots]
     if len(set(ids)) != len(ids):
         problems.append("id сцен повторяются")
