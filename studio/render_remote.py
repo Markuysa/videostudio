@@ -275,9 +275,15 @@ def find_existing(rp: RunPod, cfg: dict):
 # ---------- загрузка / скачивание ----------
 def upload_studio(remote: Remote, plan_path: pathlib.Path) -> str:
     """Копирует пакет studio/, remote/, план и его ассеты. Возвращает путь плана на Pod."""
-    remote.run(f"mkdir -p {REMOTE_STUDIO} /workspace/film/plans", check=True)
+    # scp -r копирует папку ВНУТРЬ уже существующей, поэтому старые копии сначала удаляем —
+    # иначе Pod продолжит работать на коде первого рендера
+    remote.run(f"rm -rf {REMOTE_STUDIO}/studio {REMOTE_STUDIO}/remote && mkdir -p {REMOTE_STUDIO} /workspace/film/plans",
+               check=True)
     remote.put(HERE / "studio", f"{REMOTE_STUDIO}/studio")
     remote.put(HERE / "remote", f"{REMOTE_STUDIO}/remote")
+    check = remote.run(f"grep -c 'def attempts_for' {REMOTE_STUDIO}/remote/film.py && test ! -d {REMOTE_STUDIO}/remote/remote")
+    if check.returncode != 0:
+        raise RenderError("студия на Pod загрузилась неправильно (вложенная папка remote/remote)")
     remote.put(plan_path, f"/workspace/film/plans/{plan_path.name}")
     assets = plan_path.parent / f"{plan_path.stem}_assets"
     if assets.is_dir():

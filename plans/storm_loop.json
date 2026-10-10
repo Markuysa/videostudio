@@ -1,0 +1,79 @@
+{
+ "title": "Ливень в пустом городе",
+ "shots": [
+  {
+   "id": "001",
+   "seconds": 8.042,
+   "prompt": "Static extreme close-up of a rain-streaked window pane at night in a vertical 9:16 frame, 85mm lens feel with very shallow depth of field. The glass is in crisp focus, with droplets and rivulets sliding down it. Behind it the city dissolves into large soft bokeh: warm sodium amber streetlamp circles, cold cyan-teal neon and a small desaturated magenta accent. Near the center two fat droplets tremble, merge and slide downward in a thin glistening trail that catches amber highlights. Around the third second a lightning flash floods the glass with violet-white light for half a second and flickers twice. Every droplet sparkles like cut crystal and the bokeh blows out to white. Then darkness returns, the frame settles back into amber and teal, and fresh droplets bead along the path the trail left. The camera holds perfectly still throughout, with fine 35mm film grain and slight halation around the light circles. Sound: dense steady rain drums on the glass while rivulets softly trickle. Two seconds after the flash, low rolling thunder rumbles in from far away, swells and fades back under the even drumming of the downpour.",
+   "transition": "cut",
+   "beat": "1. HOOK, loop anchor: static extreme close-up of the rain-streaked window pane, droplets merging and sliding through soft amber and teal neon bokeh; a lightning flash floods the glass with violet-white light, each droplet sparkling, then darkness returns and low thunder rolls in two seconds later over the steady drumming of rain on glass."
+  },
+  {
+   "id": "002",
+   "seconds": 8.042,
+   "prompt": "Low-angle close shot in a vertical 9:16 frame, the lens hovering a few centimeters above a deep puddle on black glossy asphalt, 50mm lens feel with very shallow depth of field and a few real raindrops on the front element. The puddle mirrors the night upside down: a warm sodium amber streetlamp, glowing cyan-teal neon tubes and a small desaturated magenta neon strip, all trembling. Fat raindrops strike the surface and burst into crowns that spread into overlapping rings, tearing the inverted lights into wobbling bands. The camera pushes in very slowly toward the reflected amber lamp. Around the fourth second a distant lightning flicker brightens the reflected storm clouds violet-white for a quarter second, flickers once, then the water drops back to amber and teal. Fine 35mm film grain, slight halation on the reflections. Sound: dense steady downpour hissing on asphalt, crisp close splashes of drops hitting the puddle, a gutter overflowing and gurgling nearby. Two seconds after the flicker, a soft low thunder roll rumbles far away and fades under the rain.",
+   "transition": "cut",
+   "beat": "Low-angle close shot just above a deep puddle on black asphalt: inverted streetlamps and teal and magenta neon trembling in the water, raindrops bursting into expanding rings; very slow push-in; a distant lightning flicker brightens the reflected clouds, a soft thunder roll follows, splashes and gutter overflow fill the sound."
+  },
+  {
+   "id": "003",
+   "seconds": 8.042,
+   "prompt": "Wide static shot in a vertical 9:16 frame looking down an empty narrow city street at night in a torrential downpour, 35mm lens feel, tripod-locked. Black glossy asphalt with deep puddles leads the eye into the distance, doubling sodium streetlamps and abstract cyan-teal and magenta neon light strips on the facades. Slanting sheets of rain streak with motion blur through the amber cones of the lamps. Far down the street, tiny in the frame, the lone distant figure in a long dark coat under a black umbrella stands motionless under a single sodium lamp, the umbrella dome glistening and the coat hem stirring in the wind. Around the third second a powerful lightning strike floods the sky violet-white for half a second, flickering twice and revealing heavy churning clouds above the rooftops, then everything drops back to amber, teal and deep blue-black shadow. Fine 35mm film grain, soft halation around the lamps. Sound: hissing downpour, water splashing from roof edges into puddles. Two seconds after the flash, a long deep thunder rumble rolls across the rooftops and slowly fades into the steady rain.",
+   "transition": "cut",
+   "beat": "Wide static vertical shot down the empty rain-lashed street, sheets of rain visible against the streetlamps, the lone distant figure in a long dark coat under a black umbrella standing motionless under a single sodium lamp far away; a powerful lightning strike reveals heavy churning clouds above the rooftops for a split second, then a long deep thunder rumble arrives over the hissing downpour."
+  },
+  {
+   "id": "004",
+   "seconds": 5.042,
+   "prompt": "Close shot in a vertical 9:16 frame, straight-on through a rain-streaked window pane at night, 85mm lens feel with very shallow depth of field, fine 35mm film grain. Droplets and thin rivulets slide down the glass, sharp and glistening, while behind them the city dissolves into large soft bokeh discs of warm sodium amber streetlamps, cold cyan-teal neon and a small desaturated magenta accent. In the first second a faint violet-white lightning afterglow lingers in the droplets and the far clouds, then fades away, leaving only amber and teal highlights on the wet glass. The camera drifts almost imperceptibly to the right and the focus breathes gently on the nearest droplets, then both come to rest. For the final seconds the frame holds perfectly still: droplets crawl down, a rivulet merges with another, the bokeh glows steady with slight halation against deep blue-black shadow. Sound: the low tail of distant thunder rumbles out and dies away in the first two seconds, then only the even drumming of dense rain on the glass and the soft hiss of the downpour outside remain.",
+   "transition": "dissolve",
+   "transition_seconds": 0.8,
+   "beat": "Back at the rain-streaked window pane: the last faint lightning afterglow fades from the droplets, a far thunder tail dies out, the slight drift and focus settle until the frame rests in exactly the opening composition, steady amber and teal bokeh behind sliding droplets, only the even drumming of rain remaining."
+  }
+ ],
+ "slug": "storm_loop",
+ "kind": "aesthetic",
+ "format": "9:16",
+ "quality": "high",
+ "seed": 48754,
+ "language": "ru",
+ "logline": "Ночной город тонет в грозовом ливне: неон дрожит в лужах, молнии на миг выхватывают пустые улицы и одинокий силуэт вдали, а потом всё снова растворяется в каплях на стекле.",
+ "synopsis": "Мы смотрим на ночной город сквозь мокрое окно: по стеклу ползут капли, за ними расплываются янтарные фонари и холодный неон. Вспышка молнии на мгновение заливает всё белым светом, и через пару секунд издалека докатывается гром. Взгляд опускается к земле: в глубокой луже на асфальте дрожат перевёрнутые огни, и каждая капля рвёт их на кольца. Пустая улица уходит в дымку ливня, и далеко под фонарём стоит одинокий силуэт под чёрным зонтом. Новая молния освещает тяжёлые тучи над крышами, а мы возвращаемся к тому же окну и тем же каплям, с которых всё началось.",
+ "style": {
+  "visual": "Photoreal night city in a torrential thunderstorm, shot like a real-world street photography series on a cinema camera: wet asphalt, neon and sodium reflections in puddles, rain on glass, lightning as the only bright white light, zero 3D render or stylized look.",
+  "palette": "Sodium amber from streetlamps as the warm key; cold cyan-teal neon as the dominant reflection color; desaturated magenta neon as a small accent; deep blue-black shadows and sky; brief violet-white lightning flashes that blow out the frame for a split second.",
+  "lens": "Vertical 9:16 frame, 35-85mm lens feel, very shallow depth of field with large soft bokeh, a few real rain droplets on the front element, fine 35mm film grain, natural motion blur on falling rain, slight halation around light sources.",
+  "lighting": "Deep night, only practical sources: sodium streetlamps and neon signs (no readable text), wet surfaces doubling every light; lightning flashes are sudden, 0.2-0.5 s, flicker once or twice, illuminating clouds and street in cold white, then everything drops back to amber and teal.",
+  "camera": "Static tripod or an almost imperceptible slow push-in or drift; never handheld shake; compositions are calm and holdable; focus pulls are slow and gentle.",
+  "sound": "Only natural sound: dense steady downpour, rain drumming on glass, water splashing into puddles, gutters overflowing, distant hiss of rain on asphalt; lightning is followed 1-3 s later by low rolling thunder, sometimes a sharp crack, always delayed after the flash. No music, no voices, no traffic horns.",
+  "pace": "Slow and hypnotic: 4 long takes of 6-8 s, hard cuts placed on the quiet moments between flashes, the last shot settling back into the exact composition of the first so the loop is seamless."
+ },
+ "characters": [
+  {
+   "name": "Силуэт",
+   "descriptor": "the lone distant figure in a long dark coat under a black umbrella",
+   "description": "A tiny anonymous silhouette standing still far down the empty street under a single sodium streetlamp; never closer than a few percent of the frame, face never visible, only the umbrella dome glistening and the coat edge moving in the wind.",
+   "voice": "none, silent"
+  }
+ ],
+ "locations": [
+  {
+   "name": "Окно над улицей",
+   "descriptor": "a rain-streaked window pane at night, droplets and rivulets sliding down the glass, the city behind dissolved into soft amber streetlamp and teal and magenta neon bokeh"
+  },
+  {
+   "name": "Мокрая улица",
+   "descriptor": "an empty narrow city street at night in a torrential downpour, black glossy asphalt with deep puddles, sodium streetlamps and unreadable neon signs reflected in the water, low heavy storm clouds above the rooftops"
+  }
+ ],
+ "captions": {
+  "enabled": false,
+  "position": "bottom",
+  "font_size": 0
+ },
+ "fade_in": 0.0,
+ "fade_out": 0.0,
+ "loop": true,
+ "request": "Эстетичный ночной дождливый шортс с грозой, зацикленный. Ночной город в ливень: мокрый асфальт, отражения фонарей и неона в лужах, капли на стекле, вспышки молний освещают улицу, тяжёлые тучи. Без людей крупным планом, максимум — одинокий силуэт вдали. Медитативное, грустное, красивое. Под шортс будет наложена грустная песня, поэтому собственный звук — только дождь и гром.",
+ "version": 2
+}
