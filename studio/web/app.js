@@ -1,12 +1,12 @@
-/* Киностудия — клиент. Vanilla JS, без сборки. */
+/* Film Studio — client. Vanilla JS, no build step. */
 const $ = (s, el = document) => el.querySelector(s);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const fmtDur = s => { if (s == null) return "—"; s = Math.round(s); return s >= 60 ? `${Math.floor(s/60)} мин ${s%60} с` : `${s} с`; };
-const fmtAgo = t => { if (!t) return ""; const d = (Date.now()/1000 - t); if (d < 60) return "только что"; if (d < 3600) return `${Math.floor(d/60)} мин назад`; if (d < 86400) return `${Math.floor(d/3600)} ч назад`; return new Date(t*1000).toLocaleDateString("ru"); };
-const fmtSize = b => b > 1e9 ? (b/1e9).toFixed(2)+" ГБ" : (b/1e6).toFixed(1)+" МБ";
-const KIND_LABEL = {short:"Шортс", aesthetic:"Эстетика", film:"Фильм", episode:"Эпизод"};
-const KIND_DESC = {short:"9:16, хук, субтитры, 15–60 с", aesthetic:"атмосфера под музыку, долгие планы", film:"драматургия, 2–10 мин", episode:"серия по библии сериала"};
-const STATUS = {queued:["в очереди","chip"], running:["выполняется","chip accent"], done:["готово","chip good"], error:["ошибка","chip bad"], stopped:["остановлено","chip warn"]};
+const fmtDur = s => { if (s == null) return "—"; s = Math.round(s); return s >= 60 ? `${Math.floor(s/60)} min ${s%60} s` : `${s} s`; };
+const fmtAgo = t => { if (!t) return ""; const d = (Date.now()/1000 - t); if (d < 60) return "just now"; if (d < 3600) return `${Math.floor(d/60)} min ago`; if (d < 86400) return `${Math.floor(d/3600)} h ago`; return new Date(t*1000).toLocaleDateString("en-GB"); };
+const fmtSize = b => b > 1e9 ? (b/1e9).toFixed(2)+" GB" : (b/1e6).toFixed(1)+" MB";
+const KIND_LABEL = {short:"Short", aesthetic:"Aesthetic", film:"Film", episode:"Episode"};
+const KIND_DESC = {short:"9:16, hook, captions, 15–60 s", aesthetic:"mood piece under music, long takes", film:"drama, 2–10 min", episode:"episode from a series bible"};
+const STATUS = {queued:["queued","chip"], running:["running","chip accent"], done:["done","chip good"], error:["error","chip bad"], stopped:["stopped","chip warn"]};
 
 let state = null, view = "studio", modalJob = null, pollTimer = null;
 const form = {request:"", kind:"short", duration:0, format:"", quality:"", language:"ru", name:"", series:"", music:"auto", captions:null, notes:"", advanced:false, loop:false};
@@ -22,7 +22,7 @@ function toast(msg, bad = false) {
   document.body.appendChild(t); setTimeout(() => t.remove(), bad ? 6000 : 3500);
 }
 async function refresh(full = false) {
-  try { state = await api("/api/state"); } catch (e) { toast("Нет связи с сервером студии: " + e.message, true); return; }
+  try { state = await api("/api/state"); } catch (e) { toast("No connection to the studio server: " + e.message, true); return; }
   render(!full);
 }
 function isInteracting() {
@@ -35,10 +35,10 @@ function schedule() {
   pollTimer = setTimeout(refresh, active ? 2500 : 8000);
 }
 
-/* ---------- каркас ---------- */
+/* ---------- skeleton ---------- */
 function render(partial = false) {
   if (!state) return;
-  if (partial && view === "studio" && $("#panel-jobs")) {      // опрос: обновляем только живые панели, не трогая форму
+  if (partial && view === "studio" && $("#panel-jobs")) {      // polling: refresh only the live panels, leave the form alone
     $("#panel-jobs").innerHTML = jobsPanel(); $("#panel-stats").innerHTML = statsPanel(); $("#panel-films").innerHTML = recentFilms();
     bind($("#panel-jobs")); bind($("#panel-films"));
     if (modalJob) refreshModalJob();
@@ -49,9 +49,9 @@ function render(partial = false) {
   const running = state.jobs.filter(j => j.status === "running").length;
   const b = $("#badge-jobs"); b.hidden = !running; b.textContent = running;
   const c = state.config;
-  $("#foot").innerHTML = `<div><span class="dot ${c.has_runpod ? "on" : "off"}"></span>RunPod ${c.has_runpod ? "настроен" : "не настроен"}</div>
+  $("#foot").innerHTML = `<div><span class="dot ${c.has_runpod ? "on" : "off"}"></span>RunPod ${c.has_runpod ? "configured" : "not configured"}</div>
     <div><span class="dot ${c.llm_effective === "anthropic" ? "on" : ""}"></span>LLM: ${esc(c.llm_model)}</div>
-    <div><span class="dot ${c.ffmpeg ? "on" : "off"}"></span>ffmpeg ${c.ffmpeg ? "есть" : "нет"}</div>`;
+    <div><span class="dot ${c.ffmpeg ? "on" : "off"}"></span>ffmpeg ${c.ffmpeg ? "yes" : "no"}</div>`;
   const views = {studio: viewStudio, jobs: viewJobs, plans: viewPlans, films: viewFilms, series: viewSeries, assets: viewAssets, settings: viewSettings};
   const main = $("#main");
   const scroll = main.scrollTop;
@@ -64,20 +64,20 @@ function render(partial = false) {
 document.querySelectorAll(".nav").forEach(n => n.onclick = () => { view = n.dataset.view; render(); });
 function jobsPanel() {
   const jobs = state.jobs.filter(j => j.status === "running" || (Date.now()/1000 - (j.finished || 0)) < 3600).slice(0, 5);
-  return `<div class="row between"><h3 style="margin:0">Задачи</h3><a href="#" data-view-link="jobs" class="small">все →</a></div>
-    ${jobs.length ? `<div class="grid" style="margin-top:10px">${jobs.map(jobCard).join("")}</div>` : `<div class="empty" style="margin-top:10px">Сейчас ничего не выполняется</div>`}`;
+  return `<div class="row between"><h3 style="margin:0">Jobs</h3><a href="#" data-view-link="jobs" class="small">all →</a></div>
+    ${jobs.length ? `<div class="grid" style="margin-top:10px">${jobs.map(jobCard).join("")}</div>` : `<div class="empty" style="margin-top:10px">Nothing is running right now</div>`}`;
 }
 function statsPanel() {
   return `<div class="row" style="justify-content:space-around">
-    <div class="stat"><b>${state.plans.length}</b><span>планов</span></div><div class="stat"><b>${state.films.length}</b><span>фильмов</span></div>
-    <div class="stat"><b>${state.series.length}</b><span>сериалов</span></div><div class="stat"><b>${(state.library.music||[]).length + (state.library.sfx||[]).length}</b><span>звуков</span></div></div>`;
+    <div class="stat"><b>${state.plans.length}</b><span>plans</span></div><div class="stat"><b>${state.films.length}</b><span>films</span></div>
+    <div class="stat"><b>${state.series.length}</b><span>series</span></div><div class="stat"><b>${(state.library.music||[]).length + (state.library.sfx||[]).length}</b><span>sounds</span></div></div>`;
 }
 function recentFilms() {
   const films = state.films.slice(0, 3);
-  return films.length ? `<h2>Последние фильмы</h2><div class="grid auto">${films.map(f => filmCard(f, true)).join("")}</div>` : "";
+  return films.length ? `<h2>Recent films</h2><div class="grid auto">${films.map(f => filmCard(f, true)).join("")}</div>` : "";
 }
 
-/* ---------- кастомные контролы ---------- */
+/* ---------- custom controls ---------- */
 function selectHtml(id, options, value, opts = {}) {
   const cur = options.find(o => String(o.value) === String(value)) || options[0];
   return `<div class="sel" data-sel="${esc(id)}" data-value="${esc(cur.value)}">
@@ -109,54 +109,54 @@ document.addEventListener("click", e => {
   }
 });
 
-/* ---------- Студия (главная) ---------- */
+/* ---------- Studio (home) ---------- */
 const DURATIONS = {short: [15, 30, 45, 60], aesthetic: [30, 45, 60, 90], film: [120, 180, 300, 480], episode: [90, 120, 180, 300]};
 const DUR_DEFAULT = {short: 45, aesthetic: 45, film: 180, episode: 120};
 const KIND_ICON = {short: "📱", aesthetic: "🌙", film: "🎬", episode: "📺"};
-function durLabel(s) { return s < 120 ? `${s} с` : `${Math.round(s / 60)} мин`; }
+function durLabel(s) { return s < 120 ? `${s} s` : `${Math.round(s / 60)} min`; }
 function estimate() {
   const secs = +form.duration || DUR_DEFAULT[form.kind];
   const [lo, hi] = ({short: [3, 8], aesthetic: [5, 10], film: [4, 10], episode: [4, 10]})[form.kind];
   const shots = Math.max(1, Math.round(secs / ((lo + hi) / 2)));
   const high = (form.quality || state.config.quality) === "high";
   const minutes = shots * (high ? 3.2 : 1.3) + 6;
-  return `≈ ${shots} сцен · ~${Math.round(minutes)} мин рендера · ≈ $${(minutes / 60 * state.config.gpu_price).toFixed(2)}`;
+  return `≈ ${shots} shots · ~${Math.round(minutes)} min render · ≈ $${(minutes / 60 * state.config.gpu_price).toFixed(2)}`;
 }
 function viewStudio() {
   if (!form.duration) form.duration = DUR_DEFAULT[form.kind];
   const presets = DURATIONS[form.kind];
   const custom = !presets.includes(+form.duration);
-  const musicOpts = [{value: "auto", label: "Из библиотеки"}, {value: "none", label: "Без музыки"}, ...(state.library.music || []).map(m => ({value: m.file, label: m.file.split("/").pop()}))];
+  const musicOpts = [{value: "auto", label: "From the library"}, {value: "none", label: "No music"}, ...(state.library.music || []).map(m => ({value: m.file, label: m.file.split("/").pop()}))];
   return `
-  <h1>Что снимаем?</h1>
-  <p class="sub">Опишите идею своими словами. Остальное студия сделает сама: сценарий, промпты, рендер, монтаж.</p>
+  <h1>What are we shooting?</h1>
+  <p class="sub">Describe the idea in your own words. The studio does the rest: script, prompts, rendering, editing.</p>
   <div class="hero">
     <div class="card compose">
-      <textarea id="f-request" placeholder="Например: эстетичный шортс про дождливый вечер в Токио — девушка с красным зонтом идёт по неоновой улице, лоу-фай настроение">${esc(form.request)}</textarea>
+      <textarea id="f-request" placeholder="For example: an aesthetic short about a rainy evening in Tokyo — a girl with a red umbrella walks down a neon street, lo-fi mood">${esc(form.request)}</textarea>
       ${segHtml("kind", Object.keys(KIND_LABEL).map(k => ({value: k, label: KIND_LABEL[k], icon: KIND_ICON[k]})), form.kind)}
       <div class="row dur">
-        <span class="muted small">Длительность</span>
-        ${segHtml("duration", [...presets.map(d => ({value: d, label: durLabel(d)})), {value: "custom", label: "своя"}], custom ? "custom" : form.duration)}
+        <span class="muted small">Duration</span>
+        ${segHtml("duration", [...presets.map(d => ({value: d, label: durLabel(d)})), {value: "custom", label: "custom"}], custom ? "custom" : form.duration)}
         <input id="f-duration" class="num" type="number" min="10" max="900" value="${esc(form.duration)}" ${custom ? "" : "hidden"}>
         <span class="muted small right" id="estimate">${estimate()}</span>
       </div>
       <div class="row actions">
-        <button class="primary big" id="btn-make">🎬 Снять</button>
-        <button class="ghost" id="btn-plan">Только сценарий</button>
-        <button class="link right" id="btn-adv">${form.advanced ? "Скрыть настройки ▴" : "Ещё настройки ▾"}</button>
+        <button class="primary big" id="btn-make">🎬 Shoot</button>
+        <button class="ghost" id="btn-plan">Script only</button>
+        <button class="link right" id="btn-adv">${form.advanced ? "Hide settings ▴" : "More settings ▾"}</button>
       </div>
       <div class="advanced" ${form.advanced ? "" : "hidden"}>
         <div class="cols">
-          <div class="field"><span>Формат</span>${selectHtml("format", [{value: "", label: "По пресету"}, ...state.config.formats.map(f => ({value: f, label: f}))], form.format)}</div>
-          <div class="field"><span>Качество</span>${selectHtml("quality", [{value: "", label: `По умолчанию (${state.config.quality})`}, {value: "high", label: "High", hint: "DFR 1080p, карта 96 ГБ"}, {value: "fast", label: "Fast", hint: "720p, быстрее и дешевле"}], form.quality)}</div>
-          <div class="field"><span>Язык реплик</span>${selectHtml("language", [["ru", "Русский"], ["en", "English"], ["es", "Español"], ["fr", "Français"], ["de", "Deutsch"], ["ja", "日本語"], ["it", "Italiano"]].map(([v, l]) => ({value: v, label: l})), form.language)}</div>
-          <div class="field"><span>Музыка</span>${selectHtml("music", musicOpts, form.music)}</div>
-          <div class="field"><span>Субтитры</span>${selectHtml("captions", [{value: "", label: "По пресету"}, {value: "1", label: "Включить"}, {value: "0", label: "Выключить"}], form.captions === null ? "" : form.captions ? "1" : "0")}</div>
-          <div class="field"><span>Сериал</span>${selectHtml("series", [{value: "", label: "—"}, ...state.series.map(x => ({value: x.slug, label: x.title}))], form.series)}</div>
-          <label><span>Имя файла</span><input id="f-name" placeholder="авто" value="${esc(form.name)}"></label>
+          <div class="field"><span>Format</span>${selectHtml("format", [{value: "", label: "By preset"}, ...state.config.formats.map(f => ({value: f, label: f}))], form.format)}</div>
+          <div class="field"><span>Quality</span>${selectHtml("quality", [{value: "", label: `Default (${state.config.quality})`}, {value: "high", label: "High", hint: "DFR 1080p, 96 GB GPU"}, {value: "fast", label: "Fast", hint: "720p, faster and cheaper"}], form.quality)}</div>
+          <div class="field"><span>Dialogue language</span>${selectHtml("language", [["ru", "Russian"], ["en", "English"], ["es", "Español"], ["fr", "Français"], ["de", "Deutsch"], ["ja", "日本語"], ["it", "Italiano"]].map(([v, l]) => ({value: v, label: l})), form.language)}</div>
+          <div class="field"><span>Music</span>${selectHtml("music", musicOpts, form.music)}</div>
+          <div class="field"><span>Captions</span>${selectHtml("captions", [{value: "", label: "By preset"}, {value: "1", label: "On"}, {value: "0", label: "Off"}], form.captions === null ? "" : form.captions ? "1" : "0")}</div>
+          <div class="field"><span>Series</span>${selectHtml("series", [{value: "", label: "—"}, ...state.series.map(x => ({value: x.slug, label: x.title}))], form.series)}</div>
+          <label><span>File name</span><input id="f-name" placeholder="auto" value="${esc(form.name)}"></label>
         </div>
-        <label><span>Указания планировщику</span><input id="f-notes" placeholder="например: без диалогов, финал на крупном плане, больше дождя" value="${esc(form.notes)}"></label>
-        <div class="row">${toggleHtml("f-loop", form.loop, "Бесшовный луп: конец переходит в начало")}</div>
+        <label><span>Notes for the planner</span><input id="f-notes" placeholder="e.g. no dialogue, end on a close-up, more rain" value="${esc(form.notes)}"></label>
+        <div class="row">${toggleHtml("f-loop", form.loop, "Seamless loop: the end flows into the beginning")}</div>
       </div>
     </div>
     <div class="grid" style="align-content:start">
@@ -180,19 +180,19 @@ function readForm() {
 }
 async function submitPlan(renderToo) {
   readForm();
-  if (!form.request.trim()) { toast("Опишите, что снимаем", true); $("#f-request").focus(); return; }
-  if (renderToo && !state.config.has_runpod) { toast("RunPod не настроен — заполните film_config.json", true); return; }
+  if (!form.request.trim()) { toast("Describe what we are shooting", true); $("#f-request").focus(); return; }
+  if (renderToo && !state.config.has_runpod) { toast("RunPod not configured — fill in film_config.json", true); return; }
   const body = Object.assign({}, form, {render: renderToo, duration: form.duration ? +form.duration : null});
   if (form.series) body.kind = "episode";
   try {
     const job = await api("/api/plan", {method: "POST", body: JSON.stringify(body)});
-    toast(renderToo ? "Запущено: сценарий, затем рендер" : "Пишу сценарий");
+    toast(renderToo ? "Started: script, then render" : "Writing the script");
     form.request = ""; form.notes = ""; form.name = "";
     await refresh(true); openJob(job.id);
   } catch (e) { toast(e.message, true); }
 }
 
-/* ---------- задачи ---------- */
+/* ---------- jobs ---------- */
 function jobCard(j) {
   const [label, cls] = STATUS[j.status] || [j.status, "chip"];
   const pct = j.shots ? Math.round(100 * (j.shot - (j.status === "running" ? 1 : 0)) / j.shots) : null;
@@ -201,22 +201,22 @@ function jobCard(j) {
   return `<div class="job card" style="padding:14px 16px;cursor:pointer" data-job="${j.id}">
     <div class="row between"><div class="title">${esc(j.title)}</div><span class="${cls}">${label}</span></div>
     ${bar}
-    <div class="row small muted"><span>${esc(j.stage || "")}${j.shots ? ` · сцена ${j.shot}/${j.shots}` : ""}</span><span class="right">${j.started ? elapsed(j) : ""}</span></div>
+    <div class="row small muted"><span>${esc(j.stage || "")}${j.shots ? ` · shot ${j.shot}/${j.shots}` : ""}</span><span class="right">${j.started ? elapsed(j) : ""}</span></div>
     ${j.error && j.status === "error" ? `<div class="small" style="color:var(--bad)">${esc(j.error)}</div>` : ""}
   </div>`;
 }
-function elapsed(j) { const end = j.finished || Date.now()/1000; const s = Math.round(end - j.started); return s < 60 ? `${s} с` : `${Math.floor(s/60)} мин ${s%60} с`; }
+function elapsed(j) { const end = j.finished || Date.now()/1000; const s = Math.round(end - j.started); return s < 60 ? `${s} s` : `${Math.floor(s/60)} min ${s%60} s`; }
 function viewJobs() {
-  return `<h1>Задачи</h1><p class="sub">Планирование, рендер и пересборка выполняются отдельными процессами. Закрытие этой страницы или сервера их не останавливает.</p>
-  ${state.jobs.length ? `<div class="grid cols2">${state.jobs.map(jobCard).join("")}</div>` : `<div class="empty">Задач пока не было</div>`}`;
+  return `<h1>Jobs</h1><p class="sub">Planning, rendering and re-assembly run as separate processes. Closing this page or the server does not stop them.</p>
+  ${state.jobs.length ? `<div class="grid cols2">${state.jobs.map(jobCard).join("")}</div>` : `<div class="empty">No jobs yet</div>`}`;
 }
 async function openJob(id) {
   modalJob = id;
-  openModal(`<div class="row between"><h3 id="mj-title" style="margin:0">Задача</h3><div class="row"><button class="small danger" id="mj-stop">Остановить</button><button class="small ghost" id="mj-close">Закрыть</button></div></div>
+  openModal(`<div class="row between"><h3 id="mj-title" style="margin:0">Job</h3><div class="row"><button class="small danger" id="mj-stop">Stop</button><button class="small ghost" id="mj-close">Close</button></div></div>
   <div class="row small muted" id="mj-meta" style="margin:8px 0"></div><div class="progress" id="mj-bar" hidden><i></i></div>
   <div class="log" id="mj-log" style="margin-top:10px">…</div><div class="row" id="mj-actions" style="margin-top:12px"></div>`);
   $("#mj-close").onclick = closeModal;
-  $("#mj-stop").onclick = async () => { if (confirm("Остановить задачу? Рендер успеет скачать лог и удалить Pod.")) { await api(`/api/jobs/${id}/stop`, {method: "POST"}); refresh(); } };
+  $("#mj-stop").onclick = async () => { if (confirm("Stop the job? The render will still download the log and delete the Pod.")) { await api(`/api/jobs/${id}/stop`, {method: "POST"}); refresh(); } };
   await refreshModalJob();
 }
 async function refreshModalJob() {
@@ -225,138 +225,138 @@ async function refreshModalJob() {
   const [label, cls] = STATUS[j.status] || [j.status, "chip"];
   const t = $("#mj-title"); if (!t) return;
   t.innerHTML = `${esc(j.title)} <span class="${cls}" style="margin-left:8px">${label}</span>`;
-  $("#mj-meta").innerHTML = `<span>${esc(j.stage || "")}${j.shots ? ` · сцена ${j.shot}/${j.shots}` : ""}</span><span class="right">${j.started ? elapsed(j) : ""}</span>`;
+  $("#mj-meta").innerHTML = `<span>${esc(j.stage || "")}${j.shots ? ` · shot ${j.shot}/${j.shots}` : ""}</span><span class="right">${j.started ? elapsed(j) : ""}</span>`;
   const bar = $("#mj-bar"); bar.hidden = j.status !== "running";
   if (j.shots) { bar.classList.remove("indeterminate"); bar.firstChild.style.width = Math.round(100 * (j.shot - 1) / j.shots) + "%"; } else bar.classList.add("indeterminate");
   const log = $("#mj-log"); const atBottom = log.scrollHeight - log.scrollTop - log.clientHeight < 40;
-  log.textContent = j.log || "(лог пока пуст)"; if (atBottom) log.scrollTop = log.scrollHeight;
+  log.textContent = j.log || "(log is empty so far)"; if (atBottom) log.scrollTop = log.scrollHeight;
   $("#mj-stop").hidden = j.status !== "running";
   const acts = [];
-  if (j.result && /\.json$/.test(j.result)) acts.push(`<button class="small" data-open-plan="${esc(j.result.split("/").pop().replace(/\.json$/, ""))}">Открыть план</button>`);
-  if (j.result && /\.mp4$/.test(j.result)) acts.push(`<button class="small" data-view-link="films">К фильмам</button>`);
-  if (j.status !== "running") acts.push(`<button class="small ghost" data-del-job="${j.id}">Удалить из списка</button>`);
+  if (j.result && /\.json$/.test(j.result)) acts.push(`<button class="small" data-open-plan="${esc(j.result.split("/").pop().replace(/\.json$/, ""))}">Open plan</button>`);
+  if (j.result && /\.mp4$/.test(j.result)) acts.push(`<button class="small" data-view-link="films">To films</button>`);
+  if (j.status !== "running") acts.push(`<button class="small ghost" data-del-job="${j.id}">Remove from list</button>`);
   $("#mj-actions").innerHTML = acts.join(""); bind($("#mj-actions"));
 }
 
-/* ---------- планы ---------- */
+/* ---------- plans ---------- */
 function viewPlans() {
-  if (!state.plans.length) return `<h1>Планы</h1><div class="empty">Планов нет. Создайте первый на вкладке «Студия».</div>`;
-  return `<h1>Планы</h1><p class="sub">План — JSON с сюжетом, стилем и промптами сцен. Его можно править руками перед рендером.</p>
-  <div class="card" style="padding:0"><table class="table"><thead><tr><th>Название</th><th>Тип</th><th>Сцен</th><th>Хронометраж</th><th>Качество</th><th>Изменён</th><th></th></tr></thead><tbody>
-  ${state.plans.map(p => p.broken ? `<tr><td>${esc(p.name)}</td><td colspan="5" style="color:var(--bad)">файл не читается</td><td></td></tr>` :
+  if (!state.plans.length) return `<h1>Plans</h1><div class="empty">No plans yet. Create the first one on the Studio tab.</div>`;
+  return `<h1>Plans</h1><p class="sub">A plan is JSON with the story, style and shot prompts. You can edit it by hand before rendering.</p>
+  <div class="card" style="padding:0"><table class="table"><thead><tr><th>Title</th><th>Type</th><th>Shots</th><th>Running time</th><th>Quality</th><th>Modified</th><th></th></tr></thead><tbody>
+  ${state.plans.map(p => p.broken ? `<tr><td>${esc(p.name)}</td><td colspan="5" style="color:var(--bad)">file unreadable</td><td></td></tr>` :
   `<tr class="clickable" data-open-plan="${esc(p.name)}"><td><b>${esc(p.title)}</b><div class="small muted">${esc(p.name)}.json${p.logline ? " · " + esc(p.logline) : ""}</div></td>
    <td><span class="chip">${KIND_LABEL[p.kind] || p.kind}</span> <span class="chip">${p.format}</span></td><td>${p.shots}</td><td>${fmtDur(p.seconds)}</td><td>${esc(p.quality)}</td><td class="muted small">${fmtAgo(p.modified)}</td>
-   <td class="row" style="justify-content:flex-end">${p.has_film ? `<span class="chip good">есть фильм</span>` : ""}<button class="small primary" data-render="${esc(p.name)}">Рендер</button></td></tr>`).join("")}
+   <td class="row" style="justify-content:flex-end">${p.has_film ? `<span class="chip good">has film</span>` : ""}<button class="small primary" data-render="${esc(p.name)}">Render</button></td></tr>`).join("")}
   </tbody></table></div>`;
 }
 async function openPlan(name, tab = "shots") {
   let d; try { d = await api(`/api/plan/${name}`); } catch (e) { toast(e.message, true); return; }
   const errs = d.issues.filter(i => i.level === "error").length, warns = d.issues.length - errs;
   const p = d.plan;
-  const body = tab === "json" ? `<textarea class="code" id="plan-raw">${esc(d.raw)}</textarea><div class="row" style="margin-top:10px"><button class="primary" id="plan-save">Сохранить</button><span class="muted small">После сохранения план перепроверяется линтером</span></div>`
-    : tab === "issues" ? (d.problems.length || d.issues.length ? `${d.problems.map(x => `<div class="issue error">⛔ ${esc(x)}</div>`).join("")}${d.issues.map(i => `<div class="issue ${i.level}">${i.level === "error" ? "✖" : "▲"} сцена ${esc(i.shot)} · ${esc(i.code)}: ${esc(i.message)}</div>`).join("")}` : `<div class="empty">Замечаний нет</div>`)
-    : p ? `<div class="kv" style="margin-bottom:14px"><div>Логлайн</div><div>${esc(p.logline || "—")}</div><div>Синопсис</div><div>${esc(p.synopsis || "—")}</div>
-        <div>Стиль</div><div class="small">${Object.entries(p.style || {}).map(([k, v]) => `<b>${esc(k)}</b>: ${esc(v)}`).join(" · ") || "—"}</div>
-        <div>Персонажи</div><div class="small">${(p.characters || []).map(c => `<b>${esc(c.name)}</b> — ${esc(c.descriptor || c.description || "")}`).join("<br>") || "—"}</div>
-        <div>Музыка</div><div>${p.music ? esc(p.music.file || "(трек не выбран)") + (p.music.mood ? " · " + esc(p.music.mood) : "") : "—"}</div></div>
-        <div class="shots">${p.shots.map((s, i) => `<div class="shot"><div class="head"><span class="id">${esc(s.id)}</span><span class="chip">${s.seconds} с</span>${i ? `<span class="chip ${s.transition === "continue" ? "blue" : s.transition === "dissolve" ? "accent" : ""}">${s.transition || "cut"}</span>` : ""}${s.caption ? `<span class="chip warn">💬 ${esc(s.caption)}</span>` : ""}${(s.sfx || []).map(x => `<span class="chip">🔊 ${esc(x.file.split("/").pop())}</span>`).join("")}${s.beat ? `<span class="muted small">${esc(s.beat)}</span>` : ""}</div><p>${esc(s.prompt)}</p></div>`).join("")}</div>` : `<div class="issue error">${esc(d.error)}</div>`;
+  const body = tab === "json" ? `<textarea class="code" id="plan-raw">${esc(d.raw)}</textarea><div class="row" style="margin-top:10px"><button class="primary" id="plan-save">Save</button><span class="muted small">After saving, the plan is re-checked by the linter</span></div>`
+    : tab === "issues" ? (d.problems.length || d.issues.length ? `${d.problems.map(x => `<div class="issue error">⛔ ${esc(x)}</div>`).join("")}${d.issues.map(i => `<div class="issue ${i.level}">${i.level === "error" ? "✖" : "▲"} shot ${esc(i.shot)} · ${esc(i.code)}: ${esc(i.message)}</div>`).join("")}` : `<div class="empty">No issues</div>`)
+    : p ? `<div class="kv" style="margin-bottom:14px"><div>Logline</div><div>${esc(p.logline || "—")}</div><div>Synopsis</div><div>${esc(p.synopsis || "—")}</div>
+        <div>Style</div><div class="small">${Object.entries(p.style || {}).map(([k, v]) => `<b>${esc(k)}</b>: ${esc(v)}`).join(" · ") || "—"}</div>
+        <div>Characters</div><div class="small">${(p.characters || []).map(c => `<b>${esc(c.name)}</b> — ${esc(c.descriptor || c.description || "")}`).join("<br>") || "—"}</div>
+        <div>Music</div><div>${p.music ? esc(p.music.file || "(no track chosen)") + (p.music.mood ? " · " + esc(p.music.mood) : "") : "—"}</div></div>
+        <div class="shots">${p.shots.map((s, i) => `<div class="shot"><div class="head"><span class="id">${esc(s.id)}</span><span class="chip">${s.seconds} s</span>${i ? `<span class="chip ${s.transition === "continue" ? "blue" : s.transition === "dissolve" ? "accent" : ""}">${s.transition || "cut"}</span>` : ""}${s.caption ? `<span class="chip warn">💬 ${esc(s.caption)}</span>` : ""}${(s.sfx || []).map(x => `<span class="chip">🔊 ${esc(x.file.split("/").pop())}</span>`).join("")}${s.beat ? `<span class="muted small">${esc(s.beat)}</span>` : ""}</div><p>${esc(s.prompt)}</p></div>`).join("")}</div>` : `<div class="issue error">${esc(d.error)}</div>`;
   openModal(`<div class="row between"><div><h3 style="margin:0">${esc(p ? p.title : name)}</h3><div class="small muted mono">${esc(d.path || name)}</div></div>
-    <div class="row"><button class="small" data-review="${esc(name)}" title="Линтер + исправление промптов моделью">✨ Исправить промпты</button><button class="small primary" data-render="${esc(name)}">🎬 Рендер</button><button class="small danger" data-del-plan="${esc(name)}">Удалить</button><button class="small ghost" id="pm-close">Закрыть</button></div></div>
+    <div class="row"><button class="small" data-review="${esc(name)}" title="Linter + prompt fixes by the model">✨ Fix prompts</button><button class="small primary" data-render="${esc(name)}">🎬 Render</button><button class="small danger" data-del-plan="${esc(name)}">Delete</button><button class="small ghost" id="pm-close">Close</button></div></div>
     ${d.summary ? `<pre class="small muted" style="white-space:pre-wrap;margin:10px 0 0">${esc(d.summary)}</pre>` : ""}
-    <div class="tabs" style="margin-top:12px">${[["shots","Сцены"],["issues",`Проверка ${errs ? `<span class="chip bad">${errs}</span>` : ""} ${warns ? `<span class="chip warn">${warns}</span>` : ""}`],["json","JSON"]].map(([k, l]) => `<div class="tab ${tab === k ? "active" : ""}" data-plan-tab="${k}" data-plan-name="${esc(name)}">${l}</div>`).join("")}</div>
+    <div class="tabs" style="margin-top:12px">${[["shots","Shots"],["issues",`Check ${errs ? `<span class="chip bad">${errs}</span>` : ""} ${warns ? `<span class="chip warn">${warns}</span>` : ""}`],["json","JSON"]].map(([k, l]) => `<div class="tab ${tab === k ? "active" : ""}" data-plan-tab="${k}" data-plan-name="${esc(name)}">${l}</div>`).join("")}</div>
     ${body}`);
   $("#pm-close").onclick = closeModal;
   bind($("#modal"));
   const save = $("#plan-save");
-  if (save) save.onclick = async () => { try { await api(`/api/plan/${name}`, {method: "PUT", body: $("#plan-raw").value}); toast("План сохранён"); await refresh(); openPlan(name, "issues"); } catch (e) { toast(e.message, true); } };
+  if (save) save.onclick = async () => { try { await api(`/api/plan/${name}`, {method: "PUT", body: $("#plan-raw").value}); toast("Plan saved"); await refresh(); openPlan(name, "issues"); } catch (e) { toast(e.message, true); } };
 }
 
-/* ---------- фильмы ---------- */
+/* ---------- films ---------- */
 function filmCard(f, compact = false) {
   const vertical = f.resolution && (() => { const [w, h] = f.resolution.split("x").map(Number); return h > w; })();
   const pipes = f.shots.filter(s => s.pipeline === "distilled").length;
-  const tl = f.timeline.length ? `<div class="timeline" title="таймлайн сцен">${f.timeline.map(t => { const s = f.shots.find(x => x.id === t.shot) || {}; return `<div class="${s.pipeline === "distilled" ? "distilled" : ""}" style="flex:${Math.max(0.5, t.end - t.start)}" title="сцена ${t.shot}: ${t.start}–${t.end} с, ${s.pipeline || ""} ${t.transition}">${t.shot}</div>`; }).join("")}${f.shots_failed.map(id => `<div class="failed" style="flex:1" title="сцена ${id} не получилась">${id}</div>`).join("")}</div>` : "";
+  const tl = f.timeline.length ? `<div class="timeline" title="shot timeline">${f.timeline.map(t => { const s = f.shots.find(x => x.id === t.shot) || {}; return `<div class="${s.pipeline === "distilled" ? "distilled" : ""}" style="flex:${Math.max(0.5, t.end - t.start)}" title="shot ${t.shot}: ${t.start}–${t.end} s, ${s.pipeline || ""} ${t.transition}">${t.shot}</div>`; }).join("")}${f.shots_failed.map(id => `<div class="failed" style="flex:1" title="shot ${id} failed">${id}</div>`).join("")}</div>` : "";
   return `<div class="card film ${vertical ? "" : "wide"}">
     <video src="/files/${esc(f.file)}" poster="/api/poster/${esc(f.slug)}" controls preload="none" playsinline></video>
     <div class="grid" style="align-content:start;gap:8px">
       <div class="row between"><h3 style="margin:0">${esc(f.title)}</h3><span class="muted small">${fmtAgo(f.modified)}</span></div>
-      <div class="row small"><span class="chip">${esc(f.resolution || "")}</span><span class="chip">${fmtDur(f.seconds)}</span><span class="chip">${esc(f.quality || "")}</span>${f.shots_ok != null ? `<span class="chip ${f.shots_failed.length ? "warn" : "good"}">${f.shots_ok} сцен${f.shots_failed.length ? `, ${f.shots_failed.length} не вышло` : ""}</span>` : ""}${pipes ? `<span class="chip warn" title="часть сцен отрендерена быстрым пайплайном после ошибки DFR">${pipes} distilled</span>` : ""}${f.music ? `<span class="chip">♫ музыка</span>` : ""}${f.captions ? `<span class="chip">💬 субтитры</span>` : ""}${f.minutes ? `<span class="chip">${f.minutes} мин GPU</span>` : ""}</div>
+      <div class="row small"><span class="chip">${esc(f.resolution || "")}</span><span class="chip">${fmtDur(f.seconds)}</span><span class="chip">${esc(f.quality || "")}</span>${f.shots_ok != null ? `<span class="chip ${f.shots_failed.length ? "warn" : "good"}">${f.shots_ok} shots${f.shots_failed.length ? `, ${f.shots_failed.length} failed` : ""}</span>` : ""}${pipes ? `<span class="chip warn" title="some shots were rendered with the fast pipeline after a DFR error">${pipes} distilled</span>` : ""}${f.music ? `<span class="chip">♫ music</span>` : ""}${f.captions ? `<span class="chip">💬 captions</span>` : ""}${f.minutes ? `<span class="chip">${f.minutes} min GPU</span>` : ""}</div>
       ${tl}
       ${compact ? "" : `<div class="row small muted">${fmtSize(f.size)} · <span class="mono">${esc(f.file)}</span></div>`}
-      <div class="row"><a class="small" href="/files/${esc(f.file)}" download>⬇ скачать</a>${f.has_manifest ? `<button class="small" data-recut="${esc(f.slug)}">♫ Пересобрать</button>` : ""}${f.recuts.length ? `<span class="small muted">пересборки: ${f.recuts.map(r => `<a href="/files/${esc(r)}" target="_blank">${esc(r.split("/").pop())}</a>`).join(", ")}</span>` : ""}${compact ? "" : `<button class="small danger right" data-del-film="${esc(f.slug)}">Удалить</button>`}</div>
+      <div class="row"><a class="small" href="/files/${esc(f.file)}" download>⬇ download</a>${f.has_manifest ? `<button class="small" data-recut="${esc(f.slug)}">♫ Re-assemble</button>` : ""}${f.recuts.length ? `<span class="small muted">re-cuts: ${f.recuts.map(r => `<a href="/files/${esc(r)}" target="_blank">${esc(r.split("/").pop())}</a>`).join(", ")}</span>` : ""}${compact ? "" : `<button class="small danger right" data-del-film="${esc(f.slug)}">Delete</button>`}</div>
     </div></div>`;
 }
 function viewFilms() {
-  return `<h1>Фильмы</h1><p class="sub">Готовые фильмы с отчётом по сценам. Пересборка меняет музыку и субтитры без GPU (нужен ffmpeg).</p>
-  ${state.films.length ? `<div class="grid">${state.films.map(f => filmCard(f)).join("")}</div>` : `<div class="empty">Фильмов пока нет</div>`}`;
+  return `<h1>Films</h1><p class="sub">Finished films with a per-shot report. Re-assembly changes music and captions without a GPU (needs ffmpeg).</p>
+  ${state.films.length ? `<div class="grid">${state.films.map(f => filmCard(f)).join("")}</div>` : `<div class="empty">No films yet</div>`}`;
 }
 function openRecut(slug) {
-  openModal(`<h3>Пересобрать «${esc(slug)}»</h3><p class="muted small">Клипы уже отрендерены. Меняем только музыку, громкость и субтитры.</p>
-  <div class="form"><div class="field"><span>Музыка</span>${selectHtml("rc-music", [{value: "", label: "Как в плане"}, {value: "none", label: "Без музыки"}, ...(state.library.music || []).map(m => ({value: m.file, label: m.file.split("/").pop()}))], "")}</div>
-  <label><span>Громкость музыки (0.1–0.5)</span><input id="rc-vol" type="number" step="0.05" min="0" max="1" placeholder="как в плане"></label>
-  ${toggleHtml("rc-cap", false, "Субтитры")}
-  <div class="row"><button class="primary" id="rc-go">Собрать</button><button class="ghost" id="rc-close">Отмена</button></div></div>`);
+  openModal(`<h3>Re-assemble “${esc(slug)}»</h3><p class="muted small">The clips are already rendered. Only music, volume and captions change.</p>
+  <div class="form"><div class="field"><span>Music</span>${selectHtml("rc-music", [{value: "", label: "As in the plan"}, {value: "none", label: "No music"}, ...(state.library.music || []).map(m => ({value: m.file, label: m.file.split("/").pop()}))], "")}</div>
+  <label><span>Music volume (0.1–0.5)</span><input id="rc-vol" type="number" step="0.05" min="0" max="1" placeholder="as in the plan"></label>
+  ${toggleHtml("rc-cap", false, "Captions")}
+  <div class="row"><button class="primary" id="rc-go">Assemble</button><button class="ghost" id="rc-close">Cancel</button></div></div>`);
   $("#rc-close").onclick = closeModal;
-  $("#rc-go").onclick = async () => { try { const j = await api("/api/assemble", {method: "POST", body: JSON.stringify({film: slug, music: selValue("rc-music"), music_volume: $("#rc-vol").value, captions: $("#rc-cap").checked})}); toast("Пересборка запущена"); await refresh(true); openJob(j.id); } catch (e) { toast(e.message, true); } };
+  $("#rc-go").onclick = async () => { try { const j = await api("/api/assemble", {method: "POST", body: JSON.stringify({film: slug, music: selValue("rc-music"), music_volume: $("#rc-vol").value, captions: $("#rc-cap").checked})}); toast("Re-assembly started"); await refresh(true); openJob(j.id); } catch (e) { toast(e.message, true); } };
 }
 
-/* ---------- сериалы ---------- */
+/* ---------- series ---------- */
 function viewSeries() {
-  return `<h1>Сериалы</h1><p class="sub">Библия задаёт персонажей, локации и стиль; каждый эпизод планируется по ней, чтобы герои выглядели одинаково.</p>
+  return `<h1>Series</h1><p class="sub">The bible defines characters, locations and style; every episode is planned against it so the characters stay consistent.</p>
   <div class="grid cols2">
-    <div class="card form"><h3>Новый сериал</h3>
-      <textarea id="s-desc" placeholder="О чём сериал, кто герои, тон, сколько серий…"></textarea>
-      <div class="cols"><label><span>Slug</span><input id="s-name" placeholder="авто"></label><label><span>Серий в сезоне</span><input id="s-eps" type="number" value="6" min="1" max="24"></label><div class="field"><span>Язык</span>${selectHtml("s-lang", [["ru", "Русский"], ["en", "English"], ["es", "Español"], ["fr", "Français"], ["de", "Deutsch"], ["ja", "日本語"]].map(([v, l]) => ({value: v, label: l})), "ru")}</div></div>
-      <div class="row"><button class="primary" id="s-create">Создать библию</button></div></div>
-    <div class="grid" style="align-content:start">${state.series.length ? state.series.map(s => `<div class="card" style="cursor:pointer" data-bible="${esc(s.slug)}"><div class="row between"><h3 style="margin:0">${esc(s.title)}</h3><span class="chip">${s.episodes}/${s.planned || "?"} серий</span></div><div class="small muted" style="margin-top:6px">${esc(s.premise || "")}</div><div class="row small" style="margin-top:8px"><span class="chip">${s.characters} персонажей</span><span class="mono dim">${esc(s.slug)}</span></div></div>`).join("") : `<div class="empty">Сериалов пока нет</div>`}</div>
+    <div class="card form"><h3>New series</h3>
+      <textarea id="s-desc" placeholder="What the series is about, the characters, tone, episode count…"></textarea>
+      <div class="cols"><label><span>Slug</span><input id="s-name" placeholder="auto"></label><label><span>Episodes per season</span><input id="s-eps" type="number" value="6" min="1" max="24"></label><div class="field"><span>Language</span>${selectHtml("s-lang", [["ru", "Russian"], ["en", "English"], ["es", "Español"], ["fr", "Français"], ["de", "Deutsch"], ["ja", "日本語"]].map(([v, l]) => ({value: v, label: l})), "ru")}</div></div>
+      <div class="row"><button class="primary" id="s-create">Create bible</button></div></div>
+    <div class="grid" style="align-content:start">${state.series.length ? state.series.map(s => `<div class="card" style="cursor:pointer" data-bible="${esc(s.slug)}"><div class="row between"><h3 style="margin:0">${esc(s.title)}</h3><span class="chip">${s.episodes}/${s.planned || "?"} episodes</span></div><div class="small muted" style="margin-top:6px">${esc(s.premise || "")}</div><div class="row small" style="margin-top:8px"><span class="chip">${s.characters} characters</span><span class="mono dim">${esc(s.slug)}</span></div></div>`).join("") : `<div class="empty">No series yet</div>`}</div>
   </div>`;
 }
 async function openBible(slug) {
   let b; try { b = await api(`/api/series/${slug}`); } catch (e) { toast(e.message, true); return; }
-  openModal(`<div class="row between"><h3 style="margin:0">${esc(b.title)} <span class="mono dim small">${esc(slug)}</span></h3><div class="row"><button class="small primary" id="b-episode">📝 Новый эпизод</button><button class="small ghost" id="b-close">Закрыть</button></div></div>
-  <div class="kv" style="margin-top:12px"><div>Премисса</div><div>${esc(b.premise)}</div><div>Тон</div><div>${esc(b.tone)} · ${esc(b.genre || "")}</div><div>Стиль</div><div class="small">${Object.entries(b.style || {}).map(([k, v]) => `<b>${esc(k)}</b>: ${esc(v)}`).join(" · ")}</div><div>Звук</div><div class="small">${esc(b.sound_signature || "")}</div></div>
-  <h3 style="margin-top:16px">Персонажи</h3>${(b.characters || []).map(c => `<div class="shot"><div class="head"><b>${esc(c.name)}</b><span class="chip accent">${esc(c.descriptor)}</span></div><p>${esc(c.description)} <span class="muted">Голос: ${esc(c.voice)}. Арка: ${esc(c.arc)}</span></p></div>`).join("")}
-  <h3 style="margin-top:16px">Арка сезона</h3><ol class="small">${(b.season_arc || []).map(a => `<li>${esc(a)}</li>`).join("")}</ol>
-  <h3>Снятые эпизоды</h3>${(b.episodes || []).length ? (b.episodes).map(e => `<div class="small">Эп. ${e.episode}: <b>${esc(e.title)}</b> — ${esc(e.summary || e.logline || "")} <span class="dim">(${esc(e.slug)}.json)</span></div>`).join("") : `<div class="dim small">пока нет</div>`}
-  <h3 style="margin-top:16px">Заметки о непрерывности</h3>${(b.notes || []).map(n => `<div class="small">• ${esc(n)}</div>`).join("")}<div class="row" style="margin-top:8px"><input id="b-note" placeholder="например: у героя теперь шрам на левой щеке"><button class="small" id="b-add">Добавить</button></div>`);
+  openModal(`<div class="row between"><h3 style="margin:0">${esc(b.title)} <span class="mono dim small">${esc(slug)}</span></h3><div class="row"><button class="small primary" id="b-episode">📝 New episode</button><button class="small ghost" id="b-close">Close</button></div></div>
+  <div class="kv" style="margin-top:12px"><div>Premise</div><div>${esc(b.premise)}</div><div>Tone</div><div>${esc(b.tone)} · ${esc(b.genre || "")}</div><div>Style</div><div class="small">${Object.entries(b.style || {}).map(([k, v]) => `<b>${esc(k)}</b>: ${esc(v)}`).join(" · ")}</div><div>Sound</div><div class="small">${esc(b.sound_signature || "")}</div></div>
+  <h3 style="margin-top:16px">Characters</h3>${(b.characters || []).map(c => `<div class="shot"><div class="head"><b>${esc(c.name)}</b><span class="chip accent">${esc(c.descriptor)}</span></div><p>${esc(c.description)} <span class="muted">Voice: ${esc(c.voice)}. Arc: ${esc(c.arc)}</span></p></div>`).join("")}
+  <h3 style="margin-top:16px">Season arc</h3><ol class="small">${(b.season_arc || []).map(a => `<li>${esc(a)}</li>`).join("")}</ol>
+  <h3>Episodes made</h3>${(b.episodes || []).length ? (b.episodes).map(e => `<div class="small">Ep. ${e.episode}: <b>${esc(e.title)}</b> — ${esc(e.summary || e.logline || "")} <span class="dim">(${esc(e.slug)}.json)</span></div>`).join("") : `<div class="dim small">none yet</div>`}
+  <h3 style="margin-top:16px">Continuity notes</h3>${(b.notes || []).map(n => `<div class="small">• ${esc(n)}</div>`).join("")}<div class="row" style="margin-top:8px"><input id="b-note" placeholder="e.g. the hero now has a scar on his left cheek"><button class="small" id="b-add">Add</button></div>`);
   $("#b-close").onclick = closeModal;
   $("#b-episode").onclick = () => { form.series = slug; form.kind = "episode"; closeModal(); view = "studio"; render(); $("#f-request").focus(); };
-  $("#b-add").onclick = async () => { const t = $("#b-note").value.trim(); if (!t) return; await api("/api/series/note", {method: "POST", body: JSON.stringify({name: slug, text: t})}); toast("Заметка добавлена"); openBible(slug); };
+  $("#b-add").onclick = async () => { const t = $("#b-note").value.trim(); if (!t) return; await api("/api/series/note", {method: "POST", body: JSON.stringify({name: slug, text: t})}); toast("Note added"); openBible(slug); };
 }
 
-/* ---------- звук ---------- */
+/* ---------- sound ---------- */
 function viewAssets() {
   const lib = state.library;
-  const list = (items, kind) => items.length ? `<table class="table"><thead><tr><th>Файл</th><th>Теги</th><th>Длина</th><th></th></tr></thead><tbody>${items.map(e => `<tr><td class="mono">${esc(e.file.split("/").pop())}</td><td class="small muted">${(e.tags || []).join(", ")}${e.mood ? ` · <i>${esc(e.mood)}</i>` : ""}</td><td>${e.seconds ? fmtDur(e.seconds) : "—"}</td><td><audio src="/files/${esc(e.file)}" controls preload="none" style="height:28px;width:220px"></audio></td></tr>`).join("")}</tbody></table>` : `<div class="empty">Пусто. Загрузите файлы или положите их в assets/${kind}/</div>`;
-  return `<h1>Звук</h1><p class="sub">Музыка и эффекты, которые планировщик подбирает по тегам. Теги берутся из имён файлов, их можно править в assets/index.json.</p>
+  const list = (items, kind) => items.length ? `<table class="table"><thead><tr><th>File</th><th>Tags</th><th>Length</th><th></th></tr></thead><tbody>${items.map(e => `<tr><td class="mono">${esc(e.file.split("/").pop())}</td><td class="small muted">${(e.tags || []).join(", ")}${e.mood ? ` · <i>${esc(e.mood)}</i>` : ""}</td><td>${e.seconds ? fmtDur(e.seconds) : "—"}</td><td><audio src="/files/${esc(e.file)}" controls preload="none" style="height:28px;width:220px"></audio></td></tr>`).join("")}</tbody></table>` : `<div class="empty">Empty. Upload files or put them into assets/${kind}/</div>`;
+  return `<h1>Sound</h1><p class="sub">Music and effects the planner picks by tags. Tags come from file names and can be edited in assets/index.json.</p>
   <div class="grid cols2">
-    <div class="card"><div class="row between"><h3 style="margin:0">Музыка</h3><label class="upload"><input type="file" id="up-music" accept="audio/*" multiple hidden><span>⬆ Загрузить</span></label></div>${list(lib.music || [], "music")}</div>
-    <div class="card"><div class="row between"><h3 style="margin:0">Эффекты</h3><label class="upload"><input type="file" id="up-sfx" accept="audio/*" multiple hidden><span>⬆ Загрузить</span></label></div>${list(lib.sfx || [], "sfx")}</div>
-  </div><div class="row" style="margin-top:12px"><button id="reindex">Переиндексировать</button><span class="muted small">после ручного копирования файлов в папки</span></div>`;
+    <div class="card"><div class="row between"><h3 style="margin:0">Music</h3><label class="upload"><input type="file" id="up-music" accept="audio/*" multiple hidden><span>⬆ Upload</span></label></div>${list(lib.music || [], "music")}</div>
+    <div class="card"><div class="row between"><h3 style="margin:0">Effects</h3><label class="upload"><input type="file" id="up-sfx" accept="audio/*" multiple hidden><span>⬆ Upload</span></label></div>${list(lib.sfx || [], "sfx")}</div>
+  </div><div class="row" style="margin-top:12px"><button id="reindex">Re-index</button><span class="muted small">after copying files into the folders manually</span></div>`;
 }
 async function upload(kind, files) {
-  for (const f of files) { const fd = new FormData(); fd.append("file", f, f.name); try { await api(`/api/assets/upload?kind=${kind}`, {method: "POST", body: fd}); toast(`Загружено: ${f.name}`); } catch (e) { toast(e.message, true); } }
+  for (const f of files) { const fd = new FormData(); fd.append("file", f, f.name); try { await api(`/api/assets/upload?kind=${kind}`, {method: "POST", body: fd}); toast(`Uploaded: ${f.name}`); } catch (e) { toast(e.message, true); } }
   refresh();
 }
 
-/* ---------- настройки ---------- */
+/* ---------- settings ---------- */
 function viewSettings() {
   const c = state.config;
-  return `<h1>Настройки</h1><p class="sub">Ключи и параметры живут в <span class="mono">${esc(c.config_path)}</span>. Здесь — проверка окружения и постоянные предпочтения планировщика.</p>
+  return `<h1>Settings</h1><p class="sub">Keys and parameters live in <span class="mono">${esc(c.config_path)}</span>. Here: environment check and standing planner preferences.</p>
   <div class="grid cols2">
-    <div class="card"><h3>Окружение</h3><div class="kv">
-      <div>LLM</div><div>${esc(c.llm_effective)} · ${esc(c.llm_model)} ${c.has_anthropic ? `<span class="chip good">ключ Anthropic есть</span>` : `<span class="chip warn">без ANTHROPIC_API_KEY — локальная Ollama, качество сценариев ниже</span>`}</div>
-      <div>RunPod</div><div>${c.has_runpod ? `<span class="chip good">настроен</span>` : `<span class="chip bad">не настроен</span>`} · качество по умолчанию <b>${esc(c.quality)}</b> · лимит ${c.max_hours} ч · ~$${c.gpu_price}/ч</div>
-      <div>Карты (fast)</div><div class="small">${(c.gpu_types || []).map(esc).join(", ")}</div>
-      <div>ffmpeg</div><div>${c.ffmpeg ? `<span class="chip good">есть</span>` : `<span class="chip warn">нет — пересборка недоступна (brew install ffmpeg)</span>`}</div>
-      <div>Озвучка</div><div>${c.has_elevenlabs ? `<span class="chip good">ElevenLabs настроен</span>` : `<span class="chip">нет (narration в плане останется текстом)</span>`}</div>
-    </div><div class="row" style="margin-top:12px"><button class="small" id="doctor">Полная диагностика</button></div><pre class="log small" id="doctor-out" hidden></pre></div>
-    <div class="card form"><h3>Предпочтения планировщика</h3><p class="muted small" style="margin:0">Попадают в каждый план. Например: «меньше крупных планов», «финал всегда на общем плане», «не использовать наплывы».</p>
-      <textarea id="prefs" style="min-height:220px">${esc(state.prefs)}</textarea><div class="row"><button class="primary" id="prefs-save">Сохранить</button></div></div>
+    <div class="card"><h3>Environment</h3><div class="kv">
+      <div>LLM</div><div>${esc(c.llm_effective)} · ${esc(c.llm_model)} ${c.has_anthropic ? `<span class="chip good">Anthropic key present</span>` : `<span class="chip warn">no ANTHROPIC_API_KEY — local Ollama, lower script quality</span>`}</div>
+      <div>RunPod</div><div>${c.has_runpod ? `<span class="chip good">configured</span>` : `<span class="chip bad">not configured</span>`} · default quality <b>${esc(c.quality)}</b> · limit ${c.max_hours} h · ~$${c.gpu_price}/h</div>
+      <div>GPUs (fast)</div><div class="small">${(c.gpu_types || []).map(esc).join(", ")}</div>
+      <div>ffmpeg</div><div>${c.ffmpeg ? `<span class="chip good">yes</span>` : `<span class="chip warn">no — re-assembly unavailable (brew install ffmpeg)</span>`}</div>
+      <div>Voice-over</div><div>${c.has_elevenlabs ? `<span class="chip good">ElevenLabs configured</span>` : `<span class="chip">no (narration in the plan stays as text)</span>`}</div>
+    </div><div class="row" style="margin-top:12px"><button class="small" id="doctor">Full diagnostics</button></div><pre class="log small" id="doctor-out" hidden></pre></div>
+    <div class="card form"><h3>Planner preferences</h3><p class="muted small" style="margin:0">Applied to every plan. For example: “fewer close-ups”, “always end on a wide shot”, “no dissolves”.</p>
+      <textarea id="prefs" style="min-height:220px">${esc(state.prefs)}</textarea><div class="row"><button class="primary" id="prefs-save">Save</button></div></div>
   </div>`;
 }
 
-/* ---------- общие обработчики ---------- */
+/* ---------- shared handlers ---------- */
 function bind(root) {
   const kindSeg = root.querySelector('[data-seg="kind"]');
   if (kindSeg) kindSeg.addEventListener("change", () => { readForm(); form.kind = kindSeg.dataset.value; form.duration = DUR_DEFAULT[form.kind]; render(); });
@@ -370,10 +370,10 @@ function bind(root) {
   root.querySelectorAll("[data-job]").forEach(el => el.onclick = () => openJob(el.dataset.job));
   root.querySelectorAll("[data-open-plan]").forEach(el => el.onclick = e => { e.stopPropagation(); openPlan(el.dataset.openPlan); });
   root.querySelectorAll("[data-plan-tab]").forEach(el => el.onclick = () => openPlan(el.dataset.planName, el.dataset.planTab));
-  root.querySelectorAll("[data-render]").forEach(el => el.onclick = async e => { e.stopPropagation(); if (!confirm("Запустить рендер на RunPod? Это платно.")) return; try { const j = await api("/api/render", {method: "POST", body: JSON.stringify({plan: el.dataset.render})}); toast("Рендер запущен"); await refresh(true); openJob(j.id); } catch (err) { toast(err.message, true); } });
-  root.querySelectorAll("[data-review]").forEach(el => el.onclick = async () => { try { const j = await api("/api/review", {method: "POST", body: JSON.stringify({plan: el.dataset.review})}); toast("Правка промптов запущена"); await refresh(true); openJob(j.id); } catch (err) { toast(err.message, true); } });
-  root.querySelectorAll("[data-del-plan]").forEach(el => el.onclick = async () => { if (!confirm(`Удалить план ${el.dataset.delPlan}?`)) return; await api(`/api/plan/${el.dataset.delPlan}`, {method: "DELETE"}); closeModal(); refresh(); });
-  root.querySelectorAll("[data-del-film]").forEach(el => el.onclick = async () => { if (!confirm(`Удалить фильм ${el.dataset.delFilm} с диска вместе с клипами?`)) return; await api(`/api/film/${el.dataset.delFilm}`, {method: "DELETE"}); refresh(); });
+  root.querySelectorAll("[data-render]").forEach(el => el.onclick = async e => { e.stopPropagation(); if (!confirm("Start the render on RunPod? This costs money.")) return; try { const j = await api("/api/render", {method: "POST", body: JSON.stringify({plan: el.dataset.render})}); toast("Render started"); await refresh(true); openJob(j.id); } catch (err) { toast(err.message, true); } });
+  root.querySelectorAll("[data-review]").forEach(el => el.onclick = async () => { try { const j = await api("/api/review", {method: "POST", body: JSON.stringify({plan: el.dataset.review})}); toast("Prompt fixing started"); await refresh(true); openJob(j.id); } catch (err) { toast(err.message, true); } });
+  root.querySelectorAll("[data-del-plan]").forEach(el => el.onclick = async () => { if (!confirm(`Delete plan ${el.dataset.delPlan}?`)) return; await api(`/api/plan/${el.dataset.delPlan}`, {method: "DELETE"}); closeModal(); refresh(); });
+  root.querySelectorAll("[data-del-film]").forEach(el => el.onclick = async () => { if (!confirm(`Delete film ${el.dataset.delFilm} from disk together with its clips?`)) return; await api(`/api/film/${el.dataset.delFilm}`, {method: "DELETE"}); refresh(); });
   root.querySelectorAll("[data-del-job]").forEach(el => el.onclick = async () => { await api(`/api/jobs/${el.dataset.delJob}`, {method: "DELETE"}); closeModal(); refresh(); });
   root.querySelectorAll("[data-recut]").forEach(el => el.onclick = () => openRecut(el.dataset.recut));
   root.querySelectorAll("[data-bible]").forEach(el => el.onclick = () => openBible(el.dataset.bible));
@@ -381,11 +381,11 @@ function bind(root) {
   const q = s => root.querySelector(s);
   if (q("#btn-make")) q("#btn-make").onclick = () => submitPlan(true);
   if (q("#btn-plan")) q("#btn-plan").onclick = () => submitPlan(false);
-  if (q("#s-create")) q("#s-create").onclick = async () => { try { const j = await api("/api/series", {method: "POST", body: JSON.stringify({description: q("#s-desc").value, name: q("#s-name").value, episodes: q("#s-eps").value, language: selValue("s-lang")})}); toast("Создаю библию"); await refresh(true); openJob(j.id); } catch (e) { toast(e.message, true); } };
+  if (q("#s-create")) q("#s-create").onclick = async () => { try { const j = await api("/api/series", {method: "POST", body: JSON.stringify({description: q("#s-desc").value, name: q("#s-name").value, episodes: q("#s-eps").value, language: selValue("s-lang")})}); toast("Creating the bible"); await refresh(true); openJob(j.id); } catch (e) { toast(e.message, true); } };
   if (q("#up-music")) q("#up-music").onchange = e => upload("music", e.target.files);
   if (q("#up-sfx")) q("#up-sfx").onchange = e => upload("sfx", e.target.files);
-  if (q("#reindex")) q("#reindex").onclick = async () => { await api("/api/assets/reindex", {method: "POST"}); toast("Индекс обновлён"); refresh(); };
-  if (q("#prefs-save")) q("#prefs-save").onclick = async () => { await api("/api/prefs", {method: "PUT", body: JSON.stringify({text: q("#prefs").value})}); toast("Сохранено"); };
+  if (q("#reindex")) q("#reindex").onclick = async () => { await api("/api/assets/reindex", {method: "POST"}); toast("Index updated"); refresh(); };
+  if (q("#prefs-save")) q("#prefs-save").onclick = async () => { await api("/api/prefs", {method: "PUT", body: JSON.stringify({text: q("#prefs").value})}); toast("Saved"); };
   if (q("#doctor")) q("#doctor").onclick = async () => { const d = await api("/api/doctor"); const o = q("#doctor-out"); o.hidden = false; o.textContent = d.lines.join("\n"); };
   const req = q("#f-request"); if (req) req.oninput = () => { form.request = req.value; };
 }

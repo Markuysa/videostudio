@@ -52,10 +52,10 @@ class Studio:
 
     def plan_path(self, name: str) -> pathlib.Path:
         if not SAFE_NAME.match(name):
-            raise ApiError("недопустимое имя плана")
+            raise ApiError("invalid plan name")
         p = self.dir("plans_dir") / f"{name}.json"
         if not p.exists():
-            raise ApiError(f"нет плана {name}", 404)
+            raise ApiError(f"no plan {name}", 404)
         return p
 
     # ---------- обзор ----------
@@ -94,7 +94,7 @@ class Studio:
                             "recuts": [f"films/{d.name}/{r}" for r in recuts]})
             elif d.is_file() and d.suffix == ".mp4" and not d.stem.startswith("film_recut"):
                 rep = _read_json(films_dir / f"{d.stem}_report.json") or {}   # старая раскладка films/<name>.mp4
-                out.append({"slug": d.stem + "__legacy", "title": d.stem + " (старая раскладка)", "file": f"films/{d.name}", "legacy": True,
+                out.append({"slug": d.stem + "__legacy", "title": d.stem + " (legacy layout)", "file": f"films/{d.name}", "legacy": True,
                             "resolution": rep.get("resolution"), "quality": rep.get("quality"),
                             "shots_ok": rep.get("shots_ok"), "shots_failed": rep.get("shots_failed") or [], "shots": [],
                             "timeline": [], "modified": d.stat().st_mtime, "size": d.stat().st_size, "has_clips": False,
@@ -150,7 +150,7 @@ class Studio:
             data = json.loads(raw)
             Plan.from_dict(data, source_path=str(p))
         except json.JSONDecodeError as e:
-            raise ApiError(f"невалидный JSON: {e}")
+            raise ApiError(f"invalid JSON: {e}")
         except PlanError as e:
             raise ApiError(str(e))
         p.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
@@ -160,11 +160,11 @@ class Studio:
     def start_plan(self, body: dict) -> dict:
         req = str(body.get("request", "")).strip()
         if not req:
-            raise ApiError("опишите, что снимаем")
+            raise ApiError("describe what we are shooting")
         args = ["make" if body.get("render") else "plan", req]
         kind = body.get("kind") or "film"
         if kind not in KINDS:
-            raise ApiError("неизвестный тип")
+            raise ApiError("unknown type")
         args += ["--kind", kind]
         if body.get("duration"):
             args += ["--duration", str(int(body["duration"]))]
@@ -177,7 +177,7 @@ class Studio:
         name = str(body.get("name") or "").strip()
         if name:
             if not SAFE_NAME.match(name):
-                raise ApiError("имя: латиница, цифры, _ и -")
+                raise ApiError("name: latin letters, digits, _ and -")
             args += ["--name", name]
         if body.get("series"):
             args += ["--series", str(body["series"])]
@@ -191,7 +191,7 @@ class Studio:
             args += ["--notes", str(body["notes"])]
         if body.get("loop"):
             args.append("--loop")
-        title = ("Фильм: " if body.get("render") else "План: ") + req[:60]
+        title = ("Film: " if body.get("render") else "Plan: ") + req[:60]
         return self.jobs.start("make" if body.get("render") else "plan", title, args, meta={"request": req}).to_dict()
 
     def start_render(self, name: str) -> dict:
@@ -199,24 +199,24 @@ class Studio:
         plan = load_plan(p)
         problems = validate(plan, plan.quality or self.cfg.get("quality", "fast"))
         if problems:
-            raise ApiError("план нельзя рендерить: " + "; ".join(problems))
+            raise ApiError("plan cannot be rendered: " + "; ".join(problems))
         if not self.config_summary()["has_runpod"]:
-            raise ApiError("не настроен RunPod (runpod_api_key, network_volume_id в film_config.json)")
-        return self.jobs.start("render", f"Рендер: {plan.title}", ["render", str(p)], meta={"plan": name}).to_dict()
+            raise ApiError("RunPod is not configured (runpod_api_key, network_volume_id in film_config.json)")
+        return self.jobs.start("render", f"Render: {plan.title}", ["render", str(p)], meta={"plan": name}).to_dict()
 
     def start_review(self, name: str) -> dict:
         p = self.plan_path(name)
-        return self.jobs.start("review", f"Правка промптов: {name}", ["review", str(p), "--fix"], meta={"plan": name}).to_dict()
+        return self.jobs.start("review", f"Prompt fixes: {name}", ["review", str(p), "--fix"], meta={"plan": name}).to_dict()
 
     def start_assemble(self, body: dict) -> dict:
         slug = str(body.get("film", ""))
         if not SAFE_NAME.match(slug):
-            raise ApiError("недопустимое имя фильма")
+            raise ApiError("invalid film name")
         d = self.dir("films_dir") / slug
         if not (d / "manifest.json").exists():
-            raise ApiError("для этого фильма нет manifest.json и клипов — пересборка невозможна")
+            raise ApiError("this film has no manifest.json and clips — re-assembly is impossible")
         if not shutil.which("ffmpeg"):
-            raise ApiError("на этом компьютере нет ffmpeg (brew install ffmpeg)")
+            raise ApiError("ffmpeg is not installed on this computer (brew install ffmpeg)")
         args = ["assemble", str(d)]
         if body.get("music"):
             args += ["--music", str(body["music"])]
@@ -224,27 +224,27 @@ class Studio:
             args += ["--music-volume", str(float(body["music_volume"]))]
         if body.get("captions"):
             args.append("--captions")
-        return self.jobs.start("assemble", f"Пересборка: {slug}", args, meta={"film": slug}).to_dict()
+        return self.jobs.start("assemble", f"Re-assembly: {slug}", args, meta={"film": slug}).to_dict()
 
     def start_series(self, body: dict) -> dict:
         desc = str(body.get("description", "")).strip()
         if not desc:
-            raise ApiError("опишите сериал")
+            raise ApiError("describe the series")
         args = ["series", "new", desc, "--episodes", str(int(body.get("episodes") or 6)),
                 "--language", str(body.get("language") or "ru")]
         if body.get("name"):
             if not SAFE_NAME.match(str(body["name"])):
-                raise ApiError("slug: латиница, цифры, _ и -")
+                raise ApiError("slug: latin letters, digits, _ and -")
             args += ["--name", str(body["name"])]
-        return self.jobs.start("series", "Библия сериала: " + desc[:50], args).to_dict()
+        return self.jobs.start("series", "Series bible: " + desc[:50], args).to_dict()
 
     # ---------- прочее ----------
     def bible(self, slug: str) -> dict:
         if not SAFE_NAME.match(slug):
-            raise ApiError("недопустимый slug")
+            raise ApiError("invalid slug")
         p = self.dir("series_dir") / slug / "bible.json"
         if not p.exists():
-            raise ApiError("нет такого сериала", 404)
+            raise ApiError("no such series", 404)
         return _read_json(p) or {}
 
     def add_note(self, slug: str, text: str) -> dict:
@@ -263,7 +263,7 @@ class Studio:
             raise ApiError("kind: music | sfx")
         name = re.sub(r"[^A-Za-z0-9._\-]+", "_", pathlib.Path(filename).name)
         if pathlib.Path(name).suffix.lower() not in (".mp3", ".wav", ".m4a", ".flac", ".ogg", ".aac", ".aiff", ".aif"):
-            raise ApiError("аудиофайл: mp3, wav, m4a, flac, ogg, aac")
+            raise ApiError("audio file: mp3, wav, m4a, flac, ogg, aac")
         dest = self.dir("assets_dir") / kind / name
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(data)
@@ -278,7 +278,7 @@ class Studio:
 
     def delete_film(self, slug: str) -> None:
         if not SAFE_NAME.match(slug):
-            raise ApiError("недопустимое имя")
+            raise ApiError("invalid name")
         if slug.endswith("__legacy"):
             stem = slug[: -len("__legacy")]
             for name in (f"{stem}.mp4", f"{stem}_report.json", f"{stem}_render.log"):
@@ -358,7 +358,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             return json.loads(raw.decode("utf-8"))
         except json.JSONDecodeError:
-            raise ApiError("тело запроса должно быть JSON")
+            raise ApiError("request body must be JSON")
 
     def _file(self, path: pathlib.Path) -> None:
         if not path.is_file():
@@ -410,7 +410,7 @@ class Handler(BaseHTTPRequestHandler):
     def _safe_under(self, base: pathlib.Path, rel: str) -> pathlib.Path:
         target = (base / urllib.parse.unquote(rel)).resolve()
         if base.resolve() not in target.parents and target != base.resolve():
-            raise ApiError("доступ запрещён", 403)
+            raise ApiError("access denied", 403)
         return target
 
     # ----- маршруты -----
@@ -453,7 +453,7 @@ class Handler(BaseHTTPRequestHandler):
             if len(parts) == 3 and parts[:2] == ["api", "jobs"]:
                 job = s.jobs.get(parts[2])
                 if not job:
-                    raise ApiError("нет такой задачи", 404)
+                    raise ApiError("no such job", 404)
                 job.poll()
                 return self._json(job.to_dict(with_log_tail=int(q.get("log", ["12000"])[0])))
             if len(parts) == 3 and parts[:2] == ["api", "plan"]:
@@ -468,12 +468,12 @@ class Handler(BaseHTTPRequestHandler):
             if len(parts) == 3 and parts[:2] == ["api", "poster"]:
                 poster = s.poster(parts[2])
                 if not poster:
-                    raise ApiError("нет постера", 404)
+                    raise ApiError("no poster", 404)
                 return self._file(poster)
             if parts[:1] == ["files"] and len(parts) >= 3 and parts[1] in ("films", "assets"):
                 base = s.dir("films_dir") if parts[1] == "films" else s.dir("assets_dir")
                 return self._file(self._safe_under(base, "/".join(parts[2:])))
-            raise ApiError("не найдено", 404)
+            raise ApiError("not found", 404)
 
         if method == "DELETE":
             if len(parts) == 3 and parts[:2] == ["api", "jobs"]:
@@ -484,14 +484,14 @@ class Handler(BaseHTTPRequestHandler):
             if len(parts) == 3 and parts[:2] == ["api", "film"]:
                 s.delete_film(parts[2])
                 return self._json({"ok": True})
-            raise ApiError("не найдено", 404)
+            raise ApiError("not found", 404)
 
         if method == "PUT":
             if len(parts) == 3 and parts[:2] == ["api", "plan"]:
                 return self._json(s.save_plan(parts[2], self._body().decode("utf-8")))
             if path == "/api/prefs":
                 return self._json({"text": s.save_prefs(self._json_body().get("text", ""))})
-            raise ApiError("не найдено", 404)
+            raise ApiError("not found", 404)
 
         # POST
         if path == "/api/plan":
@@ -510,7 +510,7 @@ class Handler(BaseHTTPRequestHandler):
         if len(parts) == 4 and parts[:2] == ["api", "jobs"] and parts[3] == "stop":
             job = s.jobs.get(parts[2])
             if not job:
-                raise ApiError("нет такой задачи", 404)
+                raise ApiError("no such job", 404)
             job.stop()
             return self._json(job.to_dict())
         if path == "/api/assets/reindex":
@@ -519,7 +519,7 @@ class Handler(BaseHTTPRequestHandler):
             kind = q.get("kind", ["music"])[0]
             ctype = self.headers.get("Content-Type", "")
             if not ctype.startswith("multipart/form-data"):
-                raise ApiError("ожидается multipart/form-data")
+                raise ApiError("multipart/form-data expected")
             msg = email.message_from_bytes(b"Content-Type: " + ctype.encode() + b"\r\nMIME-Version: 1.0\r\n\r\n" + self._body(),
                                            policy=email.policy.HTTP)
             index = None
@@ -528,9 +528,9 @@ class Handler(BaseHTTPRequestHandler):
                 if fn:
                     index = s.upload_asset(kind, fn, part.get_payload(decode=True) or b"")
             if index is None:
-                raise ApiError("файл не найден в запросе")
+                raise ApiError("no file in the request")
             return self._json(index)
-        raise ApiError("не найдено", 404)
+        raise ApiError("not found", 404)
 
 
 def serve(port: int = 8765, open_browser: bool = True, root: pathlib.Path | None = None) -> None:
@@ -538,12 +538,12 @@ def serve(port: int = 8765, open_browser: bool = True, root: pathlib.Path | None
     httpd = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     httpd.daemon_threads = True
     url = f"http://127.0.0.1:{port}/"
-    print(f"Студия открыта: {url}  (Ctrl+C — остановить сервер; запущенные рендеры продолжат работать)", flush=True)
+    print(f"Studio is open: {url}  (Ctrl+C stops the server; running renders keep going)", flush=True)
     if open_browser:
         threading.Timer(0.6, lambda: webbrowser.open(url)).start()
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
-        print("\nСервер остановлен.")
+        print("\nServer stopped.")
     finally:
         httpd.server_close()
