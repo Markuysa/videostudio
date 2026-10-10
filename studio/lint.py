@@ -115,7 +115,7 @@ def lint_plan(plan: Plan, default_quality: str = "fast") -> list[Issue]:
     issues: list[Issue] = []
     for i, s in enumerate(plan.shots):
         issues += lint_shot(s, high, names, descriptors)
-        if high and is_conditioned(s, i) and s.frames > MAX_FRAMES_HIGH_CONDITIONED:
+        if high and is_conditioned(s, i, plan.loop and i == len(plan.shots) - 1) and s.frames > MAX_FRAMES_HIGH_CONDITIONED:
             issues.append(Issue(s.id, "warn", "dfr_conditioned_length",
                                 f"сцена со стартовым кадром длиннее 5 с ({s.seconds} с): DFR на ней падает, рендер пойдёт "
                                 "distilled-пайплайном; для полного качества разбейте на сцены-продолжения по 5 с"))

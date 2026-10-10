@@ -44,6 +44,36 @@ def test_attempts_chain_skips_dfr_for_long_conditioned_shots():
     spec.loader.exec_module(film)
     chain = film.attempts_for(True, "start.png", (704, 1280), frames=193)
     assert [c["pipeline"] for c in chain] == ["distilled", "dfr", "distilled"]
+    assert chain[1].get("no_cond") is True
     chain = film.attempts_for(True, "start.png", (704, 1280), frames=121)
     assert [c["pipeline"] for c in chain] == ["dfr", "distilled", "dfr", "distilled"]
+    assert [c["pipeline"] for c in film.attempts_for(True, None, (704, 1280), 121, extra_conditioned=True)] == ["dfr", "distilled", "dfr", "distilled"]
     assert [c["pipeline"] for c in film.attempts_for(False, None, (704, 1280), 193)] == ["distilled"]
+
+
+@needs_ffmpeg
+def test_film_py_loop_closes_on_first_frame(tmp_path):
+    for p in pathlib.Path("/tmp").glob("fake_ltx_failed_*"):
+        p.unlink()
+    plan = {"title": "Луп", "format": "9:16", "quality": "high", "seed": 1, "loop": True, "shots": [
+        {"id": "001", "seconds": 4, "prompt": "p" * 40},
+        {"id": "002", "seconds": 4, "prompt": "p" * 40},
+        {"id": "003", "seconds": 8, "prompt": "p" * 40},      # в high + условие -> обрежется до 121 кадра
+    ]}
+    plan_path = tmp_path / "loop.json"
+    plan_path.write_text(json.dumps(plan, ensure_ascii=False), encoding="utf-8")
+    env = dict(os.environ, LTX_TEST_CMD=f"bash {ROOT / 'tests' / 'fake_ltx.sh'}", FILM_QUALITY="high",
+               FILM_DIR=str(tmp_path / "proj"), FILM_RETRIES="1")
+    r = subprocess.run([sys.executable, str(ROOT / "remote" / "film.py"), str(plan_path)], env=env,
+                       capture_output=True, text=True, timeout=600)
+    assert r.returncode == 0, r.stdout + r.stderr
+    assert "замыкаю луп" in r.stdout and "обрезаю" in r.stdout
+    report = json.loads((tmp_path / "proj" / "report.json").read_text(encoding="utf-8"))
+    assert report["loop"] is True and report["loop_closed"] is True
+    last = report["shots"][-1]
+    assert last["loop_closed"] is True and last["pipeline"] == "dfr"
+    # последний кадр лупа отрезан: 4.04 + 4.04 + (5.04 - 1/24)
+    assert abs(report["seconds"] - (4.042 + 4.042 + 5.042 - 1 / 24)) < 0.06
+    log = (tmp_path / "proj" / "render.log").read_text(encoding="utf-8")
+    last_cmd = [l for l in log.splitlines() if l.startswith("$") and "fake_ltx" in l and "shot_003" in l][-1]
+    assert last_cmd.count("--image") == 1 and "_loop_end.png 120 1.0" in last_cmd   # только финальный кадр, стартового нет

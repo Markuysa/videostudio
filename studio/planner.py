@@ -44,6 +44,7 @@ class PlanRequest:
     library: dict | None = None       # индекс assets
     seed: int | None = None
     notes: str = ""                   # доп. указания к этому плану
+    loop: bool = False                # бесшовный луп
 
 
 def _preset(kind: str) -> dict:
@@ -72,6 +73,12 @@ def system_prompt(req: PlanRequest, high: bool) -> str:
         LTX_PROMPT_RULES,
         STYLE_REFERENCE,
     ]
+    if req.loop:
+        parts.append("LOOP MODE: the piece must play as a seamless loop. The LAST shot must end in exactly the visual state "
+                     "the FIRST shot begins with: same location, framing, subject position, weather and light (the studio "
+                     "technically conditions the last frame of the last shot on the first frame of the first shot). "
+                     "Design the first shot to start from a calm, holdable composition and write the last shot so its "
+                     "final seconds settle back into that composition. No fades, no title, no ending beat.")
     if req.series_bible:
         from .bible import bible_summary
         parts.append("SERIES BIBLE (binding; copy character/location descriptors verbatim into prompts):\n"
@@ -191,8 +198,9 @@ class Planner:
                     if f.get("prompt"):
                         s.prompt = str(f["prompt"]).strip()
                     if f.get("seconds"):
+                        idx = plan.shots.index(s)
                         s.seconds = clamp_seconds(float(f["seconds"]), plan.is_high("high"),
-                                                  conditioned=is_conditioned(s, plan.shots.index(s)))
+                                                  conditioned=is_conditioned(s, idx, plan.loop and idx == len(plan.shots) - 1))
                     if "caption" in f and plan.captions.enabled:
                         s.caption = (str(f["caption"]).strip() or None) if f["caption"] else s.caption
         remaining = errors_only(lint_plan(plan, plan.quality or "high"))
@@ -290,7 +298,8 @@ class Planner:
             tr = str(r.get("transition") or "cut").lower()
             if tr not in ("cut", "continue", "dissolve") or i == 0:
                 tr = "cut"
-            secs = clamp_seconds(float(r.get("seconds") or 6), high, conditioned=(tr == "continue"))
+            secs = clamp_seconds(float(r.get("seconds") or 6), high,
+                                 conditioned=(tr == "continue") or (req.loop and i == len(raw_shots) - 1))
             sfx = []
             for x in r.get("sfx") or []:
                 if isinstance(x, dict) and x.get("file") in lib_files:
@@ -322,9 +331,11 @@ class Planner:
                     logline=outline.get("logline"), synopsis=outline.get("synopsis"), style=dict(outline.get("style") or {}),
                     characters=characters, locations=list(outline.get("locations") or []),
                     series=(req.series_bible or {}).get("slug"), episode=req.episode, music=music,
-                    captions=Captions(enabled=bool(want_caps)), request=req.request)
+                    captions=Captions(enabled=bool(want_caps)), request=req.request, loop=req.loop)
         if req.kind == "short":
             plan.fade_in, plan.fade_out = 0.0, 0.4
+        if req.loop:
+            plan.fade_in, plan.fade_out = 0.0, 0.0
         normalize_durations(plan)
         return plan
 
@@ -338,7 +349,7 @@ class Planner:
             return
         self.log(f"Хронометраж {total:.0f} с вместо {target} с — подгоняю длительности сцен")
         for i, s in enumerate(plan.shots):
-            s.seconds = clamp_seconds(s.seconds * ratio, high, conditioned=is_conditioned(s, i))
+            s.seconds = clamp_seconds(s.seconds * ratio, high, conditioned=is_conditioned(s, i, plan.loop and i == len(plan.shots) - 1))
 
 
 def plan_summary(plan: Plan, cfg: dict | None = None) -> str:
@@ -358,5 +369,5 @@ def plan_summary(plan: Plan, cfg: dict | None = None) -> str:
     if plan.captions.enabled:
         lines.append(f"Субтитры: {sum(1 for s in plan.shots if s.caption)} из {len(plan.shots)} сцен")
     tr = {t: sum(1 for s in plan.shots if s.transition == t) for t in ("cut", "continue", "dissolve")}
-    lines.append(f"Переходы: cut {tr['cut']}, continue {tr['continue']}, dissolve {tr['dissolve']}")
+    lines.append(f"Переходы: cut {tr['cut']}, continue {tr['continue']}, dissolve {tr['dissolve']}" + (" · бесшовный луп" if plan.loop else ""))
     return "\n".join(lines)

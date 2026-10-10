@@ -59,14 +59,16 @@ def run(cmd: list[str], logf) -> tuple[int, str]:
 
 
 def ltx_cmd(pipeline: str, prompt: str, w: int, h: int, frames: int, seed: int, out: pathlib.Path,
-            image: str | None, image_strength: float) -> list[str]:
-    """pipeline: dfr | distilled."""
+            image: str | None, image_strength: float, end_image: str | None = None) -> list[str]:
+    """pipeline: dfr | distilled. image — первый кадр, end_image — последний (луп)."""
     high = pipeline == "dfr"
     if TEST_CMD:
         test = shlex.split(TEST_CMD) + ["--width", str(w), "--height", str(h), "--num-frames", str(frames),
                                         "--seed", str(seed), "--pipeline", pipeline]
         if image:
             test += ["--image", str(image), "0", f"{image_strength:g}"]
+        if end_image:
+            test += ["--image", str(end_image), str(frames - 1), "1.0"]
         return test + [str(out)]
     vae = "ltx-2.5-video-vae-bf16.safetensors" if high else "ltx-2.5-video-vae-conv-bf16.safetensors"
     cmd = [
@@ -81,6 +83,8 @@ def ltx_cmd(pipeline: str, prompt: str, w: int, h: int, frames: int, seed: int, 
     ]
     if image:
         cmd += ["--image", str(image), "0", f"{image_strength:g}"]
+    if end_image:
+        cmd += ["--image", str(end_image), str(frames - 1), "1.0"]
     if high:
         cmd += ["--detailing-lora", DETAIL_LORA]
     elif frames > 241:
@@ -94,22 +98,30 @@ def last_frame(video: pathlib.Path, png: pathlib.Path, logf) -> bool:
     return code == 0 and png.exists()
 
 
-def attempts_for(high: bool, image: str | None, w_fast: tuple[int, int], frames: int = 121) -> list[dict]:
+def first_frame(video: pathlib.Path, png: pathlib.Path, logf) -> bool:
+    code, _ = run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(video), "-frames:v", "1", str(png)], logf)
+    return code == 0 and png.exists()
+
+
+def attempts_for(high: bool, image: str | None, w_fast: tuple[int, int], frames: int = 121,
+                 extra_conditioned: bool = False) -> list[dict]:
     """Цепочка откатов: что пробовать, если пайплайн падает.
 
-    DFR с входной картинкой падает в keyframe-декодере на 193+ кадрах (CUBLAS/illegal memory access;
-    проверено: 121 кадр проходит при любой силе условия). Поэтому для длинных сцен с картинкой DFR не
+    DFR с кадром-условием падает в keyframe-декодере на 193+ кадрах (CUBLAS/illegal memory access;
+    проверено: 121 кадр проходит при любой силе условия). Поэтому для длинных сцен с условием DFR не
     пробуем вовсе, а идём сразу в distilled того же разрешения (сохраняет непрерывность), затем DFR
-    без картинки (теряет непрерывность, но держит качество), затем быстрый режим.
+    без условий (теряет непрерывность, но держит качество), затем быстрый режим.
+    Шаг с ``no_cond`` убирает все кадры-условия (и стартовый, и финальный для лупа).
     """
     if not high:
         return [{"pipeline": "distilled", "image": image, "size": None}]
+    conditioned = bool(image) or extra_conditioned
     chain = []
-    if not (image and frames > MAX_FRAMES_HIGH_CONDITIONED):
+    if not (conditioned and frames > MAX_FRAMES_HIGH_CONDITIONED):
         chain.append({"pipeline": "dfr", "image": image, "size": None})
     chain.append({"pipeline": "distilled", "image": image, "size": None})
-    if image:
-        chain.append({"pipeline": "dfr", "image": None, "size": None})
+    if conditioned:
+        chain.append({"pipeline": "dfr", "image": None, "size": None, "no_cond": True})
     chain.append({"pipeline": "distilled", "image": image, "size": w_fast})
     return chain
 
@@ -123,6 +135,8 @@ def render_shots(plan: Plan, proj: pathlib.Path, high: bool, w: int, h: int, log
     failed: list[str] = []
     prev_clip: pathlib.Path | None = None
     prev_key = ""
+    first_clip: pathlib.Path | None = None
+    first_key = ""
     t_all = time.time()
     for i, s in enumerate(plan.shots):
         frames = s.frames
@@ -136,16 +150,23 @@ def render_shots(plan: Plan, proj: pathlib.Path, high: bool, w: int, h: int, log
             log(f"  сцена {s.id}: картинка {image} не найдена, генерирую по тексту")
             image = None
         cont = s.transition == "continue" and i > 0 and not image
+        loop_last = plan.loop and i == len(plan.shots) - 1 and len(plan.shots) > 1
+        if loop_last and high and frames > MAX_FRAMES_HIGH_CONDITIONED:
+            log(f"  сцена {s.id}: финальная сцена лупа в режиме high — максимум 5 с, обрезаю")
+            frames = MAX_FRAMES_HIGH_CONDITIONED
         key = hashlib.sha1(json.dumps([s.prompt, frames, high, w, h, plan.seed, image, s.image_strength,
-                                       prev_key if cont else ""], ensure_ascii=False).encode()).hexdigest()[:10]
+                                       prev_key if cont else "", first_key if loop_last else ""],
+                                      ensure_ascii=False).encode()).hexdigest()[:10]
         out = clips_dir / f"shot_{s.id}_{key}.mp4"
         meta_path = out.with_suffix(".json")
         if out.exists():
             log(f"[{i + 1}/{len(plan.shots)}] сцена {s.id} уже готова, пропускаю")
             meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
             done.append({"id": s.id, "clip": str(out), "pipeline": meta.get("pipeline", "?"), "cached": True,
-                         "continuity": meta.get("continuity", cont)})
+                         "continuity": meta.get("continuity", cont), "loop_closed": meta.get("loop_closed", False)})
             prev_clip, prev_key = out, key
+            if i == 0:
+                first_clip, first_key = out, key
             continue
         if cont:
             if prev_clip is None:
@@ -158,9 +179,20 @@ def render_shots(plan: Plan, proj: pathlib.Path, high: bool, w: int, h: int, log
                 else:
                     log(f"  сцена {s.id}: не смог вытащить последний кадр предыдущей сцены")
                     cont = False
-        if high and image and frames > MAX_FRAMES_HIGH_CONDITIONED:
-            log(f"  сцена {s.id}: {frames} кадров со стартовым кадром — DFR на этом падает, сразу distilled 1080p")
-        chain = attempts_for(high, image, SIZES_FAST[plan.format], frames)
+        end_image = None
+        if loop_last:
+            if first_clip is None:
+                log(f"  сцена {s.id}: первая сцена не получилась, луп замкнуть нечем")
+            else:
+                png = clips_dir / f"shot_{s.id}_{key}_loop_end.png"
+                if first_frame(first_clip, png, logf):
+                    end_image = str(png)
+                    log(f"  сцена {s.id}: замыкаю луп — последний кадр = первый кадр сцены {plan.shots[0].id}")
+                else:
+                    log(f"  сцена {s.id}: не смог вытащить первый кадр фильма, луп не замкнётся")
+        if high and (image or end_image) and frames > MAX_FRAMES_HIGH_CONDITIONED:
+            log(f"  сцена {s.id}: {frames} кадров с кадром-условием — DFR на этом падает, сразу distilled 1080p")
+        chain = attempts_for(high, image, SIZES_FAST[plan.format], frames, extra_conditioned=bool(end_image))
         ok_meta = None
         attempt_no = 0
         for step in chain:
@@ -172,12 +204,14 @@ def render_shots(plan: Plan, proj: pathlib.Path, high: bool, w: int, h: int, log
                 tag = step["pipeline"] + (" +image" if step["image"] else "") + (f" {pw}x{ph}" if step["size"] else "")
                 log(f"[{i + 1}/{len(plan.shots)}] сцена {s.id}: {frames} кадров, {tag}, попытка {attempt}")
                 tmp = clips_dir / f"shot_{s.id}_{key}.tmp.mp4"
+                step_end = None if step.get("no_cond") else end_image
                 code, tail = run(ltx_cmd(step["pipeline"], s.prompt, pw, ph, frames, seed, tmp, step["image"],
-                                         s.image_strength), logf)
+                                         s.image_strength, step_end), logf)
                 if code == 0 and tmp.exists() and tmp.stat().st_size > 0:
                     tmp.replace(out)
                     ok_meta = {"pipeline": step["pipeline"], "size": f"{pw}x{ph}", "seed": seed,
-                               "continuity": bool(step["image"]) and cont, "seconds_render": round(time.time() - t0)}
+                               "continuity": bool(step["image"]) and cont, "seconds_render": round(time.time() - t0),
+                               "loop_closed": bool(step_end)}
                     log(f"    готово за {time.time() - t0:.0f} с")
                     break
                 tmp.unlink(missing_ok=True)
@@ -192,6 +226,8 @@ def render_shots(plan: Plan, proj: pathlib.Path, high: bool, w: int, h: int, log
             meta_path.write_text(json.dumps(ok_meta))
             done.append({"id": s.id, "clip": str(out), **ok_meta})
             prev_clip, prev_key = out, key
+            if i == 0:
+                first_clip, first_key = out, key
         else:
             failed.append(s.id)
             prev_clip, prev_key = None, ""
@@ -253,8 +289,12 @@ def main() -> int:
         sfx = [(asset(x.file), x.offset, x.volume) for x in s.sfx]
         clips.append(ClipSpec(path=d["clip"], shot_id=s.id, transition=transition,
                               transition_seconds=s.transition_seconds, caption=s.caption,
-                              sfx=[x for x in sfx if x[0]], narration=narration))
+                              sfx=[x for x in sfx if x[0]], narration=narration,
+                              trim_end=(1 / FPS) if (plan.loop and d.get("loop_closed")) else 0.0))
         first = False
+    loop_closed = bool(plan.loop and clips and done and done[-1].get("loop_closed"))
+    if plan.loop and not loop_closed:
+        log("Луп не замкнут (финальная сцена без условия на первый кадр) — стык будет обычной склейкой")
     music_path = asset(plan.music.file) if plan.music and plan.music.file else None
     opts = AssembleOptions(width=w, height=h, fps=FPS, music_path=music_path,
                            music_volume=plan.music.volume if plan.music else 0.25,
@@ -262,7 +302,8 @@ def main() -> int:
                            music_fade_in=plan.music.fade_in if plan.music else 1.0,
                            music_fade_out=plan.music.fade_out if plan.music else 2.5,
                            captions=plan.captions.enabled, caption_position=plan.captions.position,
-                           caption_font_size=plan.captions.font_size, fade_in=plan.fade_in, fade_out=plan.fade_out)
+                           caption_font_size=plan.captions.font_size,
+                           fade_in=0.0 if plan.loop else plan.fade_in, fade_out=0.0 if plan.loop else plan.fade_out)
     final = proj / "film.mp4"
     try:
         rep = assemble(clips, final, opts, proj, logf=logf, log=log)
@@ -272,6 +313,7 @@ def main() -> int:
     report = {"film": str(final), "title": plan.title, "quality": "high (DFR)" if high else "fast",
               "resolution": f"{w}x{h}", "seconds": rep["seconds"], "shots_ok": len(done), "shots_failed": failed,
               "shots": done, "music": bool(music_path), "captions": rep["captions"], "timeline": rep["timeline"],
+              "loop": plan.loop, "loop_closed": loop_closed,
               "minutes": round((time.time() - t_all) / 60)}
     (proj / "manifest.json").write_text(json.dumps({"plan": plan.to_dict(), "shots": done}, ensure_ascii=False, indent=1),
                                         encoding="utf-8")

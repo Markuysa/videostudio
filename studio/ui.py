@@ -189,6 +189,8 @@ class Studio:
             args.append("--no-captions")
         if body.get("notes"):
             args += ["--notes", str(body["notes"])]
+        if body.get("loop"):
+            args.append("--loop")
         title = ("Фильм: " if body.get("render") else "План: ") + req[:60]
         return self.jobs.start("make" if body.get("render") else "plan", title, args, meta={"request": req}).to_dict()
 

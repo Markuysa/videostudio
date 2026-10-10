@@ -63,7 +63,7 @@ def _plan_request(args, cfg: dict):
     return PlanRequest(request=args.request, kind=args.kind, seconds=args.duration, format=args.format,
                        quality=args.quality or cfg.get("quality", "high"), language=args.language, name=args.name,
                        series_bible=bible, episode=args.episode, music=args.music, captions=captions,
-                       prefs=_prefs(cfg), library=library, seed=args.seed, notes=args.notes or "")
+                       prefs=_prefs(cfg), library=library, seed=args.seed, notes=args.notes or "", loop=bool(args.loop))
 
 
 def _save_plan(plan, cfg: dict, name: str | None) -> pathlib.Path:
@@ -304,6 +304,7 @@ def build_parser() -> argparse.ArgumentParser:
         sp.add_argument("--no-captions", action="store_true", help="выключить субтитры")
         sp.add_argument("--seed", type=int)
         sp.add_argument("--notes", help="дополнительные указания планировщику")
+        sp.add_argument("--loop", action="store_true", help="бесшовный луп: конец переходит в начало")
         sp.add_argument("--keep-pod", action="store_true", help="(с рендером) не удалять Pod после рендера")
 
     sp = sub.add_parser("plan", help="составить план с оптимизированными промптами")

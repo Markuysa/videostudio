@@ -70,3 +70,12 @@ def test_clamp_conditioned_in_high_mode():
     assert frames_for(clamp_seconds(8, high=True, conditioned=True)) == 121
     assert frames_for(clamp_seconds(8, high=True, conditioned=False)) == 193
     assert frames_for(clamp_seconds(8, high=False, conditioned=True)) == 193
+
+
+def test_loop_flag_roundtrip(tmp_path):
+    p = Plan.from_dict({"title": "t", "loop": True, "shots": [{"prompt": "p" * 30, "seconds": 5}]})
+    assert p.loop is True
+    out = tmp_path / "l.json"
+    p.save(out)
+    assert load_plan(out).loop is True
+    assert "loop" not in Plan.from_dict({"title": "t", "shots": [{"prompt": "p" * 30}]}).to_dict()

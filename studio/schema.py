@@ -66,8 +66,9 @@ def clamp_seconds(seconds: float, high: bool, conditioned: bool = False) -> floa
     return seconds_for(frames)
 
 
-def is_conditioned(shot: "Shot", index: int) -> bool:
-    return bool(shot.image) or (index > 0 and shot.transition == "continue")
+def is_conditioned(shot: "Shot", index: int, loop_last: bool = False) -> bool:
+    """Сцена со стартовым (или, для лупа, финальным) кадром-условием."""
+    return bool(shot.image) or (index > 0 and shot.transition == "continue") or loop_last
 
 
 def slugify(text: str, fallback: str = "film") -> str:
@@ -190,6 +191,7 @@ class Plan:
     captions: Captions = field(default_factory=Captions)
     fade_in: float = 0.5
     fade_out: float = 1.5
+    loop: bool = False               # бесшовный луп: последняя сцена заканчивается первым кадром фильма
     request: str | None = None
     version: int = 2
     source_path: str | None = None
@@ -215,6 +217,8 @@ class Plan:
     def to_dict(self) -> dict:
         d = asdict(self)
         d.pop("source_path", None)
+        if not d.get("loop"):
+            d.pop("loop", None)
         d["shots"] = [{k: v for k, v in asdict(s).items() if v not in (None, [], "")} | {"seconds": s.seconds}
                       for s in self.shots]
         for s in d["shots"]:
@@ -259,7 +263,7 @@ class Plan:
             locations=list(d.get("locations") or []), series=d.get("series"), episode=d.get("episode"),
             music=Music.from_dict(d.get("music")), captions=Captions.from_dict(d.get("captions")),
             fade_in=float(d.get("fade_in", 0.5)), fade_out=float(d.get("fade_out", 1.5)),
-            request=d.get("request"), version=int(d.get("version", 1)), source_path=source_path,
+            loop=bool(d.get("loop", False)), request=d.get("request"), version=int(d.get("version", 1)), source_path=source_path,
         )
         if plan.music and d.get("music_volume") is not None:   # совместимость с версией 1
             plan.music.volume = float(d["music_volume"])

@@ -45,6 +45,7 @@ class ClipSpec:
     caption: str | None = None
     sfx: list[tuple[str, float, float]] = field(default_factory=list)   # (файл, смещение с, громкость)
     narration: str | None = None     # путь к аудиофайлу озвучки
+    trim_end: float = 0.0            # с: отрезать с конца (луп: последний кадр дублирует первый кадр фильма)
 
 
 @dataclass
@@ -177,7 +178,7 @@ def build_timeline(clips: list[ClipSpec], durations: list[float], fps: int = FPS
     cur = 0.0
     for i, (c, dur) in enumerate(zip(clips, durations)):
         trim = (1 / fps) if (i > 0 and c.transition == "continue") else 0.0
-        d = max(0.1, dur - trim)
+        d = max(0.1, dur - trim - c.trim_end)
         if i == 0:
             start = 0.0
             cur = d
@@ -252,9 +253,10 @@ def build_graph(clips: list[ClipSpec], durations: list[float], opts: AssembleOpt
     for i, (c, dur) in enumerate(zip(clips, durations)):
         trim = (1 / fps) if (i > 0 and c.transition == "continue") else 0.0
         d = segs[i].duration
-        lines.append(f"[{i}:v]trim=start={trim:.4f}:end={dur:.4f},setpts=PTS-STARTPTS,fps={fps},"
+        end = trim + d
+        lines.append(f"[{i}:v]trim=start={trim:.4f}:end={end:.4f},setpts=PTS-STARTPTS,fps={fps},"
                      f"format=yuv420p,settb=AVTB[v{i}]")
-        lines.append(f"[{i}:a]atrim=start={trim:.4f}:end={dur:.4f},asetpts=PTS-STARTPTS,"
+        lines.append(f"[{i}:a]atrim=start={trim:.4f}:end={end:.4f},asetpts=PTS-STARTPTS,"
                      f"aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,apad=whole_dur={d:.4f},"
                      f"atrim=end={d:.4f},afade=t=in:st=0:d={fade},afade=t=out:st={max(0.0, d - fade):.4f}:d={fade}[a{i}]")
     cur_v, cur_a, cur_dur = "[v0]", "[a0]", segs[0].duration
@@ -348,7 +350,7 @@ def assemble(clips: list[ClipSpec], out_path: pathlib.Path, opts: AssembleOption
         info = probe(dst)
         normalized.append(ClipSpec(path=str(dst), shot_id=c.shot_id, transition=c.transition,
                                    transition_seconds=c.transition_seconds, caption=c.caption, sfx=c.sfx,
-                                   narration=c.narration))
+                                   narration=c.narration, trim_end=c.trim_end))
         durations.append(info["duration"])
     # дополнительные входы в том же порядке, в котором граф их нумерует
     extra: list[str] = []

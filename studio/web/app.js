@@ -9,7 +9,7 @@ const KIND_DESC = {short:"9:16, хук, субтитры, 15–60 с", aesthetic
 const STATUS = {queued:["в очереди","chip"], running:["выполняется","chip accent"], done:["готово","chip good"], error:["ошибка","chip bad"], stopped:["остановлено","chip warn"]};
 
 let state = null, view = "studio", modalJob = null, pollTimer = null;
-const form = {request:"", kind:"short", duration:0, format:"", quality:"", language:"ru", name:"", series:"", music:"auto", captions:null, notes:"", advanced:false};
+const form = {request:"", kind:"short", duration:0, format:"", quality:"", language:"ru", name:"", series:"", music:"auto", captions:null, notes:"", advanced:false, loop:false};
 
 async function api(path, opts = {}) {
   const r = await fetch(path, Object.assign({headers: opts.body && !(opts.body instanceof FormData) ? {"Content-Type":"application/json"} : {}}, opts));
@@ -156,6 +156,7 @@ function viewStudio() {
           <label><span>Имя файла</span><input id="f-name" placeholder="авто" value="${esc(form.name)}"></label>
         </div>
         <label><span>Указания планировщику</span><input id="f-notes" placeholder="например: без диалогов, финал на крупном плане, больше дождя" value="${esc(form.notes)}"></label>
+        <div class="row">${toggleHtml("f-loop", form.loop, "Бесшовный луп: конец переходит в начало")}</div>
       </div>
     </div>
     <div class="grid" style="align-content:start">
@@ -175,6 +176,7 @@ function readForm() {
   form.music = selValue("music") || "auto"; form.series = selValue("series");
   const c = selValue("captions"); form.captions = c === "" ? null : c === "1";
   form.name = q("#f-name").value; form.notes = q("#f-notes").value;
+  form.loop = !!(q("#f-loop") && q("#f-loop").checked);
 }
 async function submitPlan(renderToo) {
   readForm();
