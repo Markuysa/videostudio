@@ -1,0 +1,20 @@
+# секреты и локальные настройки
+film_config.json
+.env
+# окружение
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.idea/
+.DS_Store
+# результаты
+films/
+plans/*_assets/
+# большие аудиофайлы библиотеки (индекс храним)
+assets/music/*
+assets/sfx/*
+!assets/music/.gitkeep
+!assets/sfx/.gitkeep
+# задачи веб-интерфейса
+.studio/

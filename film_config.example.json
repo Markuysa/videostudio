@@ -1,0 +1,24 @@
+{
+  "runpod_api_key": "ВСТАВЬТЕ ключ RunPod (Settings -> API Keys, права Read/Write)",
+  "network_volume_id": "ВСТАВЬТЕ id Network Volume (Storage), 100+ ГБ",
+  "gpu_types": ["NVIDIA GeForce RTX 5090", "NVIDIA L40S", "NVIDIA RTX 6000 Ada Generation"],
+  "cloud_type": "SECURE",
+  "max_hours": 10,
+  "quality": "high",
+  "gpu_price_per_hour": 2.5,
+  "ntfy_topic": "",
+  "hf_token": "",
+
+  "llm": {
+    "provider": "auto",
+    "model": "",
+    "effort": "high",
+    "ollama_url": "http://localhost:11434",
+    "ollama_model": "qwen3:8b"
+  },
+  "anthropic_api_key": "",
+
+  "elevenlabs_api_key": "",
+  "elevenlabs_voice_id": "",
+  "elevenlabs_model": "eleven_multilingual_v2"
+}

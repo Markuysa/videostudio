@@ -1,0 +1,43 @@
+{
+ "title": "Я подожду",
+ "format": "9:16",
+ "seed": 2026,
+ "shots": [
+  {
+   "id": "001",
+   "seconds": 8,
+   "prompt": "Extreme close-up. Rain hammers the old man's trembling fingers as they tighten around the brass handle of the lantern. The flame inside flickers and almost dies, then flares back. The camera slowly pulls back to reveal his wet grey beard and his eyes fixed on the dark sea. Sound: torrential rain, wind howling, the metallic creak of the lantern swinging.",
+   "continue": false
+  },
+  {
+   "id": "002",
+   "seconds": 8,
+   "prompt": "Wide shot from behind. The lone figure stands at the very end of the pier, lantern raised, while a huge black wave rises and explodes against the pilings in front of him, spray washing over the boards. He does not step back. The camera slowly cranes up and away, making him smaller against the endless storm. Sound: thunderous wave impact, roaring wind, distant rolling thunder.",
+   "continue": true
+  },
+  {
+   "id": "003",
+   "seconds": 5,
+   "prompt": "Close-up. A frayed mooring rope tied to an empty iron cleat whips violently in the wind, slapping against the wet wood. Water runs over the rusted metal. Static camera. Sound: rope cracking like a whip, rain, waves sucking under the pier.",
+   "continue": false
+  },
+  {
+   "id": "004",
+   "seconds": 8,
+   "prompt": "Medium close-up, side profile. The old man squints into the darkness, then his eyes widen as a faint warm light blinks far out on the horizon. He lifts the lantern high and swings it slowly from side to side, his lips moving in a silent prayer. The camera slowly pushes in to his face. Sound: wind, heavy rain, a faint distant ship's horn.",
+   "continue": false
+  },
+  {
+   "id": "005",
+   "seconds": 8,
+   "prompt": "Over-the-shoulder shot toward the sea. The tiny light on the horizon rises on a swell, then a massive wave rolls over it and the light disappears into blackness. The lantern in the foreground stops swinging and hangs still in his hand. Slow push in toward the empty horizon. Sound: deep roar of the wave, the wind suddenly dropping to a low moan, a single crack of thunder.",
+   "continue": false
+  },
+  {
+   "id": "006",
+   "seconds": 8,
+   "prompt": "Wide static shot at grey dawn. The storm has passed; the sea is flat and silent under a heavy overcast sky. The old man still stands at the end of the pier, the burnt-out lantern hanging at his side. He slowly lowers himself onto an upturned crate and keeps looking at the horizon. He whispers in a hoarse voice: \"I'll wait.\" Sound: soft lapping water, a lonely seagull, quiet wind.",
+   "continue": false
+  }
+ ]
+}
