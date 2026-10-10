@@ -117,7 +117,9 @@ def attempts_for(high: bool, image: str | None, w_fast: tuple[int, int], frames:
         return [{"pipeline": "distilled", "image": image, "size": None}]
     conditioned = bool(image) or extra_conditioned
     chain = []
-    if not (conditioned and frames > MAX_FRAMES_HIGH_CONDITIONED):
+    # DFR с условием на ПОСЛЕДНИЙ кадр (луп) падает даже на 121 кадре (проверено 2026-10-10), поэтому
+    # финальную сцену лупа сразу рендерим distilled в том же разрешении
+    if not (conditioned and frames > MAX_FRAMES_HIGH_CONDITIONED) and not extra_conditioned:
         chain.append({"pipeline": "dfr", "image": image, "size": None})
     chain.append({"pipeline": "distilled", "image": image, "size": None})
     if conditioned:
@@ -193,8 +195,9 @@ def render_shots(plan: Plan, proj: pathlib.Path, high: bool, w: int, h: int, log
                     log(f"  сцена {s.id}: замыкаю луп — последний кадр = первый кадр сцены {plan.shots[0].id}")
                 else:
                     log(f"  сцена {s.id}: не смог вытащить первый кадр фильма, луп не замкнётся")
-        if high and (image or end_image) and frames > MAX_FRAMES_HIGH_CONDITIONED:
-            log(f"  сцена {s.id}: {frames} кадров с кадром-условием — DFR на этом падает, сразу distilled 1080p")
+        if high and ((image and frames > MAX_FRAMES_HIGH_CONDITIONED) or end_image):
+            log(f"  сцена {s.id}: {'условие на последний кадр' if end_image else f'{frames} кадров с кадром-условием'} — "
+                "DFR на этом падает, сразу distilled 1080p")
         chain = attempts_for(high, image, SIZES_FAST[plan.format], frames, extra_conditioned=bool(end_image))
         ok_meta = None
         attempt_no = 0

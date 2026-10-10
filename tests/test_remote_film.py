@@ -47,7 +47,7 @@ def test_attempts_chain_skips_dfr_for_long_conditioned_shots():
     assert chain[1].get("no_cond") is True
     chain = film.attempts_for(True, "start.png", (704, 1280), frames=121)
     assert [c["pipeline"] for c in chain] == ["dfr", "distilled", "dfr", "distilled"]
-    assert [c["pipeline"] for c in film.attempts_for(True, None, (704, 1280), 121, extra_conditioned=True)] == ["dfr", "distilled", "dfr", "distilled"]
+    assert [c["pipeline"] for c in film.attempts_for(True, None, (704, 1280), 121, extra_conditioned=True)] == ["distilled", "dfr", "distilled"]
     assert [c["pipeline"] for c in film.attempts_for(False, None, (704, 1280), 193)] == ["distilled"]
 
 
@@ -71,7 +71,7 @@ def test_film_py_loop_closes_on_first_frame(tmp_path):
     report = json.loads((tmp_path / "proj" / "report.json").read_text(encoding="utf-8"))
     assert report["loop"] is True and report["loop_closed"] is True
     last = report["shots"][-1]
-    assert last["loop_closed"] is True and last["pipeline"] == "dfr"
+    assert last["loop_closed"] is True and last["pipeline"] == "distilled"
     # последний кадр лупа отрезан: 4.04 + 4.04 + (5.04 - 1/24)
     assert abs(report["seconds"] - (4.042 + 4.042 + 5.042 - 1 / 24)) < 0.06
     log = (tmp_path / "proj" / "render.log").read_text(encoding="utf-8")
