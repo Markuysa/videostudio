@@ -135,7 +135,7 @@ Rules: the sum of seconds for this act must match the act duration (±10%). The 
 descriptor identical across shots. Vary shot sizes and angles. Sound description is mandatory in every prompt.
 STATE LEDGER: direction.start of every shot restates the direction.end of the previous shot (given below for
 all earlier shots), or names the time/place jump explicitly. The prompt body does NOT include the world anchor
-sentence (the studio inserts style.anchor verbatim); write the body as 60-150 words.
+sentence (the studio inserts style.anchor verbatim, ~35 words); write the body as 60-130 words so the final prompt stays under 180.
 """
 
 REVISE_SCHEMA = """\

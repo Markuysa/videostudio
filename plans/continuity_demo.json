@@ -1,0 +1,215 @@
+{
+ "title": "Ход времени",
+ "shots": [
+  {
+   "id": "001",
+   "seconds": 6.042,
+   "prompt": "Static macro close-up from slightly above of a green cutting mat on a worn walnut workbench, tweezers and a dish of brass gears blurred behind. A cramped watchmaker's workshop at dusk, walls crowded with ticking wall clocks, a worn walnut workbench lit by one warm brass desk lamp against fading blue window light, amber highlights, cool shadows, 50mm lens, fine film grain. The hand of the young granddaughter with a long chestnut braid, a mustard knit sweater and a dark green scarf enters from the right in its mustard sleeve and gently lowers a scratched silver pocket watch onto the mat, its engraved floral lid open. Her fingers rest on the case for a second, then slide away out of frame. The watch lies still, cream enamel face with a hairline crack, thin black hands frozen, its tarnished rim glinting amber, cool blue dusk light on the far edge, slight lamp halation. Sound: a dense chorus of ticking wall clocks, a soft muted tap as silver meets rubber, then only ticking around the silent watch.",
+   "transition": "cut",
+   "beat": "Хук: макро-кадр — открытая крышка серебряных карманных часов, стрелки неподвижны, а вокруг громко тикают десятки настенных часов; рука внучки кладёт часы на зелёный коврик верстака.",
+   "direction": {
+    "start": "Empty green cutting mat on the worn walnut workbench in a warm amber pool of lamp light; tweezers and a dish of brass gears soft in the background; cool blue dusk light at the frame edge.",
+    "action": "The granddaughter's hand, in a mustard knit sleeve, lowers the scratched silver pocket watch with its engraved floral lid open onto the mat, lets go and withdraws; the watch lies still, its hands frozen.",
+    "camera": "Static macro insert from slightly above, 100mm macro feel, shallow depth of field, no camera movement.",
+    "end": "The open silver pocket watch rests alone on the green mat, cream enamel face with a hairline crack catching the lamp, hands motionless; the granddaughter's hand is out of frame."
+   }
+  },
+  {
+   "id": "002",
+   "seconds": 8.042,
+   "prompt": "Locked-off wide shot at seated eye level of a cramped workshop wall crowded with wall clocks behind a worn walnut workbench. A cramped watchmaker's workshop at dusk, walls crowded with ticking wall clocks, a worn walnut workbench lit by one warm brass desk lamp against fading blue window light, amber highlights, cool shadows, 50mm lens, fine film grain. At the center sits the elderly watchmaker with thin silver hair, a white stubbled jaw, wire-rimmed glasses, a brass jeweler's loupe on a headband and a grey wool cardigan over a white shirt, the loupe raised on his forehead. Standing screen-right, half in cool blue window light, is the young granddaughter with a long chestnut braid, a mustard knit sweater and a dark green scarf, hands folded in front of her. The watchmaker slowly picks up the open silver pocket watch from the green mat and lifts it into the warm amber glow of the brass desk lamp. He pauses, then flips the brass loupe down over his right eye and leans in, studying the cracked cream face. The granddaughter watches without moving. Sound: the steady chorus of ticking wall clocks, a distant muffled street hum through the window, the soft rustle of the wool cardigan, and a tiny metallic click as the loupe snaps down.",
+   "transition": "cut",
+   "beat": "Общий план мастерской: часовщик в кардигане сидит за верстаком под лампой, внучка с косой стоит справа; он поднимает часы к свету и опускает лупу на глаз.",
+   "direction": {
+    "start": "The open silver pocket watch rests on the green mat on the walnut workbench; the elderly watchmaker sits behind the bench under the brass lamp, loupe raised on its headband; the granddaughter has just stepped back and stands screen-right, hands lowered.",
+    "action": "The watchmaker picks up the watch, lifts it into the lamp light at eye level, then flips the brass loupe down over his right eye and studies the face.",
+    "camera": "Locked-off wide shot from in front of the bench at seated eye level, 50mm feel, watchmaker centered, granddaughter screen-right, wall clocks filling the background; no movement.",
+    "end": "The watchmaker holds the open silver watch up near the lamp, loupe down over his right eye, leaning slightly forward; the granddaughter stands still screen-right watching him, the window behind glowing fading blue."
+   }
+  },
+  {
+   "id": "003",
+   "seconds": 7.042,
+   "prompt": "Close-up over the left shoulder of the elderly watchmaker with thin silver hair, a white stubbled jaw, wire-rimmed glasses, a brass jeweler's loupe on a headband and a grey wool cardigan over a white shirt, looking down at a green cutting mat on a worn walnut workbench, the loupe lowered over his right eye. A cramped watchmaker's workshop at dusk, walls crowded with ticking wall clocks, a worn walnut workbench lit by one warm brass desk lamp against fading blue window light, amber highlights, cool shadows, 50mm lens, fine film grain. On the mat the scratched silver pocket watch lies face-down, its back lid open over a brass movement. His slightly trembling fingers give a tiny screwdriver one last turn, then lay it down on the wood. He slides fine steel tweezers under the brass movement and slowly raises it out of the silver case, holding it just above the opening. The camera pushes in barely perceptibly as the movement rises. Warm amber lamp light from the upper left glints on his knuckles and the brass, cool blue dusk light rims his cardigan shoulder, shallow depth of field, fine film grain. Sound: the steady chorus of ticking wall clocks, the faint squeak of a screw thread, a soft click as the screwdriver touches the wood, his slow breathing through the nose.",
+   "transition": "cut",
+   "beat": "Крупный план через плечо: пинцет и крошечная отвёртка вывинчивают винты, часовщик осторожно приподнимает механизм из корпуса.",
+   "direction": {
+    "start": "The elderly watchmaker sits at the walnut bench, loupe down over his right eye, leaning forward; the scratched silver pocket watch already lies face-down on the green mat with its back lid open and the brass movement exposed; the granddaughter is out of frame.",
+    "action": "He gives the tiny screwdriver one last turn and lays it down, then slides fine tweezers under the brass movement and slowly lifts it out of the silver case.",
+    "camera": "Close-up over the watchmaker's left shoulder looking down onto the bench, 50mm feel, shallow depth of field, a single barely perceptible push-in as the movement rises.",
+    "end": "The watchmaker holds the freed brass movement in his tweezers just above the open silver case, loupe over his right eye; the case interior is soft and out of focus below."
+   }
+  },
+  {
+   "id": "004",
+   "seconds": 7.042,
+   "prompt": "Static macro shot from directly above into the empty scratched silver pocket watch case on a green cutting mat. A cramped watchmaker's workshop at dusk, walls crowded with ticking wall clocks, a worn walnut workbench lit by one warm brass desk lamp against fading blue window light, amber highlights, cool shadows, 50mm lens, fine film grain. A tiny folded square of yellowed paper lies flat against the tarnished silver, faded blue ink blurred through it. Fine steel tweezers enter from the left in the fingers of the elderly watchmaker with thin silver hair, a white stubbled jaw, wire-rimmed glasses, a brass jeweler's loupe on a headband and a grey wool cardigan over a white shirt, only his grey cuff and knuckles in frame. The tips hover, trembling slightly, then pinch one corner and slowly lift the paper out. Warm amber lamp light from the upper left makes the paper glow, cool blue dusk light rims the case, very shallow depth of field. Sound: ticking wall clocks, a held breath, then the dry crackle of old paper leaving the metal.",
+   "transition": "cut",
+   "beat": "Макро-вставка: под механизмом в корпусе лежит крошечный сложенный квадратик пожелтевшей бумаги; пинцет замирает, затем бережно вынимает его.",
+   "direction": {
+    "start": "The watchmaker has just lifted the freed brass movement out of the scratched silver case with his tweezers and set it aside; the empty case interior lies under the lamp on the green mat, a tiny folded square of yellowed paper tucked inside.",
+    "action": "The watchmaker's tweezers, his grey cuff and knuckles at the frame edge, enter, hover trembling above the paper, then pinch its corner and lift the folded square out of the case.",
+    "camera": "Static macro insert from directly above, 100mm macro feel, very shallow depth of field, no movement.",
+    "end": "The tweezers hold the tiny folded square of yellowed paper in mid-air above the empty silver case, faint blurred blue ink showing through the paper, illegible."
+   }
+  },
+  {
+   "id": "005",
+   "seconds": 6.042,
+   "prompt": "Locked-off medium shot from in front of the worn walnut workbench, slightly to the right: in the blurred left foreground, the grey wool shoulder and silver hair of the elderly watchmaker with thin silver hair, a white stubbled jaw, wire-rimmed glasses, a brass jeweler's loupe on a headband and a grey wool cardigan over a white shirt, bent over the bench in the warm amber lamp glow. A cramped watchmaker's workshop at dusk, walls crowded with ticking wall clocks, a worn walnut workbench lit by one warm brass desk lamp against fading blue window light, amber highlights, cool shadows, 50mm lens, fine film grain. Screen-right, a step back from the bench, stands the young granddaughter with a long chestnut braid, a mustard knit sweater and a dark green scarf, her fingers twisting the end of the scarf. Her fingers stop and the scarf end falls loose. She takes one quiet step closer to the bench, her eyes lowering toward his hands, then she slowly lifts her gaze screen-left to his face, lips slightly parted. Warm amber lamp light on her cheek and sweater, cool blue dusk window light rimming her braid from behind, fine film grain. Sound: the ticking chorus of wall clocks, the soft creak of a floorboard under her step, her quiet, careful breath.",
+   "transition": "cut",
+   "beat": "Средний план реакции внучки справа: она перестаёт теребить шарф, делает шаг ближе и смотрит то на листок, то на деда.",
+   "direction": {
+    "start": "The watchmaker sits at the bench bent over the tiny folded paper held in his tweezers; the granddaughter stands screen-right a step back from the bench, fingers twisting the end of her dark green scarf.",
+    "action": "Her fingers stop and let the scarf fall; she takes one quiet step closer, looks down toward his hands, then lifts her eyes screen-left to his face.",
+    "camera": "Locked-off medium shot from the same front side of the bench as the wide shots, slightly to the right; his blurred shoulder and hair in the left foreground, granddaughter screen-right; no movement.",
+    "end": "The granddaughter stands close at the bench edge screen-right, scarf released, lips slightly parted, eyes on the watchmaker's face screen-left; his blurred shoulder and the lamp glow remain at frame left."
+   }
+  },
+  {
+   "id": "006",
+   "seconds": 6.042,
+   "prompt": "Static macro shot from slightly above and behind two old, wrinkled hands in grey wool cardigan cuffs over white shirt cuffs, holding a tiny folded square of yellowed paper above a green cutting mat. A cramped watchmaker's workshop at dusk, walls crowded with ticking wall clocks, a worn walnut workbench lit by one warm brass desk lamp against fading blue window light, amber highlights, cool shadows, 50mm lens, fine film grain. Steel tweezers lie on the mat beside an open, scratched silver pocket watch case, soft in the background. The thumbs slowly press open the first crease, then the second, and the small sheet lies open between the fingertips. Faded blue ink strokes cross the paper, melted into soft blur by the very shallow focus, unreadable shapes only. The fingertips begin to tremble, the paper quivering gently in the light. Warm amber lamp light from the upper left makes the paper glow pale gold, cool blue dusk light rims the far edge of the knuckles, fine film grain. Sound: the gentle chorus of ticking wall clocks, the dry crackle of old paper unfolding, then a slow, unsteady exhale close to the hands.",
+   "transition": "cut",
+   "beat": "Макро-вставка рук: часовщик разворачивает записку, выцветший синий почерк размыт и нечитаем; его пальцы начинают дрожать.",
+   "direction": {
+    "start": "The tiny folded square of yellowed paper, just lifted out of the empty silver case, is now held between the fingertips of the watchmaker's two hands above the green cutting mat; the steel tweezers lie on the mat beside the open silver case; the granddaughter stands close at the edge of the bench, out of frame.",
+    "action": "His thumbs slowly open the folded paper, crease by crease, until it lies open in his fingers; faded blue ink strokes appear, soft and blurred; his fingertips begin to tremble.",
+    "camera": "Static macro insert from slightly above and behind his hands, 100mm macro feel, very shallow depth of field with the focal plane on his fingertips so the ink stays blurred and illegible; no movement.",
+    "end": "The unfolded yellowed note rests open between the watchmaker's trembling fingertips above the green mat, its faded blue ink blurred and illegible, the open silver case soft in the background."
+   }
+  },
+  {
+   "id": "007",
+   "seconds": 8.042,
+   "prompt": "Close-up of the elderly watchmaker with thin silver hair, a white stubbled jaw, wire-rimmed glasses, a brass jeweler's loupe on a headband and a grey wool cardigan over a white shirt, head bowed, gaze fixed downward on a note held below frame, the loupe still lowered over his right eye. A cramped watchmaker's workshop at dusk, walls crowded with ticking wall clocks, a worn walnut workbench lit by one warm brass desk lamp against fading blue window light, amber highlights, cool shadows, 50mm lens, fine film grain. He slowly raises one hand and pushes the brass loupe up onto his forehead. Then he holds perfectly still in a long silence; his eyes glisten behind the glasses, his jaw tightens, his chin trembles slightly. The camera pushes in slowly and almost imperceptibly until his face fills the frame. Warm amber lamp light from the upper left lights his cheek and wet eyes, cool blue dusk window light rims his silver hair from behind, fine film grain. Sound: the soft chorus of ticking wall clocks, the faint click of the loupe hinge, a shaky breath, a pause, then he whispers in Russian in a hoarse, barely audible elderly voice: \"Я всегда буду в твоём времени.\"",
+   "transition": "cut",
+   "beat": "Крупный план лица часовщика в тёплом свете лампы, медленный наезд: он поднимает лупу на лоб, долгая тишина, глаза блестят, и он шепчет по-русски: «Я всегда буду в твоём времени».",
+   "direction": {
+    "start": "The watchmaker sits at the bench, head bowed toward the unfolded note in his trembling fingers below frame, the brass loupe still down over his right eye; the granddaughter stands close screen-right, out of frame.",
+    "action": "He slowly pushes the brass loupe up onto his forehead with one hand, holds still in a long silence as his eyes glisten and his jaw tightens, then whispers one line in Russian.",
+    "camera": "Close-up of his face from the bench side, slightly off-axis to screen-left so his eyeline falls down toward the note; a slow, barely perceptible push-in through the whole shot, ending in a tight close-up.",
+    "end": "Tight close-up: the watchmaker's face with the loupe raised on his forehead, glasses on, eyes wet and glistening, lips just closed after the whisper, gaze lowered to the note below frame, warm lamp light on his face and blue window rim behind."
+   }
+  },
+  {
+   "id": "008",
+   "seconds": 8.042,
+   "prompt": "Static macro from above the wrinkled hands of the elderly watchmaker with thin silver hair, a white stubbled jaw, wire-rimmed glasses, a brass jeweler's loupe on a headband and a grey wool cardigan over a white shirt, holding an unfolded yellowed note with blurred faded ink over a green cutting mat. A cramped watchmaker's workshop at dusk, walls crowded with ticking wall clocks, a worn walnut workbench lit by one warm brass desk lamp against fading blue window light, amber highlights, cool shadows, 50mm lens, fine film grain. His fingertips steady, fold the note into a tiny square and lay it inside the open silver watch case. A hard cut, later, to a static macro of the reassembled scratched silver pocket watch face up, floral lid open, cracked cream enamel face sharp; the watchmaker's thumb turns the crown at frame right and the second hand starts moving. Amber lamp light from upper left, cool blue dusk edges. Sound: ticking wall clocks, a paper rustle, ratcheting crown clicks, then a crisp new tick joining the chorus.",
+   "transition": "cut",
+   "beat": "Крупный план рук: он складывает записку, кладёт её обратно в корпус, возвращает механизм, заводит головку — секундная стрелка оживает, и тиканье часов вливается в хор настенных.",
+   "direction": {
+    "start": "After the whisper, the watchmaker, loupe raised on his forehead and eyes wet, holds the unfolded yellowed note open between trembling fingertips above the green mat; the open empty silver case, the brass movement and the steel tweezers lie on the mat; the granddaughter is out of frame.",
+    "action": "His hands calmly fold the note into its tiny square and lay it inside the silver case; after a hard cut (short time ellipsis, watch reassembled) his thumb winds the crown and the second hand starts to move.",
+    "camera": "Native two-shot clip. First: static macro insert from above his hands, 100mm macro feel, shallow focus on fingertips and paper. Hard cut to: static macro of the watch face up with its floral lid open, crown at frame right, focus on the second hand.",
+    "end": "The scratched silver pocket watch lies face up on the green mat with its engraved floral lid open, its cream enamel face with a hairline crack glowing in the amber lamp pool, the thin second hand ticking steadily; his fingers have just left the crown."
+   }
+  },
+  {
+   "id": "009",
+   "seconds": 5.042,
+   "prompt": "Static wide shot at eye level from in front of the worn walnut workbench, the same view as the opening wide: seated center-left behind the bench is the elderly watchmaker with thin silver hair, a white stubbled jaw, wire-rimmed glasses, a brass jeweler's loupe on a headband and a grey wool cardigan over a white shirt, the loupe raised on his forehead, eyes wet, a scratched silver pocket watch ticking on the green mat in the foreground. A cramped watchmaker's workshop at dusk, walls crowded with ticking wall clocks, a worn walnut workbench lit by one warm brass desk lamp against fading blue window light, amber highlights, cool shadows, 50mm lens, fine film grain. Screen-right, close beside him, stands the young granddaughter with a long chestnut braid, a mustard knit sweater and a dark green scarf. She quietly lays her hand on his shoulder; he slowly lifts his hand and covers hers, and both hold still, looking down at the watch. The single brass desk lamp casts a warm amber pool over the bench and their hands, the clock-covered walls sink into amber shadow, and the small window behind them fades to deep slate blue, fine film grain. Sound: the gentle chorus of ticking wall clocks with the pocket watch ticking in step, the soft rustle of wool, two quiet breaths, a faint muffled street hum.",
+   "transition": "cut",
+   "beat": "Финальный общий план: внучка кладёт руку деду на плечо, он накрывает её ладонь своей; оба смотрят на тикающие часы в круге тёплого света, за окном гаснут синие сумерки.",
+   "direction": {
+    "start": "The scratched silver pocket watch lies face up on the green mat in the amber lamp pool, ticking; the watchmaker sits behind the walnut bench with the loupe raised on his forehead, glasses on, eyes wet, hands near the watch; the granddaughter stands close beside him screen-right; the window behind glows a deepening blue.",
+    "action": "The granddaughter rests her hand on the watchmaker's shoulder; he slowly raises his hand and covers hers; both stay still, looking at the ticking watch.",
+    "camera": "Locked-off wide shot from in front of the bench (same side and height as shot 002), eye level, 50mm feel, watchmaker center-left, granddaughter screen-right, the watch in the lamp pool in the foreground; static held frame.",
+    "end": "Held final frame: the watchmaker's hand rests over the granddaughter's hand on his shoulder, both gazing down at the ticking silver watch in the warm circle of lamp light, the clock-crowded walls in amber shadow, the small window fading to deep slate blue."
+   }
+  }
+ ],
+ "slug": "continuity_demo",
+ "kind": "film",
+ "format": "16:9",
+ "quality": "high",
+ "seed": 62729,
+ "language": "ru",
+ "logline": "Пожилой часовщик чинит остановившиеся карманные часы, которые принесла внучка, и находит под механизмом записку от покойной жены.",
+ "synopsis": "Вечером внучка приносит в тесную мастерскую деда старые серебряные карманные часы, которые давно стоят. Часовщик надевает лупу, вскрывает корпус и осторожно вынимает механизм. Под ним он находит крошечный сложенный листок пожелтевшей бумаги, исписанный выцветшими синими чернилами. Узнав почерк покойной жены, он замирает, и его руки начинают дрожать. Он шёпотом произносит одну строку из записки, бережно кладёт листок обратно и заводит часы. Часы начинают тикать, а внучка молча кладёт руку ему на плечо.",
+ "style": {
+  "anchor": "A cramped watchmaker's workshop at dusk, walls crowded with ticking wall clocks, a worn walnut workbench lit by one warm brass desk lamp against fading blue window light, amber highlights, cool shadows, 50mm lens, fine film grain.",
+  "visual": "Intimate, tactile chamber realism: warm lamp-lit hands and brass details against cool dusk shadows, like a quiet European arthouse drama.",
+  "palette": "Amber lamp gold on faces, hands and brass; walnut brown for wood and clothing; cool slate blue for window light and shadows; tarnished silver for the watch; pale yellowed paper as the single soft highlight of the note.",
+  "lens": "50mm-equivalent for wides and mediums, 100mm macro for inserts of the mechanism and the note; shallow but natural depth of field; fine 35mm film grain, slight halation around the lamp.",
+  "lighting": "Single motivated practical: the brass desk lamp as the warm key from above-left of the bench; cool blue dusk window light as fill and rim from behind; stable light logic throughout, the dusk dimming slightly by the end.",
+  "camera": "Mostly locked-off tripod frames with slow, barely perceptible push-ins at emotional moments; macro inserts static; no handheld, no orbits; the bench always seen from the watchmaker's side, granddaughter screen-right.",
+  "sound": "Dense, gentle chorus of ticking wall clocks as the constant bed; close, tactile micro-sounds of metal tools, tiny screws, paper creaking; soft breathing; distant muffled street hum through the window; no music, only one whispered line.",
+  "pace": "Unhurried, contemplative: long held frames of 6-8 seconds, hard cuts only, a lingering silence before the whispered line and a held final frame."
+ },
+ "characters": [
+  {
+   "name": "Часовщик",
+   "descriptor": "the elderly watchmaker with thin silver hair, a white stubbled jaw, wire-rimmed glasses, a brass jeweler's loupe on a headband and a grey wool cardigan over a white shirt",
+   "description": "Мастер лет восьмидесяти, вдовец. Движения точные и медленные, руки чуть дрожат, но становятся твёрдыми, когда касаются механизма. Эмоции видны только в глазах, челюсти и дыхании.",
+   "voice": "Тихий, хрипловатый старческий баритон, в финале — едва слышный шёпот на русском."
+  },
+  {
+   "name": "Внучка",
+   "descriptor": "the young granddaughter with a long chestnut braid, a mustard knit sweater and a dark green scarf",
+   "description": "Девушка около двадцати лет. Принесла бабушкины часы, наблюдает за дедом молча, с осторожной нежностью; не произносит ни слова.",
+   "voice": "Не говорит; слышно лишь её тихое дыхание."
+  }
+ ],
+ "locations": [
+  {
+   "name": "Мастерская часовщика",
+   "descriptor": "a cramped watchmaker's workshop at dusk with walls crowded with ticking wall clocks, a worn walnut workbench under a single brass desk lamp and a small window glowing with fading blue light"
+  }
+ ],
+ "captions": {
+  "enabled": false,
+  "position": "bottom",
+  "font_size": 0
+ },
+ "fade_in": 0.5,
+ "fade_out": 1.5,
+ "request": "Короткий фильм: пожилой часовщик в тесной мастерской чинит старые карманные часы, которые принесла внучка. Он находит внутри записку от своей покойной жены. Тихая, тёплая драма без лишних слов.",
+ "version": 2,
+ "creative_brief": {
+  "must_keep": [
+   "Пожилой часовщик в тесной мастерской",
+   "Он чинит старые карманные часы",
+   "Часы принесла внучка",
+   "Внутри часов он находит записку от покойной жены",
+   "Тихая, тёплая драма",
+   "Минимум слов: не больше одной короткой реплики за весь фильм",
+   "Хронометраж около 60 секунд, около 9 планов, 16:9",
+   "Без добавленной музыки"
+  ],
+  "avoid": [
+   "Музыка за кадром",
+   "Лишние диалоги и объяснения",
+   "Читаемый текст на экране (почерк записки нечитаем, не в фокусе)",
+   "Дополнительные персонажи, показ покойной жены, флешбэки",
+   "Дождь, неон, слоу-моушн и прочие украшения ради эффекта"
+  ],
+  "assumptions": [
+   "Действие происходит в сумерках: тёплая настольная лампа против гаснущего синего света из окна",
+   "Внучка — молодая женщина около двадцати лет, остаётся в мастерской и наблюдает",
+   "Единственная реплика — шёпот деда, строка из записки: «Я всегда буду в твоём времени»",
+   "Часы — серебряные, с гравированной крышкой; записка спрятана под механизмом",
+   "Финал: часы снова идут, тиканье совпадает с хором настенных часов",
+   "Повторяющиеся мотивы: тиканье, латунная лупа, тёплый круг света лампы"
+  ],
+  "visual_anchors": [
+   "the elderly watchmaker with thin silver hair, a white stubbled jaw, wire-rimmed glasses, a brass jeweler's loupe on a headband and a grey wool cardigan over a white shirt",
+   "the young granddaughter with a long chestnut braid, a mustard knit sweater and a dark green scarf",
+   "a scratched silver pocket watch with an engraved floral lid and a cream enamel face with a hairline crack",
+   "a tiny folded square of yellowed paper with faded blue handwriting, blurred and illegible",
+   "a worn walnut workbench with tweezers, tiny screwdrivers, brass gears in a dish and a green cutting mat",
+   "a single brass desk lamp casting a warm amber pool of light"
+  ],
+  "loop_anchor": null,
+  "project_notes": ""
+ },
+ "review_notes": [
+  "Ось съёмки: в style.camera написано «верстак всегда со стороны часовщика», но план 002 снят спереди (часовщик лицом к камере, внучка справа). Принята геометрия плана 002: широкие и реакционные планы — с фронтальной стороны верстака, внучка всегда screen-right. Под неё исправлены 005 (было «из-за верстака», что ломало правило 180°) и 009 (противоречие «со стороны часовщика» при фронтальном общем плане). Рекомендуется поправить формулировку в style.camera.",
+  "003: убрана фраза «A moment later…» — переворот и вскрытие часов теперь стоят в начальном состоянии; действие разгружено (убран невидимый винт, падающий в чашку), остались два движения рук и один наезд на 7 секунд.",
+  "008: уточнено, что после склейки внутри клипа часы уже собраны и лежат циферблатом вверх с открытой гравированной крышкой; в direction было «closed watch face», что противоречило открытой крышке в 001 и видимому циферблату.",
+  "Переход от пинцета (004) к пальцам (006) прикрыт врезкой 005 — допустимо, исправления не требуется.",
+  "009 длится 5 с: на жест «рука на плечо — накрыть ладонью» и удержанный финальный кадр это впритык. Если студия позволяет, стоит удлинить до 7–8 с (это изменение тайминга, здесь не внесено).",
+  "002: мелкое расхождение — в direction руки внучки «опущены», в промпте «сложены перед собой»; на рендер не влияет, промпт оставлен как есть.",
+  "Музыки, лишних персонажей, флешбэков и читаемого текста нет; единственная реплика — шёпот в 007; требования запроса соблюдены."
+ ]
+}
