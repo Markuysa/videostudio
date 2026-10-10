@@ -9,7 +9,7 @@ const KIND_DESC = {short:"9:16, хук, субтитры, 15–60 с", aesthetic
 const STATUS = {queued:["в очереди","chip"], running:["выполняется","chip accent"], done:["готово","chip good"], error:["ошибка","chip bad"], stopped:["остановлено","chip warn"]};
 
 let state = null, view = "studio", modalJob = null, pollTimer = null;
-const form = {request:"", kind:"short", duration:"", format:"", quality:"", language:"ru", name:"", series:"", music:"auto", captions:null, notes:""};
+const form = {request:"", kind:"short", duration:0, format:"", quality:"", language:"ru", name:"", series:"", music:"auto", captions:null, notes:"", advanced:false};
 
 async function api(path, opts = {}) {
   const r = await fetch(path, Object.assign({headers: opts.body && !(opts.body instanceof FormData) ? {"Content-Type":"application/json"} : {}}, opts));
@@ -21,9 +21,13 @@ function toast(msg, bad = false) {
   const t = document.createElement("div"); t.className = "toast" + (bad ? " bad" : ""); t.textContent = msg;
   document.body.appendChild(t); setTimeout(() => t.remove(), bad ? 6000 : 3500);
 }
-async function refresh() {
+async function refresh(full = false) {
   try { state = await api("/api/state"); } catch (e) { toast("Нет связи с сервером студии: " + e.message, true); return; }
-  render();
+  render(!full);
+}
+function isInteracting() {
+  const a = document.activeElement;
+  return !!document.querySelector(".sel.open") || (a && /^(INPUT|TEXTAREA)$/.test(a.tagName) && $("#main").contains(a));
 }
 function schedule() {
   clearTimeout(pollTimer);
@@ -32,8 +36,15 @@ function schedule() {
 }
 
 /* ---------- каркас ---------- */
-function render() {
+function render(partial = false) {
   if (!state) return;
+  if (partial && view === "studio" && $("#panel-jobs")) {      // опрос: обновляем только живые панели, не трогая форму
+    $("#panel-jobs").innerHTML = jobsPanel(); $("#panel-stats").innerHTML = statsPanel(); $("#panel-films").innerHTML = recentFilms();
+    bind($("#panel-jobs")); bind($("#panel-films"));
+    if (modalJob) refreshModalJob();
+    schedule(); return;
+  }
+  if (partial && isInteracting()) { if (modalJob) refreshModalJob(); schedule(); return; }
   document.querySelectorAll(".nav").forEach(n => n.classList.toggle("active", n.dataset.view === view));
   const running = state.jobs.filter(j => j.status === "running").length;
   const b = $("#badge-jobs"); b.hidden = !running; b.textContent = running;
@@ -51,69 +62,131 @@ function render() {
   schedule();
 }
 document.querySelectorAll(".nav").forEach(n => n.onclick = () => { view = n.dataset.view; render(); });
+function jobsPanel() {
+  const jobs = state.jobs.filter(j => j.status === "running" || (Date.now()/1000 - (j.finished || 0)) < 3600).slice(0, 5);
+  return `<div class="row between"><h3 style="margin:0">Задачи</h3><a href="#" data-view-link="jobs" class="small">все →</a></div>
+    ${jobs.length ? `<div class="grid" style="margin-top:10px">${jobs.map(jobCard).join("")}</div>` : `<div class="empty" style="margin-top:10px">Сейчас ничего не выполняется</div>`}`;
+}
+function statsPanel() {
+  return `<div class="row" style="justify-content:space-around">
+    <div class="stat"><b>${state.plans.length}</b><span>планов</span></div><div class="stat"><b>${state.films.length}</b><span>фильмов</span></div>
+    <div class="stat"><b>${state.series.length}</b><span>сериалов</span></div><div class="stat"><b>${(state.library.music||[]).length + (state.library.sfx||[]).length}</b><span>звуков</span></div></div>`;
+}
+function recentFilms() {
+  const films = state.films.slice(0, 3);
+  return films.length ? `<h2>Последние фильмы</h2><div class="grid auto">${films.map(f => filmCard(f, true)).join("")}</div>` : "";
+}
+
+/* ---------- кастомные контролы ---------- */
+function selectHtml(id, options, value, opts = {}) {
+  const cur = options.find(o => String(o.value) === String(value)) || options[0];
+  return `<div class="sel" data-sel="${esc(id)}" data-value="${esc(cur.value)}">
+    <button type="button" class="sel-btn"><span class="sel-label">${esc(cur.label)}</span><i class="sel-caret"></i></button>
+    <div class="sel-menu">${options.map(o => `<div class="sel-opt ${String(o.value) === String(cur.value) ? "active" : ""}" data-value="${esc(o.value)}"><span>${esc(o.label)}</span>${o.hint ? `<small>${esc(o.hint)}</small>` : ""}</div>`).join("")}</div></div>`;
+}
+function selValue(id, root = document) { const el = root.querySelector(`[data-sel="${id}"]`); return el ? el.dataset.value : ""; }
+function segHtml(id, options, value) {
+  return `<div class="seg" data-seg="${esc(id)}" data-value="${esc(value)}">${options.map(o => `<button type="button" class="${String(o.value) === String(value) ? "active" : ""}" data-value="${esc(o.value)}">${o.icon ? `<em>${o.icon}</em>` : ""}${esc(o.label)}</button>`).join("")}</div>`;
+}
+function segValue(id, root = document) { const el = root.querySelector(`[data-seg="${id}"]`); return el ? el.dataset.value : ""; }
+function toggleHtml(id, on, label) { return `<label class="toggle"><input type="checkbox" id="${esc(id)}" ${on ? "checked" : ""}><i></i><span>${esc(label)}</span></label>`; }
+document.addEventListener("click", e => {
+  const opt = e.target.closest(".sel-opt");
+  if (opt) {
+    const sel = opt.closest(".sel"); sel.dataset.value = opt.dataset.value;
+    sel.querySelector(".sel-label").textContent = opt.querySelector("span").textContent;
+    sel.querySelectorAll(".sel-opt").forEach(o => o.classList.toggle("active", o === opt));
+    sel.classList.remove("open"); sel.dispatchEvent(new CustomEvent("change", {bubbles: true})); return;
+  }
+  const btn = e.target.closest(".sel-btn");
+  document.querySelectorAll(".sel.open").forEach(x => { if (!btn || x !== btn.closest(".sel")) x.classList.remove("open"); });
+  if (btn) btn.closest(".sel").classList.toggle("open");
+  const sb = e.target.closest(".seg > button");
+  if (sb) {
+    const seg = sb.closest(".seg"); seg.dataset.value = sb.dataset.value;
+    seg.querySelectorAll("button").forEach(b => b.classList.toggle("active", b === sb));
+    seg.dispatchEvent(new CustomEvent("change", {bubbles: true}));
+  }
+});
 
 /* ---------- Студия (главная) ---------- */
+const DURATIONS = {short: [15, 30, 45, 60], aesthetic: [30, 45, 60, 90], film: [120, 180, 300, 480], episode: [90, 120, 180, 300]};
+const DUR_DEFAULT = {short: 45, aesthetic: 45, film: 180, episode: 120};
+const KIND_ICON = {short: "📱", aesthetic: "🌙", film: "🎬", episode: "📺"};
+function durLabel(s) { return s < 120 ? `${s} с` : `${Math.round(s / 60)} мин`; }
+function estimate() {
+  const secs = +form.duration || DUR_DEFAULT[form.kind];
+  const [lo, hi] = ({short: [3, 8], aesthetic: [5, 10], film: [4, 10], episode: [4, 10]})[form.kind];
+  const shots = Math.max(1, Math.round(secs / ((lo + hi) / 2)));
+  const high = (form.quality || state.config.quality) === "high";
+  const minutes = shots * (high ? 3.2 : 1.3) + 6;
+  return `≈ ${shots} сцен · ~${Math.round(minutes)} мин рендера · ≈ $${(minutes / 60 * state.config.gpu_price).toFixed(2)}`;
+}
 function viewStudio() {
-  const jobs = state.jobs.filter(j => j.status === "running" || (Date.now()/1000 - (j.finished || 0)) < 3600).slice(0, 6);
-  const films = state.films.slice(0, 3);
+  if (!form.duration) form.duration = DUR_DEFAULT[form.kind];
+  const presets = DURATIONS[form.kind];
+  const custom = !presets.includes(+form.duration);
+  const musicOpts = [{value: "auto", label: "Из библиотеки"}, {value: "none", label: "Без музыки"}, ...(state.library.music || []).map(m => ({value: m.file, label: m.file.split("/").pop()}))];
   return `
   <h1>Что снимаем?</h1>
-  <p class="sub">Опишите идею своими словами. Студия напишет сценарий, раскадровку и промпты, отрендерит сцены на GPU и соберёт фильм.</p>
+  <p class="sub">Опишите идею своими словами. Остальное студия сделает сама: сценарий, промпты, рендер, монтаж.</p>
   <div class="hero">
-    <div class="card form">
-      <textarea id="f-request" placeholder="Например: эстетичный шортс про дождливый вечер в Токио, девушка с красным зонтом идёт по неоновой улице, лоу-фай настроение">${esc(form.request)}</textarea>
-      <div class="kinds">${Object.keys(KIND_LABEL).map(k => `<div class="kind ${form.kind === k ? "active" : ""}" data-kind="${k}"><b>${KIND_LABEL[k]}</b><span>${KIND_DESC[k]}</span></div>`).join("")}</div>
-      <div class="cols">
-        <label><span>Длительность, с</span><input id="f-duration" type="number" min="10" max="900" placeholder="по пресету" value="${esc(form.duration)}"></label>
-        <label><span>Формат</span><select id="f-format"><option value="">по пресету</option>${state.config.formats.map(f => `<option ${form.format === f ? "selected" : ""}>${f}</option>`).join("")}</select></label>
-        <label><span>Качество</span><select id="f-quality"><option value="">${esc(state.config.quality)} (конфиг)</option><option value="high" ${form.quality === "high" ? "selected" : ""}>high — DFR 1080p</option><option value="fast" ${form.quality === "fast" ? "selected" : ""}>fast — 720p</option></select></label>
-        <label><span>Язык реплик</span><select id="f-language">${["ru","en","es","fr","de","ja","it"].map(l => `<option ${form.language === l ? "selected" : ""}>${l}</option>`).join("")}</select></label>
-        <label><span>Музыка</span><select id="f-music"><option value="auto" ${form.music === "auto" ? "selected" : ""}>подобрать из библиотеки</option><option value="none" ${form.music === "none" ? "selected" : ""}>без музыки</option>${(state.library.music || []).map(m => `<option value="${esc(m.file)}" ${form.music === m.file ? "selected" : ""}>${esc(m.file.split("/").pop())}</option>`).join("")}</select></label>
-        <label><span>Субтитры</span><select id="f-captions"><option value="" ${form.captions === null ? "selected" : ""}>по пресету</option><option value="1" ${form.captions === true ? "selected" : ""}>включить</option><option value="0" ${form.captions === false ? "selected" : ""}>выключить</option></select></label>
-        <label><span>Сериал</span><select id="f-series"><option value="">—</option>${state.series.map(s => `<option value="${esc(s.slug)}" ${form.series === s.slug ? "selected" : ""}>${esc(s.title)}</option>`).join("")}</select></label>
-        <label><span>Имя файла</span><input id="f-name" placeholder="авто" value="${esc(form.name)}"></label>
+    <div class="card compose">
+      <textarea id="f-request" placeholder="Например: эстетичный шортс про дождливый вечер в Токио — девушка с красным зонтом идёт по неоновой улице, лоу-фай настроение">${esc(form.request)}</textarea>
+      ${segHtml("kind", Object.keys(KIND_LABEL).map(k => ({value: k, label: KIND_LABEL[k], icon: KIND_ICON[k]})), form.kind)}
+      <div class="row dur">
+        <span class="muted small">Длительность</span>
+        ${segHtml("duration", [...presets.map(d => ({value: d, label: durLabel(d)})), {value: "custom", label: "своя"}], custom ? "custom" : form.duration)}
+        <input id="f-duration" class="num" type="number" min="10" max="900" value="${esc(form.duration)}" ${custom ? "" : "hidden"}>
+        <span class="muted small right" id="estimate">${estimate()}</span>
       </div>
-      <label><span>Указания планировщику (необязательно)</span><input id="f-notes" placeholder="например: без диалогов, финал на крупном плане, больше дождя" value="${esc(form.notes)}"></label>
-      <div class="row">
-        <button class="primary" id="btn-make">🎬 План и рендер</button>
-        <button id="btn-plan">📝 Только план</button>
-        <span class="muted small right">Рендер стоит денег: ~$${state.config.gpu_price}/ч GPU, ≈ 3 мин на сцену в high</span>
+      <div class="row actions">
+        <button class="primary big" id="btn-make">🎬 Снять</button>
+        <button class="ghost" id="btn-plan">Только сценарий</button>
+        <button class="link right" id="btn-adv">${form.advanced ? "Скрыть настройки ▴" : "Ещё настройки ▾"}</button>
+      </div>
+      <div class="advanced" ${form.advanced ? "" : "hidden"}>
+        <div class="cols">
+          <div class="field"><span>Формат</span>${selectHtml("format", [{value: "", label: "По пресету"}, ...state.config.formats.map(f => ({value: f, label: f}))], form.format)}</div>
+          <div class="field"><span>Качество</span>${selectHtml("quality", [{value: "", label: `По умолчанию (${state.config.quality})`}, {value: "high", label: "High", hint: "DFR 1080p, карта 96 ГБ"}, {value: "fast", label: "Fast", hint: "720p, быстрее и дешевле"}], form.quality)}</div>
+          <div class="field"><span>Язык реплик</span>${selectHtml("language", [["ru", "Русский"], ["en", "English"], ["es", "Español"], ["fr", "Français"], ["de", "Deutsch"], ["ja", "日本語"], ["it", "Italiano"]].map(([v, l]) => ({value: v, label: l})), form.language)}</div>
+          <div class="field"><span>Музыка</span>${selectHtml("music", musicOpts, form.music)}</div>
+          <div class="field"><span>Субтитры</span>${selectHtml("captions", [{value: "", label: "По пресету"}, {value: "1", label: "Включить"}, {value: "0", label: "Выключить"}], form.captions === null ? "" : form.captions ? "1" : "0")}</div>
+          <div class="field"><span>Сериал</span>${selectHtml("series", [{value: "", label: "—"}, ...state.series.map(x => ({value: x.slug, label: x.title}))], form.series)}</div>
+          <label><span>Имя файла</span><input id="f-name" placeholder="авто" value="${esc(form.name)}"></label>
+        </div>
+        <label><span>Указания планировщику</span><input id="f-notes" placeholder="например: без диалогов, финал на крупном плане, больше дождя" value="${esc(form.notes)}"></label>
       </div>
     </div>
     <div class="grid" style="align-content:start">
-      <div class="card">
-        <div class="row between"><h3 style="margin:0">Задачи</h3><a href="#" data-view-link="jobs" class="small">все →</a></div>
-        ${jobs.length ? `<div class="grid" style="margin-top:10px">${jobs.map(jobCard).join("")}</div>` : `<div class="empty" style="margin-top:10px">Сейчас ничего не выполняется</div>`}
-      </div>
-      <div class="card">
-        <div class="row" style="justify-content:space-around">
-          <div class="stat"><b>${state.plans.length}</b><span>планов</span></div>
-          <div class="stat"><b>${state.films.length}</b><span>фильмов</span></div>
-          <div class="stat"><b>${state.series.length}</b><span>сериалов</span></div>
-          <div class="stat"><b>${(state.library.music||[]).length + (state.library.sfx||[]).length}</b><span>звуков</span></div>
-        </div>
-      </div>
+      <div class="card" id="panel-jobs">${jobsPanel()}</div>
+      <div class="card" id="panel-stats">${statsPanel()}</div>
     </div>
   </div>
-  ${films.length ? `<h2>Последние фильмы</h2><div class="grid auto">${films.map(f => filmCard(f, true)).join("")}</div>` : ""}`;
+  <div id="panel-films">${recentFilms()}</div>`;
 }
 function readForm() {
-  form.request = $("#f-request").value; form.duration = $("#f-duration").value; form.format = $("#f-format").value;
-  form.quality = $("#f-quality").value; form.language = $("#f-language").value; form.name = $("#f-name").value;
-  form.series = $("#f-series").value; form.music = $("#f-music").value; form.notes = $("#f-notes").value;
-  const c = $("#f-captions").value; form.captions = c === "" ? null : c === "1";
+  const q = s => $(s);
+  if (!q("#f-request")) return;
+  form.request = q("#f-request").value;
+  const seg = segValue("duration");
+  form.duration = seg === "custom" ? (+q("#f-duration").value || form.duration) : +seg;
+  form.format = selValue("format"); form.quality = selValue("quality"); form.language = selValue("language") || "ru";
+  form.music = selValue("music") || "auto"; form.series = selValue("series");
+  const c = selValue("captions"); form.captions = c === "" ? null : c === "1";
+  form.name = q("#f-name").value; form.notes = q("#f-notes").value;
 }
 async function submitPlan(renderToo) {
   readForm();
-  if (!form.request.trim()) { toast("Опишите, что снимаем", true); return; }
+  if (!form.request.trim()) { toast("Опишите, что снимаем", true); $("#f-request").focus(); return; }
   if (renderToo && !state.config.has_runpod) { toast("RunPod не настроен — заполните film_config.json", true); return; }
   const body = Object.assign({}, form, {render: renderToo, duration: form.duration ? +form.duration : null});
   if (form.series) body.kind = "episode";
   try {
     const job = await api("/api/plan", {method: "POST", body: JSON.stringify(body)});
-    toast(renderToo ? "Запущено: план и рендер" : "Запущено планирование");
+    toast(renderToo ? "Запущено: сценарий, затем рендер" : "Пишу сценарий");
     form.request = ""; form.notes = ""; form.name = "";
-    await refresh(); openJob(job.id);
+    await refresh(true); openJob(job.id);
   } catch (e) { toast(e.message, true); }
 }
 
@@ -217,12 +290,12 @@ function viewFilms() {
 }
 function openRecut(slug) {
   openModal(`<h3>Пересобрать «${esc(slug)}»</h3><p class="muted small">Клипы уже отрендерены. Меняем только музыку, громкость и субтитры.</p>
-  <div class="form"><label><span>Музыка</span><select id="rc-music"><option value="">как в плане</option><option value="none">без музыки</option>${(state.library.music || []).map(m => `<option value="${esc(m.file)}">${esc(m.file.split("/").pop())}</option>`).join("")}</select></label>
+  <div class="form"><div class="field"><span>Музыка</span>${selectHtml("rc-music", [{value: "", label: "Как в плане"}, {value: "none", label: "Без музыки"}, ...(state.library.music || []).map(m => ({value: m.file, label: m.file.split("/").pop()}))], "")}</div>
   <label><span>Громкость музыки (0.1–0.5)</span><input id="rc-vol" type="number" step="0.05" min="0" max="1" placeholder="как в плане"></label>
-  <label class="row" style="flex-direction:row;align-items:center"><input type="checkbox" id="rc-cap" style="width:auto"> включить субтитры</label>
+  ${toggleHtml("rc-cap", false, "Субтитры")}
   <div class="row"><button class="primary" id="rc-go">Собрать</button><button class="ghost" id="rc-close">Отмена</button></div></div>`);
   $("#rc-close").onclick = closeModal;
-  $("#rc-go").onclick = async () => { try { const j = await api("/api/assemble", {method: "POST", body: JSON.stringify({film: slug, music: $("#rc-music").value, music_volume: $("#rc-vol").value, captions: $("#rc-cap").checked})}); toast("Пересборка запущена"); await refresh(); openJob(j.id); } catch (e) { toast(e.message, true); } };
+  $("#rc-go").onclick = async () => { try { const j = await api("/api/assemble", {method: "POST", body: JSON.stringify({film: slug, music: selValue("rc-music"), music_volume: $("#rc-vol").value, captions: $("#rc-cap").checked})}); toast("Пересборка запущена"); await refresh(true); openJob(j.id); } catch (e) { toast(e.message, true); } };
 }
 
 /* ---------- сериалы ---------- */
@@ -231,7 +304,7 @@ function viewSeries() {
   <div class="grid cols2">
     <div class="card form"><h3>Новый сериал</h3>
       <textarea id="s-desc" placeholder="О чём сериал, кто герои, тон, сколько серий…"></textarea>
-      <div class="cols"><label><span>Slug</span><input id="s-name" placeholder="авто"></label><label><span>Серий в сезоне</span><input id="s-eps" type="number" value="6" min="1" max="24"></label><label><span>Язык</span><select id="s-lang">${["ru","en","es","fr","de","ja"].map(l => `<option>${l}</option>`).join("")}</select></label></div>
+      <div class="cols"><label><span>Slug</span><input id="s-name" placeholder="авто"></label><label><span>Серий в сезоне</span><input id="s-eps" type="number" value="6" min="1" max="24"></label><div class="field"><span>Язык</span>${selectHtml("s-lang", [["ru", "Русский"], ["en", "English"], ["es", "Español"], ["fr", "Français"], ["de", "Deutsch"], ["ja", "日本語"]].map(([v, l]) => ({value: v, label: l})), "ru")}</div></div>
       <div class="row"><button class="primary" id="s-create">Создать библию</button></div></div>
     <div class="grid" style="align-content:start">${state.series.length ? state.series.map(s => `<div class="card" style="cursor:pointer" data-bible="${esc(s.slug)}"><div class="row between"><h3 style="margin:0">${esc(s.title)}</h3><span class="chip">${s.episodes}/${s.planned || "?"} серий</span></div><div class="small muted" style="margin-top:6px">${esc(s.premise || "")}</div><div class="row small" style="margin-top:8px"><span class="chip">${s.characters} персонажей</span><span class="mono dim">${esc(s.slug)}</span></div></div>`).join("") : `<div class="empty">Сериалов пока нет</div>`}</div>
   </div>`;
@@ -255,8 +328,8 @@ function viewAssets() {
   const list = (items, kind) => items.length ? `<table class="table"><thead><tr><th>Файл</th><th>Теги</th><th>Длина</th><th></th></tr></thead><tbody>${items.map(e => `<tr><td class="mono">${esc(e.file.split("/").pop())}</td><td class="small muted">${(e.tags || []).join(", ")}${e.mood ? ` · <i>${esc(e.mood)}</i>` : ""}</td><td>${e.seconds ? fmtDur(e.seconds) : "—"}</td><td><audio src="/files/${esc(e.file)}" controls preload="none" style="height:28px;width:220px"></audio></td></tr>`).join("")}</tbody></table>` : `<div class="empty">Пусто. Загрузите файлы или положите их в assets/${kind}/</div>`;
   return `<h1>Звук</h1><p class="sub">Музыка и эффекты, которые планировщик подбирает по тегам. Теги берутся из имён файлов, их можно править в assets/index.json.</p>
   <div class="grid cols2">
-    <div class="card"><div class="row between"><h3 style="margin:0">Музыка</h3><label class="small" style="flex-direction:row;align-items:center;gap:8px"><input type="file" id="up-music" accept="audio/*" multiple style="width:auto"></label></div>${list(lib.music || [], "music")}</div>
-    <div class="card"><div class="row between"><h3 style="margin:0">Эффекты</h3><label class="small" style="flex-direction:row;align-items:center;gap:8px"><input type="file" id="up-sfx" accept="audio/*" multiple style="width:auto"></label></div>${list(lib.sfx || [], "sfx")}</div>
+    <div class="card"><div class="row between"><h3 style="margin:0">Музыка</h3><label class="upload"><input type="file" id="up-music" accept="audio/*" multiple hidden><span>⬆ Загрузить</span></label></div>${list(lib.music || [], "music")}</div>
+    <div class="card"><div class="row between"><h3 style="margin:0">Эффекты</h3><label class="upload"><input type="file" id="up-sfx" accept="audio/*" multiple hidden><span>⬆ Загрузить</span></label></div>${list(lib.sfx || [], "sfx")}</div>
   </div><div class="row" style="margin-top:12px"><button id="reindex">Переиндексировать</button><span class="muted small">после ручного копирования файлов в папки</span></div>`;
 }
 async function upload(kind, files) {
@@ -283,12 +356,20 @@ function viewSettings() {
 
 /* ---------- общие обработчики ---------- */
 function bind(root) {
-  root.querySelectorAll("[data-kind]").forEach(el => el.onclick = () => { readForm(); form.kind = el.dataset.kind; render(); });
+  const kindSeg = root.querySelector('[data-seg="kind"]');
+  if (kindSeg) kindSeg.addEventListener("change", () => { readForm(); form.kind = kindSeg.dataset.value; form.duration = DUR_DEFAULT[form.kind]; render(); });
+  const durSeg = root.querySelector('[data-seg="duration"]');
+  if (durSeg) durSeg.addEventListener("change", () => { const v = durSeg.dataset.value; const inp = root.querySelector("#f-duration"); if (v === "custom") { inp.hidden = false; inp.focus(); } else { inp.hidden = true; inp.value = v; form.duration = +v; } $("#estimate").textContent = estimate(); });
+  const durInp = root.querySelector("#f-duration");
+  if (durInp) durInp.oninput = () => { form.duration = +durInp.value || form.duration; $("#estimate").textContent = estimate(); };
+  const qSel = root.querySelector('[data-sel="quality"]');
+  if (qSel) qSel.addEventListener("change", () => { form.quality = qSel.dataset.value; $("#estimate").textContent = estimate(); });
+  if (root.querySelector("#btn-adv")) root.querySelector("#btn-adv").onclick = () => { readForm(); form.advanced = !form.advanced; render(); };
   root.querySelectorAll("[data-job]").forEach(el => el.onclick = () => openJob(el.dataset.job));
   root.querySelectorAll("[data-open-plan]").forEach(el => el.onclick = e => { e.stopPropagation(); openPlan(el.dataset.openPlan); });
   root.querySelectorAll("[data-plan-tab]").forEach(el => el.onclick = () => openPlan(el.dataset.planName, el.dataset.planTab));
-  root.querySelectorAll("[data-render]").forEach(el => el.onclick = async e => { e.stopPropagation(); if (!confirm("Запустить рендер на RunPod? Это платно.")) return; try { const j = await api("/api/render", {method: "POST", body: JSON.stringify({plan: el.dataset.render})}); toast("Рендер запущен"); await refresh(); openJob(j.id); } catch (err) { toast(err.message, true); } });
-  root.querySelectorAll("[data-review]").forEach(el => el.onclick = async () => { try { const j = await api("/api/review", {method: "POST", body: JSON.stringify({plan: el.dataset.review})}); toast("Правка промптов запущена"); await refresh(); openJob(j.id); } catch (err) { toast(err.message, true); } });
+  root.querySelectorAll("[data-render]").forEach(el => el.onclick = async e => { e.stopPropagation(); if (!confirm("Запустить рендер на RunPod? Это платно.")) return; try { const j = await api("/api/render", {method: "POST", body: JSON.stringify({plan: el.dataset.render})}); toast("Рендер запущен"); await refresh(true); openJob(j.id); } catch (err) { toast(err.message, true); } });
+  root.querySelectorAll("[data-review]").forEach(el => el.onclick = async () => { try { const j = await api("/api/review", {method: "POST", body: JSON.stringify({plan: el.dataset.review})}); toast("Правка промптов запущена"); await refresh(true); openJob(j.id); } catch (err) { toast(err.message, true); } });
   root.querySelectorAll("[data-del-plan]").forEach(el => el.onclick = async () => { if (!confirm(`Удалить план ${el.dataset.delPlan}?`)) return; await api(`/api/plan/${el.dataset.delPlan}`, {method: "DELETE"}); closeModal(); refresh(); });
   root.querySelectorAll("[data-del-film]").forEach(el => el.onclick = async () => { if (!confirm(`Удалить фильм ${el.dataset.delFilm} с диска вместе с клипами?`)) return; await api(`/api/film/${el.dataset.delFilm}`, {method: "DELETE"}); refresh(); });
   root.querySelectorAll("[data-del-job]").forEach(el => el.onclick = async () => { await api(`/api/jobs/${el.dataset.delJob}`, {method: "DELETE"}); closeModal(); refresh(); });
@@ -298,7 +379,7 @@ function bind(root) {
   const q = s => root.querySelector(s);
   if (q("#btn-make")) q("#btn-make").onclick = () => submitPlan(true);
   if (q("#btn-plan")) q("#btn-plan").onclick = () => submitPlan(false);
-  if (q("#s-create")) q("#s-create").onclick = async () => { try { const j = await api("/api/series", {method: "POST", body: JSON.stringify({description: q("#s-desc").value, name: q("#s-name").value, episodes: q("#s-eps").value, language: q("#s-lang").value})}); toast("Создаю библию"); await refresh(); openJob(j.id); } catch (e) { toast(e.message, true); } };
+  if (q("#s-create")) q("#s-create").onclick = async () => { try { const j = await api("/api/series", {method: "POST", body: JSON.stringify({description: q("#s-desc").value, name: q("#s-name").value, episodes: q("#s-eps").value, language: selValue("s-lang")})}); toast("Создаю библию"); await refresh(true); openJob(j.id); } catch (e) { toast(e.message, true); } };
   if (q("#up-music")) q("#up-music").onchange = e => upload("music", e.target.files);
   if (q("#up-sfx")) q("#up-sfx").onchange = e => upload("sfx", e.target.files);
   if (q("#reindex")) q("#reindex").onclick = async () => { await api("/api/assets/reindex", {method: "POST"}); toast("Индекс обновлён"); refresh(); };
