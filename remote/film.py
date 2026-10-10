@@ -154,9 +154,12 @@ def render_shots(plan: Plan, proj: pathlib.Path, high: bool, w: int, h: int, log
         if loop_last and high and frames > MAX_FRAMES_HIGH_CONDITIONED:
             log(f"  сцена {s.id}: финальная сцена лупа в режиме high — максимум 5 с, обрезаю")
             frames = MAX_FRAMES_HIGH_CONDITIONED
-        key = hashlib.sha1(json.dumps([s.prompt, frames, high, w, h, plan.seed, image, s.image_strength,
-                                       prev_key if cont else "", first_key if loop_last else ""],
-                                      ensure_ascii=False).encode()).hexdigest()[:10]
+        # ключ кэша: формат для обычных сцен не меняем (иначе все клипы на томе перерендерятся);
+        # элемент для лупа добавляем только финальной сцене лупа
+        key_parts = [s.prompt, frames, high, w, h, plan.seed, image, s.image_strength, prev_key if cont else ""]
+        if loop_last:
+            key_parts.append(first_key)
+        key = hashlib.sha1(json.dumps(key_parts, ensure_ascii=False).encode()).hexdigest()[:10]
         out = clips_dir / f"shot_{s.id}_{key}.mp4"
         meta_path = out.with_suffix(".json")
         if out.exists():
