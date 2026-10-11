@@ -190,6 +190,13 @@ class JobManager:
     def active(self) -> list[Job]:
         return [j for j in self.jobs.values() if j.status == "running"]
 
+    def remove_finished(self) -> int:
+        """Удаляет все завершённые задачи (done / error / stopped) вместе с логами."""
+        ids = [j.id for j in self.jobs.values() if j.status != "running"]
+        for jid in ids:
+            self.remove(jid)
+        return len(ids)
+
     def remove(self, job_id: str) -> bool:
         with self.lock:
             j = self.jobs.pop(job_id, None)

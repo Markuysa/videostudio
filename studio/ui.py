@@ -497,6 +497,8 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError("not found", 404)
 
         if method == "DELETE":
+            if path == "/api/jobs":
+                return self._json({"removed": s.jobs.remove_finished()})
             if len(parts) == 3 and parts[:2] == ["api", "jobs"]:
                 return self._json({"ok": s.jobs.remove(parts[2])})
             if len(parts) == 3 and parts[:2] == ["api", "plan"]:
