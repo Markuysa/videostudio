@@ -12,10 +12,13 @@ export function FilmCard({ film, compact = false }: { film: Film; compact?: bool
     if (!confirm(`Delete film ${film.slug} from disk together with its clips?`)) return;
     try { await api(`/api/film/${film.slug}`, { method: "DELETE" }); toast("Film deleted"); await refresh(); } catch (e) { toast((e as Error).message, true); }
   };
+  // Медиа-бокс фиксированного размера: вертикальные и горизонтальные фильмы занимают одинаковые карточки
+  const box = compact ? "w-[220px] h-[124px]" : "w-[320px] h-[180px]";
   return (
-    <div className={`card p-4 grid gap-4 ${vertical ? "grid-cols-[180px_1fr]" : "grid-cols-[300px_1fr]"} max-sm:grid-cols-1`}>
-      <video src={`/files/${film.file}`} poster={`/api/poster/${film.slug}`} controls preload="none" playsInline
-        className={`rounded-lg w-full ${vertical ? "max-h-[320px]" : "max-h-[180px]"} object-contain`} />
+    <div className={`card p-4 grid gap-4 ${compact ? "grid-cols-[220px_1fr]" : "grid-cols-[320px_1fr]"} max-sm:grid-cols-1 ${compact ? "min-h-[156px]" : "min-h-[212px]"}`}>
+      <div className={`${box} max-sm:w-full rounded-lg overflow-hidden bg-black grid place-items-center`} title={vertical ? "vertical video" : undefined}>
+        <video src={`/files/${film.file}`} poster={`/api/poster/${film.slug}`} controls preload="none" playsInline className="w-full h-full object-contain" />
+      </div>
       <div className="min-w-0 grid gap-2.5 content-start">
         <div className="flex items-start justify-between gap-3">
           <h3 className="m-0 text-[16px] font-bold leading-tight">{film.title}</h3>

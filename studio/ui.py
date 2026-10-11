@@ -345,7 +345,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
         self.end_headers()
-        self.wfile.write(body)
+        if not getattr(self, "_head_only", False):
+            self.wfile.write(body)
 
     def _body(self) -> bytes:
         n = int(self.headers.get("Content-Length") or 0)
@@ -394,6 +395,8 @@ class Handler(BaseHTTPRequestHandler):
         if path.suffix in (".html", ".js", ".css"):
             self.send_header("Cache-Control", "no-store")
         self.end_headers()
+        if getattr(self, "_head_only", False):
+            return
         with open(path, "rb") as f:
             f.seek(start)
             left = end - start + 1
@@ -427,6 +430,16 @@ class Handler(BaseHTTPRequestHandler):
             self._json({"error": str(e)}, e.status)
         except (PlanError, OSError, ValueError) as e:
             self._json({"error": str(e)}, 400)
+
+    def do_HEAD(self):
+        """Заголовки файла без тела (некоторые плееры спрашивают размер и Accept-Ranges через HEAD)."""
+        self._head_only = True
+        try:
+            self._route("GET")
+        except ApiError as e:
+            self.send_response(e.status)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
 
     def do_PUT(self):
         self.do_POST()
