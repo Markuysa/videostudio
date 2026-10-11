@@ -31,16 +31,20 @@ export function FilmCard({ film, compact = false }: { film: Film; compact?: bool
           {film.captions && <Chip>💬 captions</Chip>}
           {film.minutes ? <Chip>{film.minutes} min GPU</Chip> : null}
         </div>
-        {film.timeline.length > 0 && (
-          <div className="flex h-6 rounded-md overflow-hidden border border-line" title="shot timeline">
-            {film.timeline.map((t) => {
-              const s = film.shots.find((x) => x.id === t.shot);
-              return <div key={t.shot} style={{ flex: Math.max(0.5, t.end - t.start) }} title={`shot ${t.shot}: ${t.start}–${t.end} s, ${s?.pipeline ?? ""} ${t.transition}`}
-                className={`grid place-items-center text-[10.5px] font-bold text-[#1a1206] border-r border-black/30 min-w-[14px] ${s?.pipeline === "distilled" ? "bg-[#d0a46c]" : "bg-accent"}`}>{t.shot}</div>;
-            })}
-            {film.shots_failed.map((id) => <div key={id} style={{ flex: 1 }} className="grid place-items-center text-[10.5px] font-bold bg-bad text-white" title={`shot ${id} failed`}>{id}</div>)}
-          </div>
-        )}
+        {film.timeline.length > 0 && (() => {
+          // подписи сцен показываем только когда для них есть место; в компактных карточках — просто полоски
+          const labels = !compact && film.timeline.length + film.shots_failed.length <= 10;
+          return (
+            <div className={`flex ${labels ? "h-6" : "h-2.5"} rounded-md overflow-hidden border border-line`} title={`shot timeline: ${film.timeline.map((t) => t.shot).join(", ")}`}>
+              {film.timeline.map((t) => {
+                const s = film.shots.find((x) => x.id === t.shot);
+                return <div key={t.shot} style={{ flex: Math.max(0.5, t.end - t.start) }} title={`shot ${t.shot}: ${t.start}–${t.end} s, ${s?.pipeline ?? ""} ${t.transition}`}
+                  className={`grid place-items-center overflow-hidden text-[10.5px] font-bold text-[#1a1206] border-r border-black/30 last:border-r-0 min-w-[4px] ${s?.pipeline === "distilled" ? "bg-[#d0a46c]" : "bg-accent"}`}>{labels ? t.shot : ""}</div>;
+              })}
+              {film.shots_failed.map((id) => <div key={id} style={{ flex: 1 }} className="grid place-items-center overflow-hidden text-[10.5px] font-bold bg-bad text-white min-w-[4px]" title={`shot ${id} failed`}>{labels ? id : ""}</div>)}
+            </div>
+          );
+        })()}
         {!compact && <div className="text-[12.5px] text-muted">{fmtSize(film.size)} · <span className="mono">{film.file}</span></div>}
         <div className="flex flex-wrap items-center gap-2 pt-1">
           <a className="inline-flex items-center gap-1.5 text-[13px] text-info hover:underline" href={`/files/${film.file}`} download><Download size={14} />download</a>
