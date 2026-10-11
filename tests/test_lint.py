@@ -43,3 +43,9 @@ def test_warns_about_long_conditioned_shot_in_high(storm_plan):
     issues = lint_plan(storm_plan, "high")
     assert any(i.code == "dfr_conditioned_length" and i.shot_id == "002" for i in issues)
     assert not any(i.code == "dfr_conditioned_length" for i in lint_plan(storm_plan, "fast"))
+
+
+def test_hissy_sound_words_are_flagged():
+    bad = GOOD.replace("torrential rain on wood", "rain hissing on the lake")
+    assert any(i.code == "hissy_sound" for i in lint_shot(Shot(id="1", seconds=8, prompt=bad), high=True))
+    assert not any(i.code == "hissy_sound" for i in lint_shot(Shot(id="1", seconds=8, prompt=GOOD), high=True))

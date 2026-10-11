@@ -61,6 +61,12 @@ Cover these elements, in roughly this order:
    You may state the language of speech ("she says in Russian: ..."). Give the model a moment of stillness before
    a line so lip-sync has something to lock onto; keep lines short (one sentence).
 
+Sound texture (LTX renders exactly the timbre you name): describe rain, wind, surf and traffic through concrete,
+low- and mid-frequency sources — "heavy drops drumming on the wooden roof", "rain splashing into the lake", "deep
+rolling thunder", "water lapping against stone", "a low gust pushing through the trees". Never call a sound
+"hiss", "hissing", "static", "white noise" or "sizzle": the model then generates a thin high-frequency hiss that
+sounds like a whine on phone speakers. Name the deepest, most physical sound first, the fine detail last.
+
 Hard rules:
 - Describe exactly what the camera sees in these seconds. One location, one continuous time span per clip,
   unless you deliberately write a native multishot clip (below).

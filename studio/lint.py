@@ -29,6 +29,7 @@ LIGHT_WORDS = re.compile(r"\b(light|lighting|lit|glow|shadow|sun|neon|lamp|lante
 PRONOUN_START = re.compile(r"^\s*(he|she|they|it|his|her|their)\b", re.I)
 CYRILLIC = re.compile(r"[А-Яа-яЁё]")
 QUOTE = re.compile(r"[\"“”«»]")
+HISSY = re.compile(r"\b(hiss(es|ing|ed)?|static|white noise|sizzl(e|es|ing)|whine|whining)\b", re.I)
 VOICE_WORDS = re.compile(r"\b(voice|says|speaks|whispers|shouts|murmurs|tone|accent|replies|asks|in (russian|english|"
                          r"french|spanish|german|japanese|italian))\b", re.I)
 
@@ -87,6 +88,9 @@ def lint_shot(shot: Shot, high: bool, known_characters: list[str] | None = None,
         add("warn", "mood_only", "абстрактное настроение без конкретного источника звука/движения")
     if QUOTE.search(p) and not VOICE_WORDS.search(p):
         add("warn", "dialogue_voice", "есть реплика, но не описан голос говорящего")
+    if HISSY.search(p):
+        add("warn", "hissy_sound", "звук описан как hiss/static/white noise — LTX сгенерирует тонкое высокочастотное "
+            "шипение; опишите источник физически (drops drumming on wood, rain splashing into the lake, rolling thunder)")
     if known_characters:
         for name in known_characters:
             if re.search(rf"\b{re.escape(name)}\b", p) and len(p) < 400 and not re.search(
