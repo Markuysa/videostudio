@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { api, LANGS, type Job } from "../api";
 import { Button, Chip, Empty, Field, Input, Select, Textarea, useToast } from "../components/ui";
+import { PageHeader } from "../components/PageHeader";
 import { useStore } from "../store";
 
 export function Series() {
-  const { state, refresh, setModal } = useStore();
+  const { state, refresh, setModal, setView, setPrefill } = useStore();
   const toast = useToast();
   const [desc, setDesc] = useState(""); const [name, setName] = useState(""); const [eps, setEps] = useState(6); const [lang, setLang] = useState("ru");
   const create = async () => {
@@ -13,8 +14,7 @@ export function Series() {
   };
   return (
     <>
-      <h1 className="text-[28px] font-extrabold tracking-tight m-0">Series</h1>
-      <p className="text-muted mt-1 mb-6">The bible defines characters, locations and style; every episode is planned against it so the characters stay consistent.</p>
+      <PageHeader title="Series" subtitle="The bible defines characters, locations and style; every episode is planned against it so the characters stay consistent." />
       <div className="grid grid-cols-2 gap-5 max-lg:grid-cols-1">
         <div className="card p-5 grid gap-3.5 content-start">
           <h3 className="m-0 text-[15px] font-bold">New series</h3>
@@ -31,7 +31,8 @@ export function Series() {
             <div key={s.slug} className="card p-5 cursor-pointer hover:border-line-2 transition" onClick={() => setModal({ type: "bible", slug: s.slug })}>
               <div className="flex items-center justify-between gap-3"><h3 className="m-0 text-[15px] font-bold">{s.title}</h3><Chip>{s.episodes}/{s.planned || "?"} episodes</Chip></div>
               <div className="text-[13px] text-muted mt-1.5">{s.premise}</div>
-              <div className="flex gap-2 mt-2.5 items-center"><Chip>{s.characters} characters</Chip><span className="mono text-dim">{s.slug}</span></div>
+              <div className="flex gap-2 mt-2.5 items-center"><Chip>{s.characters} characters</Chip><span className="mono text-dim">{s.slug}</span>
+                <Button size="sm" variant="primary" className="ml-auto" onClick={(e) => { e.stopPropagation(); setPrefill({ kind: "episode", series: s.slug }); setView("studio"); }}>New episode</Button></div>
             </div>
           )) : <Empty>No series yet</Empty>}
         </div>

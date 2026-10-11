@@ -9,7 +9,8 @@ export interface TimelineItem { shot: string; start: number; end: number; transi
 export interface Film {
   slug: string; title: string; file: string; seconds?: number | null; resolution?: string | null; quality?: string | null;
   shots_ok?: number | null; shots_failed: string[]; shots: ShotInfo[]; timeline: TimelineItem[]; music?: boolean; captions?: boolean;
-  minutes?: number | null; modified: number; size: number; has_clips: boolean; has_manifest: boolean; recuts: string[]; legacy?: boolean;
+  minutes?: number | null; loop?: boolean; loop_closed?: boolean; audio?: string | null; plan?: string | null;
+  modified: number; size: number; has_clips: boolean; has_manifest: boolean; recuts: string[]; legacy?: boolean;
 }
 export interface SeriesRow { slug: string; title: string; premise?: string; episodes: number; characters: number; planned: number }
 export interface Job {

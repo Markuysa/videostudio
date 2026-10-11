@@ -32,12 +32,13 @@ export function Sidebar() {
           {n.view === "jobs" && running > 0 && <span className="ml-auto bg-accent text-[#1a1206] text-[11px] font-extrabold rounded-full px-2 py-px">{running}</span>}
         </button>
       ))}
-      <div className="mt-auto text-[12px] text-dim px-3 leading-relaxed">
+      <div className="mt-auto text-[12px] text-dim px-3 leading-relaxed grid gap-0.5">
         {c && (<>
           <div><Dot on={c.has_runpod} bad={!c.has_runpod} />RunPod {c.has_runpod ? "configured" : "not configured"}</div>
           <div><Dot on={c.llm_effective === "anthropic"} />LLM: {c.llm_model}</div>
           <div><Dot on={c.ffmpeg} bad={!c.ffmpeg} />ffmpeg {c.ffmpeg ? "yes" : "no"}</div>
         </>)}
+        <a className="mt-2 text-dim hover:text-muted" href="https://github.com/Markuysa/videostudio" target="_blank" rel="noreferrer">github.com/Markuysa/videostudio</a>
       </div>
     </aside>
   );

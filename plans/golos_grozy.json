@@ -1,0 +1,171 @@
+{
+ "title": "Голос грозы",
+ "shots": [
+  {
+   "id": "001",
+   "seconds": 8.042,
+   "prompt": "Wide vertical shot from low at path level, static locked-off camera, deep focus. A dense forest of tall dark trunks in a violent dusk thunderstorm, silver rain and low ground fog, cold blue-grey overcast light from above, deep green-teal palette, 35mm cinema lens, fine film grain. A narrow muddy path covered in wet rust-brown leaves runs away between tall dark rain-soaked trunks, lush green ferns at its edges, low blue-white fog drifting between the roots. A strong gust sways the tall trees: the thick bases stay firmly rooted while the upper trunks lean and the high branches whip sideways, and the wet rust-brown leaves lift and tumble along the path toward the lens. Slanted silver rain streaks catch the cold blue-grey skylight from above, the ferns shudder and the fog is pushed low along the ground. The trees sway back, then lean again under the next gust. Sound: a deep low roar of wind through the canopy, long wooden creaks from straining trunks, heavy rain drumming on leaves and mud, wet leaves tumbling along the path, under it a low sustained string drone.",
+   "transition": "cut",
+   "beat": "1. 8 с, cut. Хук: широкий вертикальный кадр с уровня тропы, статичная камера. Сильный ветер гнёт высокие тёмные стволы, мокрые рыже-бурые листья кувыркаются по тропе к камере, косой серебристый дождь, низкий рёв порывов и скрип стволов.",
+   "direction": {
+    "start": "Начало фильма. Пустая тёмная лесная тропа, усыпанная мокрыми рыже-бурыми листьями. По бокам высокие тёмные мокрые стволы, у корней папоротник и низкий туман. Идёт косой серебристый дождь, ветер сильный. Камера стоит низко, на уровне тропы, и смотрит вдоль неё вглубь леса.",
+    "action": "Сильный порыв раскачивает высокие деревья: основания стволов неподвижны, верхние части стволов кренятся, а ветви в кронах хлещут вбок. Ветер гонит мокрые рыже-бурые листья кувырком по тропе к камере. Деревья откачиваются назад и снова кренятся под следующим порывом.",
+    "camera": "Широкий вертикальный кадр с уровня тропы, статичная камера на штативе, глубокий фокус, туман создаёт слоистую глубину.",
+    "end": "Камера всё так же статична на уровне тропы. Кроны и верхние части стволов снова накренены новым порывом, по тропе к объективу катятся листья, косой серебристый дождь не ослабевает, у корней стелется туман, свет холодный, сине-серый, сверху."
+   }
+  },
+  {
+   "id": "002",
+   "seconds": 8.042,
+   "prompt": "Medium-wide vertical shot at chest height inside the dense forest, smooth stabilized rig, natural depth of field. A dense forest of tall dark trunks in a violent dusk thunderstorm, silver rain and low ground fog, cold blue-grey overcast light from above, deep green-teal palette, 35mm cinema lens, fine film grain. Tall dark rain-soaked trunks stand close on both sides, their wet bark glistening, low blue-white fog drifting between the roots, wet rust-brown leaves rolling across the ground under the gusts. The camera glides slowly and steadily forward between the trunks as the branches above sway and lash in the wind. Slanted silver rain streaks catch the cold blue-grey backlight filtering down through the canopy, drawing bright lines against the near-black bark. The glide eases to a stop beside one massive trunk streaked with emerald moss, its wet bark filling the right side of the frame. Sound: a deep low roar of wind through the canopy, heavy rain drumming on bark and leaves, long wooden creaks from swaying trunks, distant thunder rolling, a low sustained string drone underneath.",
+   "transition": "cut",
+   "beat": "1. 8 с, cut. Камера плавно скользит вперёд между тёмными мокрыми стволами. Кора блестит, ветви раскачиваются, туман у корней, струи дождя светятся в холодном контровом свете, ветер ревёт в кронах.",
+   "direction": {
+    "start": "Та же гроза в той же точке леса сразу после первого кадра. Высокие тёмные мокрые стволы гнутся под порывами, по земле катятся мокрые рыже-бурые листья, косой серебристый дождь не ослабевает, у корней стелется низкий туман, свет холодный, сине-серый, сверху. Камера теперь стоит на уровне груди между стволами, чуть в стороне от тропы.",
+    "action": "Камера медленно и плавно скользит вперёд между тёмными стволами с блестящей мокрой корой. Ветви над ней раскачиваются и хлещут на ветру, струи дождя вспыхивают серебром в контровом свете.",
+    "camera": "Средне-общий вертикальный кадр на уровне груди, стабилизированная камера, одно плавное движение вперёд, которое замедляется и останавливается у массивного ствола.",
+    "end": "Камера остановилась вплотную к массивному тёмному стволу с полосами мха: он занимает правую часть кадра. Дождь льёт косо, ветви наверху раскачиваются, туман у корней, свет холодный, сине-серый, сверху."
+   }
+  },
+  {
+   "id": "003",
+   "seconds": 5.042,
+   "prompt": "Continuing from the same frame, the massive dark trunk streaked with emerald moss fills the right side of the vertical frame as slanted silver rain falls past it in the cold blue-grey light. A dense forest of tall dark trunks in a violent dusk thunderstorm, silver rain and low ground fog, cold blue-grey overcast light from above, deep green-teal palette, 35mm cinema lens, fine film grain. The camera cranes slowly upward along the wet glistening bark toward the swaying crowns tossing against a leaden blue storm sky. As the treetops enter the frame, a single white-blue lightning flash briefly overexposes the sky and rims the lashing treetops in silver, then the cold blue-grey light returns. The final frame looks straight up into the dark swaying crowns with rain streaming down through them. Sound: the deep roar of wind in the canopy, heavy rain drumming on leaves, then a heavy thunderclap booming from far beyond the forest and rolling away in a long deep rumble over the low string drone.",
+   "transition": "continue",
+   "transition_seconds": 0.5,
+   "beat": "2. 5 с, continue. Продолжение того же дубля: камера медленно поднимается вдоль ствола к раскачивающимся кронам. Бело-голубая вспышка молнии на миг выбеливает грозовое небо и обрисовывает верхушки, следом резкий близкий раскат грома.",
+   "direction": {
+    "start": "Камера остановилась вплотную к массивному тёмному стволу с полосами мха: он занимает правую часть кадра. Дождь льёт косо, ветви наверху раскачиваются, туман у корней, свет холодный, сине-серый, сверху.",
+    "action": "Камера медленно поднимается вдоль мокрого ствола к раскачивающимся кронам. Когда в кадр входят верхушки, одна бело-голубая вспышка молнии на миг выбеливает небо и обрисовывает кроны, затем свет возвращается к холодному сине-серому; следом издалека докатывается тяжёлый раскат грома.",
+    "camera": "Тот же дубль: плавный подъём камеры вертикально вдоль ствола, кадр заканчивается ракурсом снизу вверх на кроны на фоне неба.",
+    "end": "Камера смотрит снизу вверх на раскачивающиеся тёмные кроны на фоне свинцово-синего грозового неба. Вспышка погасла, свет снова холодный, сине-серый, серебристый дождь падает сквозь кроны, далёкий раскат грома затихает в глухом перекате."
+   }
+  },
+  {
+   "id": "004",
+   "seconds": 8.042,
+   "prompt": "Close-up vertical shot near the forest floor, static camera, shallow depth of field. A dense forest of tall dark trunks in a violent dusk thunderstorm, silver rain and low ground fog, cold blue-grey overcast light from above, deep green-teal palette, 35mm cinema lens, fine film grain. A dense clump of lush green fern fronds fills the frame, with dark wet trunks and low blue-white fog drifting softly out of focus behind them. Heavy silver raindrops strike the fronds, which dip and spring back under each hit while the gusts sway them gently side to side. Water gathers along the central veins, runs down to the tips and falls away in thin glistening strings. Cold blue-grey skylight from above makes every wet leaflet shine, deep green against teal shadow, as slanted rain streaks glint silver in the blurred background. Sound: heavy drops drumming on the fern leaves, water pattering onto wet soil, a low gust moving through the undergrowth, deep distant thunder rolling low and long, a low sustained string drone underneath.",
+   "transition": "cut",
+   "beat": "1. 8 с, cut. Крупный план, статичная камера: серебристые капли барабанят по густым зелёным листьям папоротника, листья пружинят и качаются, вода стекает по прожилкам, вдали низко перекатывается гром.",
+   "direction": {
+    "start": "Тот же лес и та же гроза сразу после вспышки: молния погасла, свет снова холодный, сине-серый, сверху; кроны раскачиваются, серебристый дождь льёт сквозь них, раскат грома затихает в глухом перекате. Монтажная склейка вниз, к подлеску: камера теперь стоит неподвижно у самой земли перед густым кустом папоротника, за ним размытые тёмные мокрые стволы и низкий туман.",
+    "action": "Тяжёлые серебристые капли бьют по листьям папоротника. Листья пружинят под ударами и качаются на ветру, вода собирается вдоль центральных прожилок и стекает к кончикам.",
+    "camera": "Крупный план, вертикальный кадр у земли, статичная камера, малая глубина резкости: папоротник резкий, стволы и туман на фоне мягко размыты.",
+    "end": "Камера всё так же неподвижна у земли. Листья папоротника продолжают пружинить под каплями и качаться на ветру, с их кончиков срываются струйки воды. За ними в размытом фоне стелется туман между тёмными стволами, дождь не ослабевает, свет холодный, сине-серый, сверху."
+   }
+  },
+  {
+   "id": "005",
+   "seconds": 8.042,
+   "prompt": "Macro vertical shot, static camera, very shallow depth of field. A dense forest of tall dark trunks in a violent dusk thunderstorm, silver rain and low ground fog, cold blue-grey overcast light from above, deep green-teal palette, 35mm cinema lens, fine film grain. A low branch wrapped in thick emerald moss crosses the frame, with dark wet trunks and drifting blue-white fog melted into a soft teal blur behind it. Rainwater soaks through the moss and gathers on the underside of the branch into heavy clear drops that swell slowly, tremble and fall one after another, while new drops bead in their place. A gust rocks the branch gently up and down, shaking loose a quick cluster of drops, then it settles again. Cold blue-grey light from above glints silver inside each hanging drop, deep green moss against teal shadow. Sound: the low muffled roar of wind through the canopy, rapid dripping of heavy drops onto leaves below, rain pattering softly on the moss, a deep sustained string drone underneath.",
+   "transition": "cut",
+   "beat": "2. 8 с, cut. Макро, статичная камера: мшистая ветвь в изумрудном мху, вода собирается в тяжёлые капли, они набухают и срываются; ветка покачивается на ветру, частая капель, глухой рокот ветра.",
+   "direction": {
+    "start": "Та же гроза, тот же участок леса. Листья папоротника пружинят под каплями и качаются на ветру, дождь не ослабевает, туман стелется между тёмными стволами, свет холодный, сине-серый, сверху. Монтажная склейка: камера неподвижна в упор у низкой ветви, покрытой толстым изумрудным мхом.",
+    "action": "Дождевая вода пропитывает мох и собирается на нижней стороне ветви в тяжёлые прозрачные капли. Они медленно набухают, дрожат и срываются одна за другой; порыв ветра покачивает ветку и стряхивает сразу несколько капель.",
+    "camera": "Макро, вертикальный кадр, статичная камера, очень малая глубина резкости: мох и капли резкие, фон растворён в мягком сине-зелёном размытии.",
+    "end": "Камера всё так же неподвижна у мшистой ветви. Ветка снова успокаивается после порыва, на её нижней стороне набухают новые тяжёлые капли, дождь продолжает идти, на фоне размыты тёмные стволы и туман, свет холодный, сине-серый, сверху."
+   }
+  },
+  {
+   "id": "006",
+   "seconds": 8.042,
+   "prompt": "Low wide vertical shot from just above the forest floor, static camera, deep focus. A dense forest of tall dark trunks in a violent dusk thunderstorm, silver rain and low ground fog, cold blue-grey overcast light from above, deep green-teal palette, 35mm cinema lens, fine film grain. Wet gnarled roots furred with green moss and the bases of tall dark trunks stand in the foreground and midground, receding into layers of low blue-white fog that curls slowly between them. Silver rain falls in a steady even wall, glinting in cold blue-grey light from above, and high overhead the treetops sway in a slow regular rhythm against the leaden sky. The fog rolls toward the lens and thins, then thickens again as the frame holds, teal shadows and near-black bark around it. Sound: a long deep roll of distant thunder rumbles across the forest and slowly fades into the steady roar of the downpour, heavy drops drumming on leaves and splashing into puddles between the roots, a deep sustained string drone settling underneath.",
+   "transition": "cut",
+   "beat": "1. 8 с, cut. Финал: низкий широкий кадр у самой земли, статичная камера. Белёсо-синий туман клубится между корнями и тёмными стволами, дождь льёт ровной серебристой стеной, кроны мерно раскачиваются; долгий глубокий раскат грома вдали затихает в шум ливня.",
+   "direction": {
+    "start": "Та же гроза, тот же участок леса. Мшистая ветвь успокаивается после порыва, на ней набухают новые тяжёлые капли, дождь не ослабевает, в фоне тёмные стволы и туман, свет холодный, сине-серый, сверху. Монтажная склейка на общий план: камера неподвижно стоит у самой земли среди мокрых корней, перед ней основания высоких тёмных стволов уходят вглубь, в слои низкого тумана.",
+    "action": "Белёсо-синий туман медленно клубится между корнями и стволами, накатывает к объективу и снова редеет. Дождь льёт ровной серебристой стеной, высоко вверху кроны мерно раскачиваются. Вдали долго перекатывается глубокий гром и затихает в ровном шуме ливня.",
+    "camera": "Низкий широкий вертикальный кадр у самой земли, статичная камера, большая глубина резкости: корни на переднем плане, стволы на среднем, туман и кроны в глубине.",
+    "end": "Камера всё так же неподвижна у земли. Туман продолжает стелиться и клубиться между корнями и тёмными стволами, серебристый дождь льёт ровной стеной, кроны мерно качаются, гром затих, остаётся ровный шум ливня, свет холодный, сине-серый, сверху. Финальный кадр фильма."
+   }
+  }
+ ],
+ "slug": "golos_grozy",
+ "kind": "aesthetic",
+ "format": "9:16",
+ "quality": "high",
+ "seed": 15274,
+ "language": "ru",
+ "logline": "Сильная гроза проходит через густой лес: ветер раскачивает высокие деревья, вспышка молнии на миг освещает кроны, а дождь, мох и туман показывают величие бури вблизи.",
+ "synopsis": "Широкий вертикальный кадр открывает тёмную лесную тропу. Сильный ветер гнёт высокие стволы и гонит по тропе мокрые листья. Камера медленно скользит между тёмными стволами, затем поднимается к раскачивающимся кронам, и в этот момент вспышка молнии на мгновение заливает грозовое небо холодным светом. Вблизи серебристые струи дождя бьют по листьям папоротника, а тяжёлые капли собираются на мшистых ветвях и срываются вниз. В финале низкий туман клубится у подножия стволов, а вдали долго перекатывается гром.",
+ "style": {
+  "anchor": "A dense forest of tall dark trunks in a violent dusk thunderstorm, silver rain and low ground fog, cold blue-grey overcast light from above, deep green-teal palette, 35mm cinema lens, fine film grain.",
+  "visual": "Majestic, tactile storm-forest realism in vertical frame, like a single nature photographer's series shot in one stormy dusk: wet bark, glistening ferns, silver rain streaks, layered fog depth.",
+  "palette": "Deep forest green for foliage and moss; teal-blue for shadows, fog and sky; near-black for wet trunks; silver-white for rain streaks and the single lightning flash; muted rust-brown only on the wet leaves on the path.",
+  "lens": "35mm cinema lens feel, natural depth of field with fog creating layered depth (deeper focus in wide shots, shallow focus only in the fern and moss close-ups), fine film grain, slight wet sheen on all surfaces.",
+  "lighting": "Dusk thunderstorm: soft cold blue-grey skylight filtering down through the canopy as the only constant source, with no warm light anywhere; rain streaks catch this backlight as silver lines; one brief white-blue lightning flash in shot 3 momentarily overexposes the sky and rims the treetops.",
+  "camera": "Slow, smooth, weighted moves on a stabilized rig or a locked-off tripod: a gentle glide forward between trunks, one slow crane-up to the canopy, otherwise static or near-static frames that let wind and rain do the moving.",
+  "sound": "Deep, physical storm bed: low gusts roaring through the canopy, creaking trunks, heavy drops drumming on leaves and ferns, water dripping from moss, wet leaves tumbling along the path, deep distant thunder rolling; one close sharp thunderclap after the lightning; under it, low sustained strings and a deep drone.",
+  "pace": "Slow and music-led: long takes of 5-8 s, one seamless continue to join the glide with the crane-up, hard cuts between scales motivated by the wind and the rain, a long held final frame on the fog and the thunder."
+ },
+ "characters": [],
+ "locations": [
+  {
+   "name": "Грозовой лес",
+   "descriptor": "a dense old forest of tall dark rain-soaked trunks with a narrow muddy path covered in wet rust-brown leaves, lush green ferns and thick emerald moss on low branches, low blue-white fog drifting between the roots"
+  }
+ ],
+ "music": {
+  "file": null,
+  "volume": 0.2,
+  "duck": false,
+  "fade_in": 1.0,
+  "fade_out": 2.5,
+  "mood": "Majestic and tense: low sustained cellos and basses over a deep slow drone, swelling gently at the lightning and the crane-up, then receding into a long dark resonance under the final thunder; no percussion, so the storm keeps the rhythm."
+ },
+ "captions": {
+  "enabled": false,
+  "position": "bottom",
+  "font_size": 0
+ },
+ "fade_in": 0.5,
+ "fade_out": 1.5,
+ "request": "Широкий кинематографичный кадр погружает в густой лес, где сильный ветер раскачивает высокие деревья и гонит по тропе мокрые листья. Камера плавно скользит между темными стволами, затем поднимается к кронам, когда вспышка молнии на миг озаряет грозовое небо. Дождь серебристыми струями сверкает в холодном свете, капли стучат по папоротникам и собираются на мшистых ветвях. Вдали гремит гром, туман клубится у земли, а глубокая зелено-синяя цветовая палитра создает величественное, напряженное и завораживающе красивое настроение.",
+ "version": 2,
+ "creative_brief": {
+  "must_keep": [
+   "Широкий кинематографичный кадр густого леса",
+   "Сильный ветер раскачивает высокие деревья и гонит по тропе мокрые листья",
+   "Камера плавно скользит между тёмными стволами",
+   "Затем камера поднимается к кронам, и вспышка молнии на миг озаряет грозовое небо",
+   "Серебристые струи дождя сверкают в холодном свете",
+   "Капли стучат по папоротникам и собираются на мшистых ветвях",
+   "Вдали гремит гром",
+   "Туман клубится у земли",
+   "Глубокая зелёно-синяя палитра",
+   "Величественное, напряжённое, завораживающе красивое настроение",
+   "Вертикальный формат 9:16, общая длительность 45 секунд"
+  ],
+  "avoid": [
+   "Текст, надписи и титры в кадре"
+  ],
+  "assumptions": [
+   "Людей и животных в кадре нет: продюсер описывает только природу",
+   "Диалогов и закадрового голоса нет",
+   "Время действия: сумеречная гроза, рассеянный холодный сине-серый свет сверху; молния служит единственным ярким импульсным источником",
+   "Лес смешанный: высокие тёмные стволы, папоротник в подлеске, мох на нижних ветвях, сырая тропа с опавшей листвой",
+   "Молния звучит в одном кадре (подъём к кронам); в остальных кадрах гром слышен только вдали, без новых вспышек",
+   "Музыка не из библиотеки: низкие тянущиеся струнные и глубокий дрон",
+   "Скольжение и подъём камеры решены как один дубль: 8 с + 5 с (continue)"
+  ],
+  "visual_anchors": [
+   "Тёмная мокрая лесная тропа, усыпанная мокрыми рыже-бурыми листьями, по бокам высокие тёмные стволы с блестящей от дождя корой",
+   "Высокие кроны, раскачивающиеся на фоне свинцово-синего грозового неба",
+   "Густые ярко-зелёные листья папоротника, по которым барабанят капли",
+   "Мшистая ветвь с толстым изумрудным мхом, на которой набухают и срываются капли",
+   "Низкий белёсо-синий туман, стелющийся между корнями и стволами",
+   "Серебристые косые струи дождя, подсвеченные холодным светом",
+   "Одна бело-голубая вспышка молнии, на миг выбеливающая небо и кроны"
+  ],
+  "loop_anchor": null,
+  "project_notes": ""
+ },
+ "review_notes": [
+  "001: формулировка «порыв гнёт высокие стволы вбок» заменена на раскачивание крон и верхних частей стволов при неподвижных основаниях. Модель склонна изгибать стволы как резиновые, а запрос говорит именно о раскачивании деревьев.",
+  "003: в запросе гром гремит «вдали». Резкий близкий треск грома прямо над головой был добавлен от себя и к тому же провоцирует тонкий высокочастотный звук, поэтому заменён на тяжёлый раскат издалека. В beat шота 003 и в style.sound всё ещё указан «близкий резкий раскат»; при следующем редактировании библии стиля их стоит выровнять с запросом.",
+  "003: длительность 5.042 с формально превышает лимит в 5 с для continue-шотов в этом режиме качества. Вероятно, это квантование до 121 кадра; если декодер ключевых кадров строг к лимиту, нужно 4.958 с (119 кадров). Тайминг я не менял.",
+  "В must_keep указаны вертикальный формат 9:16 и общая длительность 45 с, хотя в тексте запроса их нет. Похоже, это параметры проекта, и сумма шотов (8+8+5+8+8+8 = 45 с) им соответствует. Стоит учесть, что «широкий кинематографичный кадр» из запроса в вертикали передаётся только крупностью и глубиной, а не шириной кадра.",
+  "Остальные шоты (002, 004, 005, 006) соответствуют запросу: в них есть скольжение между стволами, капли на папоротнике, капли на мшистой ветви, туман у земли и далёкий гром. Состояние между склейками согласовано, свет единый (холодный сине-серый сверху), а молния, как и задумано, есть только в 003. Правки в этих шотах не нужны."
+ ]
+}

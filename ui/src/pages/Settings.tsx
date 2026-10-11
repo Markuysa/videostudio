@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 import { Button, Chip, KV, Textarea, useToast } from "../components/ui";
+import { PageHeader } from "../components/PageHeader";
 import { useStore } from "../store";
 
 export function SettingsPage() {
@@ -12,8 +13,7 @@ export function SettingsPage() {
   useEffect(() => setPrefs(state!.prefs), [state]);
   return (
     <>
-      <h1 className="text-[28px] font-extrabold tracking-tight m-0">Settings</h1>
-      <p className="text-muted mt-1 mb-6">Keys and parameters live in <span className="mono">{c.config_path}</span>. Here: environment check and standing planner preferences.</p>
+      <PageHeader title="Settings" subtitle={<>Keys and parameters live in <span className="mono">{c.config_path}</span>. Here: environment check and standing planner preferences.</>} />
       <div className="grid grid-cols-2 gap-5 max-lg:grid-cols-1">
         <div className="card p-5">
           <h3 className="m-0 mb-3 text-[15px] font-bold">Environment</h3>

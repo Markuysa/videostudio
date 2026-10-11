@@ -13,6 +13,7 @@ import { PlanModal } from "./modals/PlanModal";
 import { RecutModal } from "./modals/RecutModal";
 import { BibleModal } from "./modals/BibleModal";
 import { PlayerModal } from "./modals/PlayerModal";
+import { FilmModal } from "./modals/FilmModal";
 
 function Shell() {
   const { state, view, modal } = useStore();
@@ -28,6 +29,7 @@ function Shell() {
       {modal?.type === "recut" && <RecutModal slug={modal.slug} />}
       {modal?.type === "bible" && <BibleModal slug={modal.slug} />}
       {modal?.type === "player" && <PlayerModal file={modal.file} title={modal.title} slug={modal.slug} />}
+      {modal?.type === "film" && <FilmModal slug={modal.slug} />}
     </div>
   );
 }

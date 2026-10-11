@@ -5,7 +5,7 @@ import { Button, Chip, Input, KV, Modal, useToast } from "../components/ui";
 import { useStore } from "../store";
 
 export function BibleModal({ slug }: { slug: string }) {
-  const { setModal, setView } = useStore();
+  const { setModal, setView, setPrefill } = useStore();
   const toast = useToast();
   const [b, setB] = useState<Bible | null>(null);
   const [note, setNote] = useState("");
@@ -14,7 +14,7 @@ export function BibleModal({ slug }: { slug: string }) {
   const add = async () => { if (!note.trim()) return; await api("/api/series/note", { method: "POST", body: JSON.stringify({ name: slug, text: note }) }); setNote(""); toast("Note added"); await load(); };
   return (
     <Modal open onClose={() => setModal(null)} wide title={b?.title ?? slug} subtitle={<span className="mono">{slug}</span>}
-      actions={<Button size="sm" variant="primary" icon={<FileText size={14} />} onClick={() => { setModal(null); setView("studio"); toast(`Choose “${b?.title ?? slug}” in More settings → Series and describe the episode`); }}>New episode</Button>}>
+      actions={<Button size="sm" variant="primary" icon={<FileText size={14} />} onClick={() => { setModal(null); setPrefill({ kind: "episode", series: slug }); setView("studio"); }}>New episode</Button>}>
       {!b ? <div className="text-dim">Loading…</div> : (<>
         <KV rows={[["Premise", b.premise ?? "—"], ["Tone", `${b.tone ?? ""} · ${b.genre ?? ""}`],
           ["Style", <span className="text-[13px]">{Object.entries(b.style ?? {}).map(([k, v]) => <span key={k} className="mr-2"><b>{k}</b>: {v}</span>)}</span>],

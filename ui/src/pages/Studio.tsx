@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Clapperboard, FileText } from "lucide-react";
 import { api, KINDS, LANGS, type Job } from "../api";
 import { Button, Empty, Field, Input, Segmented, Select, Stat, Textarea, Toggle, useToast } from "../components/ui";
 import { JobCard } from "../components/JobCard";
 import { FilmCard } from "../components/FilmCard";
+import { PageHeader } from "../components/PageHeader";
 import { useStore } from "../store";
 
 interface Form {
@@ -13,10 +14,17 @@ interface Form {
 const initial: Form = { request: "", kind: "short", duration: 45, custom: false, format: "", quality: "", language: "ru", music: "auto", captions: "", series: "", name: "", notes: "", loop: false, audio: "raw" };
 
 export function Studio() {
-  const { state, refresh, setModal, setView } = useStore();
+  const { state, refresh, setModal, setView, prefill, setPrefill } = useStore();
   const toast = useToast();
   const [f, setF] = useState<Form>(initial);
   const [adv, setAdv] = useState(false);
+  useEffect(() => {
+    if (!prefill) return;
+    setF((p) => ({ ...p, ...(prefill.kind ? { kind: prefill.kind, duration: KINDS[prefill.kind]?.def ?? p.duration, custom: false } : {}),
+      ...(prefill.series ? { series: prefill.series } : {}), ...(prefill.request ? { request: prefill.request } : {}) }));
+    if (prefill.series) setAdv(true);
+    setPrefill(null);
+  }, [prefill, setPrefill]);
   const [busy, setBusy] = useState(false);
   const s = state!;
   const kind = KINDS[f.kind] ?? KINDS.film;
@@ -50,8 +58,7 @@ export function Studio() {
 
   return (
     <>
-      <h1 className="text-[28px] font-extrabold tracking-tight m-0">What are we shooting?</h1>
-      <p className="text-muted mt-1 mb-6">Describe the idea in your own words. The studio does the rest: script, prompts, rendering, editing.</p>
+      <PageHeader title="What are we shooting?" subtitle="Describe the idea in your own words. The studio does the rest: script, prompts, rendering, editing." />
       <div className="grid grid-cols-[1.45fr_1fr] gap-5 max-lg:grid-cols-1">
         <div className="card p-6 grid gap-4">
           <Textarea value={f.request} onChange={(e) => set("request", e.target.value)} rows={4} className="text-[16.5px] min-h-[130px] p-4"
@@ -101,7 +108,7 @@ export function Studio() {
       </div>
       {s.films.length > 0 && (<>
         <h2 className="text-[17px] font-bold mt-8 mb-3">Recent films</h2>
-        <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(420px,1fr))] max-sm:grid-cols-1">{s.films.slice(0, 2).map((f) => <FilmCard key={f.slug} film={f} compact />)}</div>
+        <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(420px,1fr))] max-sm:grid-cols-1">{s.films.slice(0, 2).map((f) => <FilmCard key={f.slug} film={f} />)}</div>
       </>)}
     </>
   );

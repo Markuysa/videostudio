@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Clapperboard, FileText, Film, Play, Repeat, Search, Sparkles, Trash2, Tv, Volume2, type LucideIcon } from "lucide-react";
 import { api, fmtAgo, fmtDur, KINDS, type Job, type PlanRow } from "../api";
 import { Button, Chip, Empty, Input, Segmented, useToast } from "../components/ui";
+import { PageHeader } from "../components/PageHeader";
 import { useStore } from "../store";
 
 const KIND_ICON: Record<string, LucideIcon> = { short: FileText, aesthetic: FileText, film: Clapperboard, episode: Tv, motion: FileText };
@@ -36,13 +37,8 @@ export function Plans() {
 
   return (
     <>
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-[28px] font-extrabold tracking-tight m-0">Plans</h1>
-          <p className="text-muted mt-1 mb-5">A plan is the script, the style bible and the shot prompts. Check it, fix it, then render.</p>
-        </div>
-        <Button variant="primary" size="sm" icon={<FileText size={14} />} onClick={() => setView("studio")}>New script</Button>
-      </div>
+      <PageHeader title="Plans" subtitle="A plan is the script, the style bible and the shot prompts. Check it, fix it, then render."
+        actions={<Button variant="primary" size="sm" icon={<FileText size={14} />} onClick={() => setView("studio")}>New script</Button>} />
       <div className="flex flex-wrap items-center gap-3 mb-5">
         <div className="relative w-[320px] max-w-full">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-dim" />

@@ -3,6 +3,7 @@ import { Calculator, Clapperboard, FileText, Film, ListX, Music2, ScrollText, Sp
 import { api, elapsed, fmtAgo, type Job } from "../api";
 import { Button, Chip, Empty, Progress, Segmented, Stat, useToast } from "../components/ui";
 import { jobPct, STATUS } from "../components/JobCard";
+import { PageHeader } from "../components/PageHeader";
 import { useStore } from "../store";
 
 const KIND: Record<string, { label: string; icon: LucideIcon }> = {
@@ -54,13 +55,8 @@ export function Jobs() {
 
   return (
     <>
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-[28px] font-extrabold tracking-tight m-0">Jobs</h1>
-          <p className="text-muted mt-1 mb-5">Scripts, renders and re-assemblies run as separate processes. Closing this page or the server does not stop them.</p>
-        </div>
-        <Button variant="ghost" size="sm" icon={<ListX size={14} />} onClick={clear} disabled={counts.done + counts.error === 0}>Clear finished</Button>
-      </div>
+      <PageHeader title="Jobs" subtitle="Scripts, renders and re-assemblies run as separate processes. Closing this page or the server does not stop them."
+        actions={<Button variant="ghost" size="sm" icon={<ListX size={14} />} onClick={clear} disabled={counts.done + counts.error === 0}>Clear finished</Button>} />
       <div className="card p-5 mb-5 flex flex-wrap items-center gap-8">
         <Stat value={<span className={counts.running ? "text-accent" : ""}>{counts.running}</span>} label="running" />
         <Stat value={counts.done} label="done" />

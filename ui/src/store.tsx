@@ -3,12 +3,14 @@ import { api, type State } from "./api";
 import { useToast } from "./components/ui";
 
 export type View = "studio" | "jobs" | "plans" | "films" | "series" | "sound" | "settings";
-export type ModalState = { type: "job"; id: string } | { type: "plan"; name: string; tab?: "shots" | "issues" | "json" } | { type: "recut"; slug: string } | { type: "bible"; slug: string } | { type: "player"; file: string; title: string; slug: string } | null;
+export type ModalState = { type: "job"; id: string } | { type: "plan"; name: string; tab?: "shots" | "issues" | "json" } | { type: "recut"; slug: string } | { type: "bible"; slug: string } | { type: "player"; file: string; title: string; slug: string } | { type: "film"; slug: string } | null;
 
+export interface Prefill { kind?: string; series?: string; request?: string }
 interface Store {
   state: State | null; refresh: () => Promise<void>;
   view: View; setView: (v: View) => void;
   modal: ModalState; setModal: (m: ModalState) => void;
+  prefill: Prefill | null; setPrefill: (p: Prefill | null) => void;
 }
 const Ctx = createContext<Store>(null!);
 export const useStore = () => useContext(Ctx);
@@ -17,6 +19,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<State | null>(null);
   const [view, setView] = useState<View>("studio");
   const [modal, setModal] = useState<ModalState>(null);
+  const [prefill, setPrefill] = useState<Prefill | null>(null);
   const toast = useToast();
   const timer = useRef<number | undefined>(undefined);
   const failed = useRef(false);
@@ -40,5 +43,5 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => window.clearTimeout(timer.current);
   }, [state, refresh]);
 
-  return <Ctx.Provider value={{ state, refresh, view, setView, modal, setModal }}>{children}</Ctx.Provider>;
+  return <Ctx.Provider value={{ state, refresh, view, setView, modal, setModal, prefill, setPrefill }}>{children}</Ctx.Provider>;
 }

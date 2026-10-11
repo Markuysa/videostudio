@@ -97,6 +97,8 @@ class Studio:
                             "shots_ok": rep.get("shots_ok"), "shots_failed": rep.get("shots_failed") or [],
                             "shots": rep.get("shots") or [], "timeline": rep.get("timeline") or [],
                             "music": rep.get("music"), "captions": rep.get("captions"), "minutes": rep.get("minutes"),
+                            "loop": rep.get("loop"), "loop_closed": rep.get("loop_closed"), "audio": rep.get("audio"),
+                            "plan": (_read_json(d / "manifest.json") or {}).get("plan", {}).get("slug") if (d / "manifest.json").exists() else None,
                             "modified": (d / "film.mp4").stat().st_mtime, "size": (d / "film.mp4").stat().st_size,
                             "has_clips": (d / "clips").is_dir(), "has_manifest": (d / "manifest.json").exists(),
                             "recuts": [f"films/{d.name}/{r}" for r in recuts]})
