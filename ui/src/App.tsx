@@ -12,6 +12,7 @@ import { JobModal } from "./modals/JobModal";
 import { PlanModal } from "./modals/PlanModal";
 import { RecutModal } from "./modals/RecutModal";
 import { BibleModal } from "./modals/BibleModal";
+import { PlayerModal } from "./modals/PlayerModal";
 
 function Shell() {
   const { state, view, modal } = useStore();
@@ -26,6 +27,7 @@ function Shell() {
       {modal?.type === "plan" && <PlanModal name={modal.name} initialTab={modal.tab} />}
       {modal?.type === "recut" && <RecutModal slug={modal.slug} />}
       {modal?.type === "bible" && <BibleModal slug={modal.slug} />}
+      {modal?.type === "player" && <PlayerModal file={modal.file} title={modal.title} slug={modal.slug} />}
     </div>
   );
 }

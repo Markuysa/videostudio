@@ -3,7 +3,7 @@ import { api, type State } from "./api";
 import { useToast } from "./components/ui";
 
 export type View = "studio" | "jobs" | "plans" | "films" | "series" | "sound" | "settings";
-export type ModalState = { type: "job"; id: string } | { type: "plan"; name: string; tab?: "shots" | "issues" | "json" } | { type: "recut"; slug: string } | { type: "bible"; slug: string } | null;
+export type ModalState = { type: "job"; id: string } | { type: "plan"; name: string; tab?: "shots" | "issues" | "json" } | { type: "recut"; slug: string } | { type: "bible"; slug: string } | { type: "player"; file: string; title: string; slug: string } | null;
 
 interface Store {
   state: State | null; refresh: () => Promise<void>;

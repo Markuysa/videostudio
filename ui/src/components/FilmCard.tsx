@@ -1,4 +1,4 @@
-import { Download, Music2, Trash2 } from "lucide-react";
+import { Download, Music2, Play, Trash2 } from "lucide-react";
 import { api, fmtAgo, fmtDur, fmtSize, type Film } from "../api";
 import { Button, Chip, useToast } from "./ui";
 import { useStore } from "../store";
@@ -6,7 +6,6 @@ import { useStore } from "../store";
 export function FilmCard({ film, compact = false }: { film: Film; compact?: boolean }) {
   const { refresh, setModal } = useStore();
   const toast = useToast();
-  const vertical = film.resolution ? (() => { const [w, h] = film.resolution.split("x").map(Number); return h > w; })() : false;
   const distilled = film.shots.filter((s) => s.pipeline === "distilled").length;
   const del = async () => {
     if (!confirm(`Delete film ${film.slug} from disk together with its clips?`)) return;
@@ -16,9 +15,17 @@ export function FilmCard({ film, compact = false }: { film: Film; compact?: bool
   const box = compact ? "w-[220px] h-[124px]" : "w-[320px] h-[180px]";
   return (
     <div className={`card p-4 grid gap-4 ${compact ? "grid-cols-[220px_1fr]" : "grid-cols-[320px_1fr]"} max-sm:grid-cols-1 ${compact ? "min-h-[156px]" : "min-h-[212px]"}`}>
-      <div className={`${box} max-sm:w-full rounded-lg overflow-hidden bg-black grid place-items-center`} title={vertical ? "vertical video" : undefined}>
-        <video src={`/files/${film.file}`} poster={`/api/poster/${film.slug}`} controls preload="none" playsInline className="w-full h-full object-contain" />
-      </div>
+      <button type="button" onClick={() => setModal({ type: "player", file: film.file, title: film.title, slug: film.slug })}
+        className={`${box} max-sm:w-full relative rounded-lg overflow-hidden bg-black grid place-items-center cursor-pointer group border-0 p-0`}
+        title={`Play ${film.title}`} aria-label={`Play ${film.title}`}>
+        <img src={`/api/poster/${film.slug}`} alt="" className="w-full h-full object-contain opacity-90 group-hover:opacity-100 transition" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = "none"; }} />
+        <span className="absolute inset-0 grid place-items-center">
+          <span className="w-12 h-12 rounded-full bg-black/55 border border-white/30 backdrop-blur grid place-items-center text-white group-hover:scale-110 group-hover:bg-accent group-hover:text-[#1a1206] transition">
+            <Play size={20} className="ml-0.5" fill="currentColor" />
+          </span>
+        </span>
+        {film.seconds != null && <span className="absolute right-2 bottom-2 text-[11.5px] font-semibold bg-black/65 text-white rounded px-1.5 py-0.5">{fmtDur(film.seconds)}</span>}
+      </button>
       <div className="min-w-0 grid gap-2.5 content-start">
         <div className="flex items-start justify-between gap-3">
           <h3 className="m-0 text-[16px] font-bold leading-tight">{film.title}</h3>
