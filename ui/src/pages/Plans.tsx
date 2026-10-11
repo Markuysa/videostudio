@@ -32,7 +32,7 @@ export function Plans() {
   };
   const cost = (p: PlanRow) => {
     const minutes = (p.shots ?? 0) * (p.quality === "high" ? 3.2 : 1.3) + 6;
-    return `~${Math.round(minutes)} min · $${((minutes / 60) * s.config.gpu_price).toFixed(2)}`;
+    return `~${Math.round(minutes)} min render`;
   };
 
   return (

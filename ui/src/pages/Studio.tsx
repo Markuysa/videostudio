@@ -35,7 +35,7 @@ export function Studio() {
     const shots = Math.max(1, Math.round(secs / ((kind.lo + kind.hi) / 2)));
     const high = (f.quality || s.config.quality) === "high";
     const minutes = shots * (high ? 3.2 : 1.3) + 6;
-    return `≈ ${shots} shots · ~${Math.round(minutes)} min render · ≈ $${((minutes / 60) * s.config.gpu_price).toFixed(2)}`;
+    return `≈ ${shots} shots · ~${Math.round(minutes)} min render`;
   }, [f.duration, f.quality, kind, s.config]);
 
   const submit = async (render: boolean) => {

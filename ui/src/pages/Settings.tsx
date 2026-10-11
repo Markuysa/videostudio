@@ -19,7 +19,7 @@ export function SettingsPage() {
           <h3 className="m-0 mb-3 text-[15px] font-bold">Environment</h3>
           <KV rows={[
             ["LLM", <span className="flex flex-wrap items-center gap-2">{c.llm_effective} · {c.llm_model} {c.has_anthropic ? <Chip tone="good">Anthropic key present</Chip> : <Chip tone="warn">no ANTHROPIC_API_KEY — local Ollama, lower script quality</Chip>}</span>],
-            ["RunPod", <span className="flex flex-wrap items-center gap-2">{c.has_runpod ? <Chip tone="good">configured</Chip> : <Chip tone="bad">not configured</Chip>} · default quality <b>{c.quality}</b> · limit {c.max_hours} h · ~${c.gpu_price}/h</span>],
+            ["RunPod", <span className="flex flex-wrap items-center gap-2">{c.has_runpod ? <Chip tone="good">configured</Chip> : <Chip tone="bad">not configured</Chip>} · default quality <b>{c.quality}</b> · limit {c.max_hours} h</span>],
             ["GPUs (fast)", <span className="text-[13px]">{(c.gpu_types ?? []).join(", ")}</span>],
             ["ffmpeg", c.ffmpeg ? <Chip tone="good">yes</Chip> : <Chip tone="warn">no — re-assembly unavailable (brew install ffmpeg)</Chip>],
             ["Voice-over", c.has_elevenlabs ? <Chip tone="good">ElevenLabs configured</Chip> : <Chip>no (narration in the plan stays as text)</Chip>],

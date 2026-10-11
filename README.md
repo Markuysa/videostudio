@@ -25,12 +25,12 @@ and finds a note from his late wife inside" --kind film --duration 60
 
 That single command writes the screenplay, the style bible and nine shot prompts, starts a GPU pod,
 renders every shot in 1080p, stitches them into one film with continuity across cuts, downloads
-`films/<slug>/film.mp4` and deletes the pod. About 20 minutes and $0.85.
+`films/<slug>/film.mp4` and deletes the pod. About 20 minutes of GPU time.
 
 <div align="center">
 <img src="docs/img/still_watchmaker_1.jpg" width="900" alt="The watchmaker — three shots from one film" />
 <img src="docs/img/still_watchmaker_2.jpg" width="900" alt="The watchmaker — character consistency across cuts" />
-<sub>Six frames from <i>Ход времени</i>: nine independently generated clips, one workshop, one watchmaker, one granddaughter.</sub>
+<sub>Six frames from <i>The Passage of Time</i>: nine independently generated clips, one workshop, one watchmaker, one granddaughter.</sub>
 </div>
 
 ---
@@ -61,7 +61,7 @@ python studio.py ui          # http://127.0.0.1:8765
 <img src="docs/img/ui_film_details.jpg" width="900" alt="Film details" />
 <sub>Per‑shot report: pipeline used, render time, continuity, loop closure, audio mode.</sub><br/><br/>
 <img src="docs/img/ui_plans.jpg" width="900" alt="Plans" />
-<sub>Plans: lint status, render cost, director review notes, one‑click render.</sub><br/><br/>
+<sub>Plans: lint status, render time, director review notes, one‑click render.</sub><br/><br/>
 <img src="docs/img/ui_jobs.jpg" width="900" alt="Jobs" />
 <sub>Jobs: live progress, stages, logs, stop and clear.</sub>
 </div>
@@ -136,7 +136,7 @@ measured gain toward −14 LUFS with a true‑peak limiter — never a dynamic n
 <div align="center">
 <img src="docs/img/still_loop_seam.jpg" width="420" alt="Loop seam: first and last frame" />
 <img src="docs/img/still_storm_loop.jpg" width="420" alt="Storm loop stills" />
-<br/><sub>A seamless loop: first and last frame of <i>Ливень в пустом городе</i> (PSNR 37 dB), and two shots from the middle.</sub>
+<br/><sub>A seamless loop: first and last frame of <i>Downpour in an Empty City</i> (PSNR 37 dB), and two shots from the middle.</sub>
 </div>
 
 ---
