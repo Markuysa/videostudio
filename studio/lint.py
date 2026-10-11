@@ -29,7 +29,7 @@ LIGHT_WORDS = re.compile(r"\b(light|lighting|lit|glow|shadow|sun|neon|lamp|lante
 PRONOUN_START = re.compile(r"^\s*(he|she|they|it|his|her|their)\b", re.I)
 CYRILLIC = re.compile(r"[А-Яа-яЁё]")
 QUOTE = re.compile(r"[\"“”«»]")
-HISSY = re.compile(r"\b(hiss(es|ing|ed)?|static|white noise|sizzl(e|es|ing)|whine|whining)\b", re.I)
+HISSY = re.compile(r"\b(hiss(es|ing|ed)?|static noise|white noise|sizzl(e|es|ing)|whine|whining)\b", re.I)   # «static camera» не считается
 VOICE_WORDS = re.compile(r"\b(voice|says|speaks|whispers|shouts|murmurs|tone|accent|replies|asks|in (russian|english|"
                          r"french|spanish|german|japanese|italian))\b", re.I)
 
