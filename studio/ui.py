@@ -68,11 +68,19 @@ class Studio:
             except (PlanError, OSError):
                 out.append({"name": p.stem, "title": p.stem, "broken": True, "modified": p.stat().st_mtime})
                 continue
+            q = plan.quality or self.cfg.get("quality", "fast")
+            issues = lint_plan(plan, q)
+            problems = validate(plan, q)
             out.append({"name": p.stem, "title": plan.title, "kind": plan.kind, "format": plan.format,
-                        "quality": plan.quality or self.cfg.get("quality", "fast"), "shots": len(plan.shots),
-                        "seconds": plan.total_seconds, "logline": plan.logline, "series": plan.series,
+                        "quality": q, "shots": len(plan.shots),
+                        "seconds": plan.total_seconds, "logline": plan.logline, "series": plan.series, "episode": plan.episode,
                         "modified": p.stat().st_mtime, "has_film": plan.slug in films or p.stem in films,
-                        "captions": plan.captions.enabled, "music": bool(plan.music and plan.music.file)})
+                        "film_slug": plan.slug if plan.slug in films else (p.stem if p.stem in films else None),
+                        "captions": plan.captions.enabled, "music": bool(plan.music and plan.music.file),
+                        "loop": plan.loop, "audio": plan.audio, "anchor": (plan.style or {}).get("anchor"),
+                        "errors": sum(1 for i in issues if i.level == "error") + len(problems),
+                        "warnings": sum(1 for i in issues if i.level == "warn"),
+                        "review_notes": len(plan.review_notes or [])})
         return out
 
     def films(self) -> list[dict]:

@@ -1,6 +1,8 @@
 export interface PlanRow {
   name: string; title: string; kind?: string; format?: string; quality?: string; shots?: number; seconds?: number;
-  logline?: string | null; series?: string | null; modified: number; has_film?: boolean; captions?: boolean; music?: boolean; broken?: boolean;
+  logline?: string | null; series?: string | null; episode?: number | null; modified: number; has_film?: boolean; film_slug?: string | null;
+  captions?: boolean; music?: boolean; loop?: boolean; audio?: string; anchor?: string | null;
+  errors?: number; warnings?: number; review_notes?: number; broken?: boolean;
 }
 export interface ShotInfo { id: string; pipeline: string; size?: string; seconds_render?: number; continuity?: boolean; loop_closed?: boolean; cached?: boolean }
 export interface TimelineItem { shot: string; start: number; end: number; transition: string; caption?: string | null }
