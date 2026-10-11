@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Вечерний маршрут по Лимассолу</title>
+<style>
+  :root{
+    --bg:#faf7f2; --card:#ffffff; --ink:#1f2328; --muted:#6b7280; --line:#e5e1d8;
+    --land:#f3ede2; --sea:#cfe4f0; --sea-ink:#4a7a96; --route:#d9480f; --back:#6b7280;
+    --old:#efe2c8; --halo:#f3ede2; --sun:#f59f00;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14161a; --card:#1c1f24; --ink:#e8e6e3; --muted:#9aa0a6; --line:#2c3036;
+      --land:#23262b; --sea:#16324a; --sea-ink:#8fbcd6; --route:#ff7a3d; --back:#8a9099;
+      --old:#3a3326; --halo:#23262b; --sun:#ffc046;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  main{max-width:720px;margin:0 auto;padding:20px 16px 40px}
+  h1{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 16px;font-size:14px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  svg{display:block;width:100%;height:auto}
+  .lbl{font-size:12px;fill:var(--ink);paint-order:stroke;stroke:var(--halo);stroke-width:4px;stroke-linejoin:round}
+  .lbl.b{font-weight:600}
+  .sea-t{font-size:13px;fill:var(--sea-ink);font-style:italic;letter-spacing:2px}
+  .num{font-size:11px;font-weight:700;fill:#fff}
+  .note{font-size:12px;color:var(--muted);padding:8px 14px;border-top:1px solid var(--line)}
+  ol{list-style:none;padding:0;margin:18px 0 0}
+  li{display:grid;grid-template-columns:56px 28px 1fr;gap:0 8px;align-items:start;padding:9px 0;border-bottom:1px solid var(--line)}
+  li:last-child{border-bottom:0}
+  .t{font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px;padding-top:1px}
+  .dot{width:22px;height:22px;border-radius:50%;background:var(--route);color:#fff;font-size:12px;font-weight:700;display:grid;place-items:center}
+  .dot.g{background:var(--back)}
+  .what b{display:block}
+  .what span{color:var(--muted);font-size:13px}
+  .stats{display:flex;gap:10px;flex-wrap:wrap;margin:16px 0 0}
+  .stat{flex:1 1 140px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .stat b{display:block;font-size:18px}
+  .stat span{color:var(--muted);font-size:13px}
+
+  .location-photo{grid-column:3;margin:12px 0 10px;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .location-photo>a{display:block;background:var(--land)}
+  .location-photo img{display:block;width:100%;height:auto;max-height:420px;object-fit:contain}
+  .location-photo figcaption{padding:8px 11px;font-size:12px;color:var(--muted)}
+  .location-photo a{color:var(--sea-ink)}
+  .photo-note{font-size:12px;color:var(--muted);margin:18px 0 0}
+  @media(max-width:480px){.location-photo{grid-column:1 / -1}li{padding-top:16px}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Вечерняя прогулка от Трилоджи</h1>
+  <p class="sub">Воскресенье, 11 октября · пешком · закат в 18:19</p>
+
+  <div class="card">
+    <svg viewBox="0 205 400 255" role="img" aria-label="Схема маршрута: Трилоджи, набережная Molos, Old Port, старый город, марина и обратно">
+      <!-- land -->
+      <rect y="205" width="400" height="265" fill="var(--land)"/>
+      <!-- old town area -->
+      <path d="M92 300 Q100 262 150 250 Q205 242 222 272 Q230 310 200 342 L120 352 Q92 340 92 300Z" fill="var(--old)"/>
+      <text x="108" y="246" class="lbl" style="font-size:11px;fill:var(--muted)">старый город</text>
+      <!-- municipal garden -->
+      <ellipse cx="318" cy="248" rx="30" ry="16" fill="#8fbf7f" opacity=".45"/>
+      <text x="290" y="226" class="lbl" style="font-size:11px;fill:var(--muted)">Муниц. сад</text>
+      <!-- sea -->
+      <path d="M0 382 L60 378 L60 398 L84 398 L84 376 L130 372 L200 362 L300 326 L400 290 L400 470 L0 470Z" fill="var(--sea)"/>
+      <text x="210" y="418" class="sea-t">СРЕДИЗЕМНОЕ МОРЕ</text>
+
+      <!-- sunset hint -->
+      <g transform="translate(36 440)">
+        <circle r="11" fill="var(--sun)" opacity=".9"/>
+        <rect x="-16" y="0" width="32" height="14" fill="var(--sea)"/>
+      </g>
+      <text x="56" y="444" class="lbl" style="font-size:11px">закат здесь ↙ — идёте прямо на него</text>
+
+      <!-- return path (dashed, along the shore) -->
+      <path d="M72 392 Q120 386 168 380 Q240 364 300 338 Q330 326 352 312"
+            fill="none" stroke="var(--back)" stroke-width="2.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+
+      <!-- main route -->
+      <path d="M352 300 Q330 318 300 328 Q240 352 178 366
+               L176 348 L152 334 L198 280 L150 286 L118 316 L72 384"
+            fill="none" stroke="var(--route)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <!-- direction arrows -->
+      <path d="M262 342 l10 -7 l-2 10z" fill="var(--route)" transform="rotate(200 266 341)"/>
+      <path d="M95 352 l8 -8 l1 11z" fill="var(--route)"/>
+
+      <!-- Molos label -->
+      <text x="298" y="318" class="lbl b" transform="rotate(-21 298 318)">Molos</text>
+
+      <!-- stops -->
+      <g>
+        <circle cx="352" cy="300" r="10" fill="var(--route)"/><text x="352" y="304" text-anchor="middle" class="num">1</text>
+        <text x="356" y="284" class="lbl b" text-anchor="middle">Трилоджи</text>
+        <text x="394" y="364" class="lbl" text-anchor="end" style="font-size:11px;fill:var(--sea-ink);stroke:var(--sea)">пляж Акти Олимпион</text>
+
+        <circle cx="178" cy="366" r="10" fill="var(--route)"/><text x="178" y="370" text-anchor="middle" class="num">3</text>
+        <text x="192" y="384" class="lbl">Old Port · Papadaki</text>
+
+        <circle cx="176" cy="348" r="9" fill="var(--route)"/><text x="176" y="352" text-anchor="middle" class="num">4</text>
+        <text x="190" y="346" class="lbl">Carob Mill</text>
+
+        <circle cx="152" cy="334" r="10" fill="var(--route)"/><text x="152" y="338" text-anchor="middle" class="num">5</text>
+        <text x="138" y="338" class="lbl b" text-anchor="end">Замок</text>
+
+        <circle cx="198" cy="280" r="10" fill="var(--route)"/><text x="198" y="284" text-anchor="middle" class="num">6</text>
+        <text x="212" y="284" class="lbl">Собор Агия Напа</text>
+
+        <circle cx="150" cy="286" r="10" fill="var(--route)"/><text x="150" y="290" text-anchor="middle" class="num">7</text>
+        <text x="150" y="270" class="lbl" text-anchor="middle">пл. Сарипулу</text>
+
+        <circle cx="118" cy="316" r="10" fill="var(--route)"/><text x="118" y="320" text-anchor="middle" class="num">8</text>
+        <text x="104" y="306" class="lbl" text-anchor="end">Мечеть Кебир</text>
+
+        <circle cx="72" cy="384" r="10" fill="var(--route)"/><text x="72" y="388" text-anchor="middle" class="num">9</text>
+        <text x="20" y="366" class="lbl b">Марина</text>
+
+        <!-- 2: sunset point on Molos -->
+        <circle cx="282" cy="335" r="10" fill="var(--sun)"/><text x="282" y="339" text-anchor="middle" class="num" style="fill:#3b2a00">2</text>
+      </g>
+
+      <!-- north arrow -->
+      <g transform="translate(380 228)">
+        <path d="M0 -14 L7 8 L0 3 L-7 8Z" fill="var(--ink)"/>
+        <text y="24" text-anchor="middle" class="lbl" style="font-size:11px">С</text>
+      </g>
+    </svg>
+    <div class="note">Схема, не в масштабе. Сплошная линия — путь туда, пунктир — обратно вдоль моря.</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b>≈ 3,5–4 км</b><span>всего пешком</span></div>
+    <div class="stat"><b>≈ 3,5 часа</b><span>с остановками</span></div>
+    <div class="stat"><b>€0</b><span>кроме десерта</span></div>
+  </div>
+
+  <p class="photo-note">Фото для знакомства с местами, сняты в разное время. Для загрузки нужен интернет. Нажмите на фотографию, чтобы открыть её крупнее.</p>
+  <ol>
+    <li><span class="t">17:50</span><span class="dot">1</span><span class="what"><b>Выход из Трилоджи</b><span>Сразу на набережную и на запад, в сторону порта</span></span><figure class="location-photo"><a href="https://dom.com.cy/upload/resize_cache/uf/3a5/1308_981_1/03ni1uursofi8mfadz9daogdk0a8qhuc.jpg" target="_blank" rel="noopener noreferrer" aria-label="Открыть фотографию: Башни Trilogy у моря"><img src="https://dom.com.cy/upload/resize_cache/uf/3a5/1308_981_1/03ni1uursofi8mfadz9daogdk0a8qhuc.jpg" alt="Башни Trilogy у моря" loading="lazy" decoding="async" referrerpolicy="no-referrer"></a><figcaption>Башни Trilogy у моря · <a href="https://dom.com.cy/en/live/complexes/towers-limassol/trilogy-limassol/" target="_blank" rel="noopener noreferrer">DOM</a></figcaption></figure></li>
+    <li><span class="t">18:19</span><span class="dot" style="background:var(--sun);color:#3b2a00">2</span><span class="what"><b>Закат на Molos</b><span>Солнце садится в море впереди вас; скульптуры, пирс</span></span><figure class="location-photo"><a href="https://www.cyprusisland.net/sites/default/files/attractions/molos-limassol.jpg" target="_blank" rel="noopener noreferrer" aria-label="Открыть фотографию: Molos — набережная, пальмы и пирсы"><img src="https://www.cyprusisland.net/sites/default/files/attractions/molos-limassol.jpg" alt="Molos — набережная, пальмы и пирсы" loading="lazy" decoding="async" referrerpolicy="no-referrer"></a><figcaption>Molos — набережная, пальмы и пирсы · <a href="https://www.cyprusisland.net/attractions/molos-multifunctional-seaside-park-limassol" target="_blank" rel="noopener noreferrer">Cyprus Island</a></figcaption></figure></li>
+    <li><span class="t">19:00</span><span class="dot">3</span><span class="what"><b>Old Port · Apothikes Papadaki</b><span>Перформанс Art Walks, бесплатно</span></span><figure class="location-photo"><a href="https://cyprus.wiz-guide.com/assets/modules/kat/articles/201606/359/images/det_cover2.jpg" target="_blank" rel="noopener noreferrer" aria-label="Открыть фотографию: Old Port — старый порт"><img src="https://cyprus.wiz-guide.com/assets/modules/kat/articles/201606/359/images/det_cover2.jpg" alt="Old Port — старый порт" loading="lazy" decoding="async" referrerpolicy="no-referrer"></a><figcaption>Old Port — старый порт · <a href="https://cyprus.wiz-guide.com/news/bolta-sto-palio-limani-lemesoy/359" target="_blank" rel="noopener noreferrer">Wiz Guide</a></figcaption></figure><figure class="location-photo"><a href="https://www.elemesos.com/wp-content/uploads/2024/06/apothikes_papadaki.png" target="_blank" rel="noopener noreferrer" aria-label="Открыть фотографию: Apothikes Papadaki — вход в арт-пространство"><img src="https://www.elemesos.com/wp-content/uploads/2024/06/apothikes_papadaki.png" alt="Apothikes Papadaki — вход в арт-пространство" loading="lazy" decoding="async" referrerpolicy="no-referrer"></a><figcaption>Apothikes Papadaki — вход в арт-пространство · <a href="https://www.elemesos.com/a-one-of-a-kind-exhibition-is-coming-to-papadakis-warehouses/" target="_blank" rel="noopener noreferrer">Elemesos</a></figcaption></figure></li>
+    <li><span class="t">~19:45</span><span class="dot">4</span><span class="what"><b>Carob Mill</b><span>Каменные арки и дворики, вечерняя подсветка</span></span><figure class="location-photo"><a href="https://allaboutlimassol.com/assets/images/primary-image/1010024-0.carob-mill-online.jpg" target="_blank" rel="noopener noreferrer" aria-label="Открыть фотографию: Carob Mill — фасад старой рожковой мельницы"><img src="https://allaboutlimassol.com/assets/images/primary-image/1010024-0.carob-mill-online.jpg" alt="Carob Mill — фасад старой рожковой мельницы" loading="lazy" decoding="async" referrerpolicy="no-referrer"></a><figcaption>Carob Mill — фасад старой рожковой мельницы · <a href="https://allaboutlimassol.com/en/get-a-job-fair" target="_blank" rel="noopener noreferrer">All About Limassol</a></figcaption></figure></li>
+    <li><span class="t"></span><span class="dot">5</span><span class="what"><b>Замок</b><span>Подсвеченные стены, площадь с пальмами</span></span><figure class="location-photo"><a href="https://riknews-live-3b6a59f16159442b91f0247e09-b5029b8.divio-media.org/images/KASTRO_LEMESOU.2e16d0ba.fill-1600x900.jpg" target="_blank" rel="noopener noreferrer" aria-label="Открыть фотографию: Замок Лимассола с вечерней подсветкой"><img src="https://riknews-live-3b6a59f16159442b91f0247e09-b5029b8.divio-media.org/images/KASTRO_LEMESOU.2e16d0ba.fill-1600x900.jpg" alt="Замок Лимассола с вечерней подсветкой" loading="lazy" decoding="async" referrerpolicy="no-referrer"></a><figcaption>Замок Лимассола с вечерней подсветкой · <a href="https://news.rik.cy/el/article/2021/5/24/kleisto-gia-to-koino-to-kastro-lemesou-logo-ergasion-5798660/" target="_blank" rel="noopener noreferrer">RIK</a></figcaption></figure></li>
+    <li><span class="t"></span><span class="dot">6</span><span class="what"><b>Собор Агия Напа</b><span>Купола и колокольня с подсветкой</span></span><figure class="location-photo"><a href="https://beautiful-photo.net/wp-content/uploads/2019/08/Agia-Napa-Cathedral-Limassol-Cyprus.jpg" target="_blank" rel="noopener noreferrer" aria-label="Открыть фотографию: Собор Агия Напа в Лимассоле"><img src="https://beautiful-photo.net/wp-content/uploads/2019/08/Agia-Napa-Cathedral-Limassol-Cyprus.jpg" alt="Собор Агия Напа в Лимассоле" loading="lazy" decoding="async" referrerpolicy="no-referrer"></a><figcaption>Собор Агия Напа в Лимассоле · <a href="https://beautiful-photo.net/agia-napa-cathedral-limassol-cyprus" target="_blank" rel="noopener noreferrer">Beautiful Photo</a></figcaption></figure></li>
+    <li><span class="t"></span><span class="dot">7</span><span class="what"><b>Площадь Сарипулу</b><span>Старый крытый рынок, самое живое место вечером</span></span><figure class="location-photo"><a href="https://files.phileasguide.eu/limassol_photo_58479_24354.jpg" target="_blank" rel="noopener noreferrer" aria-label="Открыть фотографию: Площадь Сарипулу — кафе и пешеходные улицы"><img src="https://files.phileasguide.eu/limassol_photo_58479_24354.jpg" alt="Площадь Сарипулу — кафе и пешеходные улицы" loading="lazy" decoding="async" referrerpolicy="no-referrer"></a><figcaption>Площадь Сарипулу — кафе и пешеходные улицы · <a href="https://phileas.guide/guide/limassol/entry/58479" target="_blank" rel="noopener noreferrer">Phileas Guides</a></figcaption></figure></li>
+    <li><span class="t"></span><span class="dot">8</span><span class="what"><b>Мечеть Кебир</b><span>Белый минарет, тихие улочки бывшего турецкого квартала</span></span><figure class="location-photo"><a href="https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Limassol_01-2017_img14_Kebir_Great_Mosque.jpg/1280px-Limassol_01-2017_img14_Kebir_Great_Mosque.jpg" target="_blank" rel="noopener noreferrer" aria-label="Открыть фотографию: Мечеть Кебир и минарет"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Limassol_01-2017_img14_Kebir_Great_Mosque.jpg/1280px-Limassol_01-2017_img14_Kebir_Great_Mosque.jpg" alt="Мечеть Кебир и минарет" loading="lazy" decoding="async" referrerpolicy="no-referrer"></a><figcaption>Мечеть Кебир и минарет · <a href="https://commons.wikimedia.org/wiki/File:Limassol_01-2017_img14_Kebir_Great_Mosque.jpg" target="_blank" rel="noopener noreferrer">A. Savin / Wikimedia Commons</a></figcaption></figure></li>
+    <li><span class="t">~20:40</span><span class="dot">9</span><span class="what"><b>Марина</b><span>Яхты в огнях, десерт или горячий шоколад у воды</span></span><figure class="location-photo"><a href="https://allaboutlimassol.com/assets/images/limassol_marina1.jpg" target="_blank" rel="noopener noreferrer" aria-label="Открыть фотографию: Марина Лимассола в сумерках"><img src="https://allaboutlimassol.com/assets/images/limassol_marina1.jpg" alt="Марина Лимассола в сумерках" loading="lazy" decoding="async" referrerpolicy="no-referrer"></a><figcaption>Марина Лимассола в сумерках · <a href="https://allaboutlimassol.com/en/natalia-kardash-the-russians-who-have-been-living-here-for-a-long-time-will-never-leave" target="_blank" rel="noopener noreferrer">All About Limassol</a></figcaption></figure></li>
+    <li><span class="t">~21:30</span><span class="dot g">1</span><span class="what"><b>Обратно вдоль моря к Трилоджи</b><span>≈ 20–25 мин; в конце — плед или купание на Акти Олимпион</span></span><figure class="location-photo"><a href="https://allaboutlimassol.com/en/assets/components/phpthumbof/cache/akti-olimbion-9.309714d371420f7390317c867b9575ba.jpg" target="_blank" rel="noopener noreferrer" aria-label="Открыть фотографию: Акти Олимпион — пляж на обратном пути"><img src="https://allaboutlimassol.com/en/assets/components/phpthumbof/cache/akti-olimbion-9.309714d371420f7390317c867b9575ba.jpg" alt="Акти Олимпион — пляж на обратном пути" loading="lazy" decoding="async" referrerpolicy="no-referrer"></a><figcaption>Акти Олимпион — пляж на обратном пути · <a href="https://allaboutlimassol.com/en/akti-olympion-beach" target="_blank" rel="noopener noreferrer">All About Limassol</a></figcaption></figure></li>
+  </ol>
+</main>
+</body>
+</html>
