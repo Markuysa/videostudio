@@ -441,11 +441,15 @@ class Handler(BaseHTTPRequestHandler):
         q = urllib.parse.parse_qs(url.query)
         parts = [p for p in path.split("/") if p]
 
-        if method == "GET":
-            if path in ("/", "/index.html"):
+        if method == "GET" and not path.startswith(("/api/", "/files/")):
+            # собранный React-интерфейс (ui/ -> studio/web): файл, если есть, иначе index.html (SPA)
+            target = self._safe_under(WEB, path.lstrip("/")) if path not in ("/", "") else WEB / "index.html"
+            if target.is_file():
+                return self._file(target)
+            if "." not in path.rsplit("/", 1)[-1]:
                 return self._file(WEB / "index.html")
-            if path in ("/app.js", "/style.css", "/favicon.svg"):
-                return self._file(WEB / path.lstrip("/"))
+            raise ApiError("not found", 404)
+        if method == "GET":
             if path == "/api/state":
                 return self._json(s.state())
             if path == "/api/jobs":

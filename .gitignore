@@ -18,3 +18,5 @@ assets/sfx/*
 !assets/sfx/.gitkeep
 # задачи веб-интерфейса
 .studio/
+# React UI
+ui/node_modules/

@@ -117,6 +117,11 @@ render starts within a minute.
 .venv/bin/python studio.py ui          # opens http://127.0.0.1:8765 in the browser
 ```
 
+The interface is a React + TypeScript app (Vite, Tailwind v4, lucide icons) in `ui/`; the production build
+is committed to `studio/web/` and served by the Python server, so no Node.js is needed to run it. To work on
+the UI: `cd ui && pnpm install && pnpm dev` (proxies `/api` and `/files` to the Python server on :8765),
+then `pnpm build` to refresh `studio/web/`.
+
 Home: a "what are we shooting?" form (type, duration, and under "More settings": format, quality,
 language, music, captions, series, loop) with "Shoot" (plan + render) and "Script only" buttons. Jobs
 run as separate processes with a live log and per-shot progress; closing the browser or the server does
