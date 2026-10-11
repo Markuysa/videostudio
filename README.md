@@ -193,6 +193,17 @@ render text.
 Your standing preferences (`studio prefs`), the series bible and the sound library go into the system
 prompt, so prompts are optimized for your requests and your material.
 
+## Audio modes
+
+By default (`audio: raw`, `--audio raw`) the film carries the model's sound untouched: clips are only
+converted to a common format (48 kHz stereo) and get 60 ms fades at cuts so joins do not click. No gain,
+no normalization, no limiter. LTX sometimes renders ambience such as rain as quiet broadband hiss, and any
+boost turns it into an audible whine, so leaving the sound alone is the safe default.
+
+`--audio leveled` (also available in the web form and in the re-assembly dialog) matches scene loudness
+with a bounded constant gain per clip (+18/-12 dB, limiter at -3 dBTP) and applies one measured gain to the
+whole film toward -14 LUFS with a true-peak limiter. It never pumps quiet passages dynamically.
+
 ## Seamless assembly
 
 `studio/assemble.py` builds the film in a single ffmpeg pass: clip normalization, micro audio fades at

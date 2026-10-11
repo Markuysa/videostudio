@@ -8,9 +8,9 @@ import { useStore } from "../store";
 
 interface Form {
   request: string; kind: string; duration: number; custom: boolean; format: string; quality: string; language: string;
-  music: string; captions: "" | "1" | "0"; series: string; name: string; notes: string; loop: boolean;
+  music: string; captions: "" | "1" | "0"; series: string; name: string; notes: string; loop: boolean; audio: "raw" | "leveled";
 }
-const initial: Form = { request: "", kind: "short", duration: 45, custom: false, format: "", quality: "", language: "ru", music: "auto", captions: "", series: "", name: "", notes: "", loop: false };
+const initial: Form = { request: "", kind: "short", duration: 45, custom: false, format: "", quality: "", language: "ru", music: "auto", captions: "", series: "", name: "", notes: "", loop: false, audio: "raw" };
 
 export function Studio() {
   const { state, refresh, setModal, setView } = useStore();
@@ -79,6 +79,7 @@ export function Studio() {
                 <Field label="Music"><Select value={f.music} onChange={(v) => set("music", v)} options={musicOpts} /></Field>
                 <Field label="Captions"><Select value={f.captions} onChange={(v) => set("captions", v)} options={[{ value: "", label: "By preset" }, { value: "1", label: "On" }, { value: "0", label: "Off" }]} /></Field>
                 <Field label="Series"><Select value={f.series} onChange={(v) => set("series", v)} options={[{ value: "", label: "—" }, ...s.series.map((x) => ({ value: x.slug, label: x.title }))]} /></Field>
+                <Field label="Audio"><Select value={f.audio} onChange={(v) => set("audio", v)} options={[{ value: "raw", label: "As generated", hint: "the model's sound untouched" }, { value: "leveled", label: "Leveled", hint: "scenes matched, -14 LUFS, limiter" }]} /></Field>
               </div>
               <div className="grid grid-cols-[1fr_2fr] gap-3 max-sm:grid-cols-1">
                 <Field label="File name"><Input value={f.name} onChange={(e) => set("name", e.target.value)} placeholder="auto" /></Field>

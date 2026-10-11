@@ -191,6 +191,8 @@ class Studio:
             args += ["--notes", str(body["notes"])]
         if body.get("loop"):
             args.append("--loop")
+        if body.get("audio") in ("raw", "leveled"):
+            args += ["--audio", str(body["audio"])]
         title = ("Film: " if body.get("render") else "Plan: ") + req[:60]
         return self.jobs.start("make" if body.get("render") else "plan", title, args, meta={"request": req}).to_dict()
 
@@ -224,6 +226,8 @@ class Studio:
             args += ["--music-volume", str(float(body["music_volume"]))]
         if body.get("captions"):
             args.append("--captions")
+        if body.get("audio") in ("raw", "leveled"):
+            args += ["--audio", str(body["audio"])]
         return self.jobs.start("assemble", f"Re-assembly: {slug}", args, meta={"film": slug}).to_dict()
 
     def start_series(self, body: dict) -> dict:

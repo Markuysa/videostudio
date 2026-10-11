@@ -9,7 +9,8 @@
 - подмешивает музыку (луп, фейды, приглушение под речь через sidechain),
   звуковые эффекты и закадровый голос в нужные моменты таймлайна;
 - жжёт субтитры (ASS) для шортсов, если в ffmpeg есть libass;
-- нормализует громкость под платформы (EBU R128, -14 LUFS).
+- по умолчанию отдаёт звук модели как есть (режим raw); в режиме leveled выравнивает
+  сцены между собой и общую громкость под платформы (-14 LUFS) с лимитером.
 
 Модуль не зависит от остального пакета, кроме schema, и одинаково работает на
 GPU-Pod (Ubuntu) и локально (macOS).
@@ -77,7 +78,8 @@ class AssembleOptions:
     caption_font_size: int = 0
     fade_in: float = 0.5
     fade_out: float = 1.5
-    loudnorm: bool = True
+    leveling: bool = False     # выравнивать громкость сцен между собой (по умолчанию звук модели как есть)
+    loudnorm: bool = False     # общая громкость к -14 LUFS с лимитером (тоже только в режиме leveled)
     crf: int = 18
     preset: str = "medium"
 
@@ -431,10 +433,12 @@ def assemble(clips: list[ClipSpec], out_path: pathlib.Path, opts: AssembleOption
             if not normalize(src, dst, opts.width, opts.height, opts.fps, logf):
                 raise AssembleError(f"не удалось нормализовать {src.name}")
         info = probe(dst)
-        lufs = measure_loudness(dst)
-        gain = clip_gain_db(lufs)
-        if logf is not None:
-            logf.write(f"\n# clip {c.shot_id}: {lufs if lufs is not None else '—'} LUFS -> gain {gain:+.1f} dB\n")
+        gain = 0.0
+        if opts.leveling:
+            lufs = measure_loudness(dst)
+            gain = clip_gain_db(lufs)
+            if logf is not None:
+                logf.write(f"\n# clip {c.shot_id}: {lufs if lufs is not None else '—'} LUFS -> gain {gain:+.1f} dB\n")
         normalized.append(ClipSpec(path=str(dst), shot_id=c.shot_id, transition=c.transition,
                                    transition_seconds=c.transition_seconds, caption=c.caption, sfx=c.sfx,
                                    narration=c.narration, trim_end=c.trim_end, gain_db=gain))
@@ -492,6 +496,7 @@ def assemble(clips: list[ClipSpec], out_path: pathlib.Path, opts: AssembleOption
                  "caption": s.clip.caption} for s in segs]
     report = {"film": str(out_path), "seconds": round(total, 2), "resolution": f"{opts.width}x{opts.height}",
               "shots": len(clips), "music": bool(opts.music_path), "captions": bool(ass_name), "timeline": timeline,
+              "audio": "leveled" if (opts.leveling or opts.loudnorm) else "raw",
               "clip_gains_db": {c.shot_id: c.gain_db for c in normalized}, "loudnorm": loudnorm}
     (workdir / "timeline.json").write_text(json.dumps(timeline, ensure_ascii=False, indent=1), encoding="utf-8")
     return report

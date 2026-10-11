@@ -321,7 +321,8 @@ def main() -> int:
                            music_fade_out=plan.music.fade_out if plan.music else 2.5,
                            captions=plan.captions.enabled, caption_position=plan.captions.position,
                            caption_font_size=plan.captions.font_size,
-                           fade_in=0.0 if plan.loop else plan.fade_in, fade_out=0.0 if plan.loop else plan.fade_out)
+                           fade_in=0.0 if plan.loop else plan.fade_in, fade_out=0.0 if plan.loop else plan.fade_out,
+                           leveling=plan.audio == "leveled", loudnorm=plan.audio == "leveled")
     final = proj / "film.mp4"
     try:
         rep = assemble(clips, final, opts, proj, logf=logf, log=log)
@@ -331,7 +332,7 @@ def main() -> int:
     report = {"film": str(final), "title": plan.title, "quality": "high (DFR)" if high else "fast",
               "resolution": f"{w}x{h}", "seconds": rep["seconds"], "shots_ok": len(done), "shots_failed": failed,
               "shots": done, "music": bool(music_path), "captions": rep["captions"], "timeline": rep["timeline"],
-              "loop": plan.loop, "loop_closed": loop_closed,
+              "loop": plan.loop, "loop_closed": loop_closed, "audio": plan.audio,
               "minutes": round((time.time() - t_all) / 60)}
     (proj / "manifest.json").write_text(json.dumps({"plan": plan.to_dict(), "shots": done}, ensure_ascii=False, indent=1),
                                         encoding="utf-8")

@@ -22,7 +22,7 @@ def test_timeline_positions():
 
 
 def test_graph_structure():
-    opts = AssembleOptions(704, 1280, music_path="m.mp3", captions=True)
+    opts = AssembleOptions(704, 1280, music_path="m.mp3", captions=True, loudnorm=True)
     graph, segs, total = build_graph(three_clips(), [8.04, 8.04, 5.04], opts, [], "captions.ass")
     assert "xfade=transition=fade:duration=0.5" in graph
     assert "acrossfade=d=0.5" in graph
@@ -105,3 +105,10 @@ def test_measure_loudness_on_synthetic_tone(tmp_path):
     silent = tmp_path / "silent.wav"
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo:d=2", str(silent)], check=True)
     assert measure_loudness(silent) is None
+
+
+def test_raw_mode_leaves_model_audio_untouched():
+    clips = [ClipSpec("a.mp4", "1"), ClipSpec("b.mp4", "2")]
+    graph, _, _ = build_graph(clips, [5.0, 5.0], AssembleOptions(704, 1280), [], None)
+    assert "volume=" not in graph and "loudnorm" not in graph and "alimiter" not in graph
+    assert "aresample=48000" in graph and "afade" in graph          # только формат и микрофейды на стыках

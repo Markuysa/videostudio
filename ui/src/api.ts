@@ -33,7 +33,7 @@ export interface Plan {
   title: string; kind: string; format: string; quality?: string | null; seed: number; logline?: string | null; synopsis?: string | null;
   style: Record<string, string>; characters: { name: string; descriptor?: string; description?: string; voice?: string }[];
   locations?: { name: string; descriptor?: string }[]; music?: { file?: string | null; mood?: string | null; volume: number; duck: boolean } | null;
-  captions: { enabled: boolean }; loop?: boolean; creative_brief?: Record<string, unknown>; review_notes?: string[]; shots: Shot[];
+  captions: { enabled: boolean }; loop?: boolean; audio?: "raw" | "leveled"; creative_brief?: Record<string, unknown>; review_notes?: string[]; shots: Shot[];
 }
 export interface Issue { shot: string; level: "error" | "warn"; code: string; message: string }
 export interface PlanDetail { name: string; plan?: Plan; raw: string; summary?: string; issues: Issue[]; problems: string[]; path?: string; error?: string }

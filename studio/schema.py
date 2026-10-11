@@ -194,6 +194,7 @@ class Plan:
     fade_in: float = 0.5
     fade_out: float = 1.5
     loop: bool = False               # бесшовный луп: последняя сцена заканчивается первым кадром фильма
+    audio: str = "raw"               # raw — звук модели как есть; leveled — выравнивание сцен и громкости (-14 LUFS)
     request: str | None = None
     version: int = 2
     source_path: str | None = None
@@ -223,6 +224,8 @@ class Plan:
         d.pop("source_path", None)
         if not d.get("loop"):
             d.pop("loop", None)
+        if d.get("audio") == "raw":
+            d.pop("audio", None)
         d["shots"] = [{k: v for k, v in asdict(s).items() if v not in (None, [], "")} | {"seconds": s.seconds}
                       for s in self.shots]
         for s in d["shots"]:
@@ -267,7 +270,7 @@ class Plan:
             locations=list(d.get("locations") or []), series=d.get("series"), episode=d.get("episode"),
             music=Music.from_dict(d.get("music")), captions=Captions.from_dict(d.get("captions")),
             fade_in=float(d.get("fade_in", 0.5)), fade_out=float(d.get("fade_out", 1.5)),
-            loop=bool(d.get("loop", False)), request=d.get("request"), version=int(d.get("version", 1)), source_path=source_path,
+            loop=bool(d.get("loop", False)), audio=str(d.get("audio") or "raw").lower(), request=d.get("request"), version=int(d.get("version", 1)), source_path=source_path,
             creative_brief=dict(d.get("creative_brief") or {}), review_notes=list(d.get("review_notes") or []),
         )
         if plan.music and d.get("music_volume") is not None:   # совместимость с версией 1
@@ -289,6 +292,8 @@ def validate(plan: Plan, default_quality: str = "fast") -> list[str]:
     """Жёсткие проблемы, с которыми рендерить нельзя (или бессмысленно)."""
     problems: list[str] = []
     high = plan.is_high(default_quality)
+    if plan.audio not in ("raw", "leveled"):
+        problems.append(f"audio должен быть raw или leveled, а не {plan.audio!r}")
     if plan.loop and len(plan.shots) < 2:
         problems.append("для замыкания лупа нужны минимум две сцены")
     ids = [s.id for s in plan.shots]
