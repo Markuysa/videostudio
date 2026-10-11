@@ -29,7 +29,12 @@ from .schema import FPS
 
 CUT_AUDIO_FADE = 0.06      # с: микро-фейд на краях клипов при жёсткой склейке (убирает щелчки)
 DUCK = dict(threshold=0.05, ratio=3, attack=250, release=1200)
-LOUDNORM = "loudnorm=I=-14:TP=-1.5:LRA=11"
+LOUDNORM_TARGET = dict(I=-14.0, TP=-1.5, LRA=11.0)   # YouTube/TikTok
+# Выравнивание сцен между собой: LTX отдаёт клипы с разбросом уровня в 40 дБ (−9 … −50 LUFS).
+# Постоянное усиление на клип, ограниченное сверху, чтобы почти тишина не превращалась в шипение.
+CLIP_TARGET_LUFS = -18.0
+CLIP_MAX_BOOST_DB = 18.0
+CLIP_MAX_CUT_DB = 12.0
 
 
 class AssembleError(RuntimeError):
@@ -46,6 +51,7 @@ class ClipSpec:
     sfx: list[tuple[str, float, float]] = field(default_factory=list)   # (файл, смещение с, громкость)
     narration: str | None = None     # путь к аудиофайлу озвучки
     trim_end: float = 0.0            # с: отрезать с конца (луп: последний кадр дублирует первый кадр фильма)
+    gain_db: float = 0.0             # выравнивание громкости сцены (см. clip_gain_db)
 
 
 @dataclass
@@ -144,6 +150,62 @@ def _filter_complex_args(graph: str, script: pathlib.Path) -> list[str]:
     return ["-/filter_complex", str(script)] if ffmpeg_major() >= 7 else ["-filter_complex_script", str(script)]
 
 
+def measure_loudness(path: str | pathlib.Path) -> float | None:
+    """Интегральная громкость файла (LUFS, EBU R128) или None, если звука нет / не измерить."""
+    r = subprocess.run([ffmpeg_bin(), "-hide_banner", "-nostats", "-i", str(path), "-vn", "-af", "ebur128", "-f", "null", "-"],
+                       capture_output=True, text=True)
+    m = re.search(r"Summary:.*?I:\s*(-?[\d.]+)\s*LUFS", r.stderr, re.S)
+    if not m:
+        return None
+    val = float(m.group(1))
+    return None if val <= -70 else val      # -70 = тишина по R128
+
+
+def clip_gain_db(lufs: float | None, target: float = CLIP_TARGET_LUFS, max_boost: float = CLIP_MAX_BOOST_DB,
+                 max_cut: float = CLIP_MAX_CUT_DB) -> float:
+    """Постоянное усиление клипа к целевому уровню, ограниченное сверху и снизу."""
+    if lufs is None:
+        return 0.0
+    return round(max(-max_cut, min(max_boost, target - lufs)), 1)
+
+
+def measure_graph_loudness(cmd_inputs: list[str], graph_audio: str, cwd: str) -> dict | None:
+    """Первый проход: громкость собранного аудио (без видео) для линейного loudnorm."""
+    g = graph_audio + ";\n[aout]loudnorm=I={I}:TP={TP}:LRA={LRA}:print_format=json[anorm]".format(**LOUDNORM_TARGET)
+    cmd = [ffmpeg_bin(), "-hide_banner", "-nostats", *cmd_inputs, "-filter_complex", g.replace("\n", ""),
+           "-map", "[anorm]", "-f", "null", "-"]
+    r = subprocess.run(cmd, capture_output=True, text=True, cwd=cwd)
+    m = re.search(r"\{[^{}]*\"input_i\"[^{}]*\}", r.stderr, re.S)
+    if not m:
+        return None
+    try:
+        return json.loads(m.group(0))
+    except json.JSONDecodeError:
+        return None
+
+
+def loudnorm_filter(measured: dict | None) -> str:
+    """Финальная громкость: постоянный коэффициент по замеру + true-peak лимитер.
+
+    `loudnorm ... linear=true` молча переходит в динамический режим, если пики выше цели, и тогда
+    тихие сцены снова накачиваются до шипения. Поэтому считаем усиление сами: к целевой громкости,
+    но так, чтобы пики не превысили цель больше чем на 3 дБ (их съедает лимитер).
+    Без замеров — однопроходный loudnorm как запасной вариант.
+    """
+    tp_limit = 10 ** (LOUDNORM_TARGET["TP"] / 20)
+    limiter = f"alimiter=limit={tp_limit:.4f}:attack=5:release=80:level=false"
+    if not measured:
+        return "loudnorm=I={I}:TP={TP}:LRA={LRA}".format(**LOUDNORM_TARGET)
+    try:
+        in_i, in_tp = float(measured["input_i"]), float(measured["input_tp"])
+    except (KeyError, ValueError):
+        return "loudnorm=I={I}:TP={TP}:LRA={LRA}".format(**LOUDNORM_TARGET)
+    gain = LOUDNORM_TARGET["I"] - in_i
+    gain = min(gain, LOUDNORM_TARGET["TP"] - in_tp + 6.0)      # до 6 дБ пиков съедает лимитер
+    gain = max(-30.0, min(30.0, gain))
+    return f"volume={gain:+.2f}dB,{limiter}"
+
+
 def run(cmd: list[str], logf=None, cwd: str | None = None) -> int:
     if logf is not None:
         logf.write("\n$ " + " ".join(shlex.quote(c) for c in cmd) + "\n")
@@ -238,7 +300,7 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 
 
 def build_graph(clips: list[ClipSpec], durations: list[float], opts: AssembleOptions, extra_inputs: list[str],
-                ass_name: str | None) -> tuple[str, list[Segment], float]:
+                ass_name: str | None, loudnorm: str | None = None, audio_only: bool = False) -> tuple[str, list[Segment], float]:
     """Возвращает (filter_complex, таймлайн, длительность фильма).
 
     Входы ffmpeg: 0..n-1 — клипы, далее extra_inputs в порядке: музыка (если есть),
@@ -254,33 +316,42 @@ def build_graph(clips: list[ClipSpec], durations: list[float], opts: AssembleOpt
         trim = (1 / fps) if (i > 0 and c.transition == "continue") else 0.0
         d = segs[i].duration
         end = trim + d
-        lines.append(f"[{i}:v]trim=start={trim:.4f}:end={end:.4f},setpts=PTS-STARTPTS,fps={fps},"
-                     f"format=yuv420p,settb=AVTB[v{i}]")
+        if not audio_only:
+            lines.append(f"[{i}:v]trim=start={trim:.4f}:end={end:.4f},setpts=PTS-STARTPTS,fps={fps},"
+                         f"format=yuv420p,settb=AVTB[v{i}]")
+        # усиленный клип тут же ограничиваем по пикам (-3 dBTP): транзиенты тихих сцен иначе
+        # задирают пик всего фильма и не дают поднять общий уровень
+        gain = f"volume={c.gain_db:+.1f}dB," if abs(c.gain_db) >= 0.05 else ""
+        if c.gain_db > 0.05:
+            gain += f"alimiter=limit={10 ** (-3 / 20):.4f}:attack=5:release=80:level=false,"
         lines.append(f"[{i}:a]atrim=start={trim:.4f}:end={end:.4f},asetpts=PTS-STARTPTS,"
-                     f"aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,apad=whole_dur={d:.4f},"
+                     f"aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,{gain}apad=whole_dur={d:.4f},"
                      f"atrim=end={d:.4f},afade=t=in:st=0:d={fade},afade=t=out:st={max(0.0, d - fade):.4f}:d={fade}[a{i}]")
     cur_v, cur_a, cur_dur = "[v0]", "[a0]", segs[0].duration
     for i in range(1, n):
         c, d = clips[i], segs[i].duration
         if c.transition == "dissolve":
             x = _xfade_len(c.transition_seconds, d, cur_dur)
-            lines.append(f"{cur_v}[v{i}]xfade=transition=fade:duration={x}:offset={cur_dur - x:.4f}[vx{i}]")
+            if not audio_only:
+                lines.append(f"{cur_v}[v{i}]xfade=transition=fade:duration={x}:offset={cur_dur - x:.4f}[vx{i}]")
             lines.append(f"{cur_a}[a{i}]acrossfade=d={x}:c1=tri:c2=tri[ax{i}]")
             cur_dur = cur_dur + d - x
         else:
-            lines.append(f"{cur_v}[v{i}]concat=n=2:v=1:a=0[vx{i}]")
+            if not audio_only:
+                lines.append(f"{cur_v}[v{i}]concat=n=2:v=1:a=0[vx{i}]")
             lines.append(f"{cur_a}[a{i}]concat=n=2:v=0:a=1[ax{i}]")
             cur_dur += d
         cur_v, cur_a = f"[vx{i}]", f"[ax{i}]"
     # видео: фейды фильма и субтитры
-    vchain = []
-    if opts.fade_in > 0:
-        vchain.append(f"fade=t=in:st=0:d={opts.fade_in}")
-    if opts.fade_out > 0:
-        vchain.append(f"fade=t=out:st={max(0.0, total - opts.fade_out):.3f}:d={opts.fade_out}")
-    if ass_name:
-        vchain.append(f"ass={ass_name}")
-    lines.append(f"{cur_v}{','.join(vchain) if vchain else 'copy'}[vout]")
+    if not audio_only:
+        vchain = []
+        if opts.fade_in > 0:
+            vchain.append(f"fade=t=in:st=0:d={opts.fade_in}")
+        if opts.fade_out > 0:
+            vchain.append(f"fade=t=out:st={max(0.0, total - opts.fade_out):.3f}:d={opts.fade_out}")
+        if ass_name:
+            vchain.append(f"ass={ass_name}")
+        lines.append(f"{cur_v}{','.join(vchain) if vchain else 'copy'}[vout]")
     # аудио: диалоги/эмбиент + озвучка -> (sidechain) музыка -> sfx -> loudnorm
     idx = n
     music_label = None
@@ -326,8 +397,11 @@ def build_graph(clips: list[ClipSpec], durations: list[float], opts: AssembleOpt
         a = "[mix]"
     else:
         a = mix_inputs[0]
-    tail = (LOUDNORM + ",aresample=48000") if opts.loudnorm else "aresample=48000"
-    lines.append(f"{a}{tail}[aout]")
+    if audio_only:
+        lines.append(f"{a}anull[aout]")                       # первый проход: сырой микс для замера
+    else:
+        tail = ((loudnorm or loudnorm_filter(None)) + ",aresample=48000") if opts.loudnorm else "aresample=48000"
+        lines.append(f"{a}{tail}[aout]")
     return ";\n".join(lines), segs, total
 
 
@@ -336,6 +410,15 @@ def assemble(clips: list[ClipSpec], out_path: pathlib.Path, opts: AssembleOption
     """Нормализует клипы и собирает фильм. Возвращает отчёт с таймлайном."""
     if not clips:
         raise AssembleError("нет клипов для сборки")
+    # ffmpeg запускается из workdir (ради ass=captions.ass), поэтому все пути делаем абсолютными
+    workdir = workdir.resolve()
+    out_path = pathlib.Path(out_path).resolve()
+    absf = lambda x: str(pathlib.Path(x).resolve()) if x else x  # noqa: E731
+    clips = [ClipSpec(path=absf(c.path), shot_id=c.shot_id, transition=c.transition, transition_seconds=c.transition_seconds,
+                      caption=c.caption, sfx=[(absf(f), o, v) for (f, o, v) in c.sfx], narration=absf(c.narration),
+                      trim_end=c.trim_end, gain_db=c.gain_db) for c in clips]
+    if opts.music_path:
+        opts = AssembleOptions(**{**opts.__dict__, "music_path": absf(opts.music_path)})
     workdir.mkdir(parents=True, exist_ok=True)
     norm_dir = workdir / "norm"
     norm_dir.mkdir(exist_ok=True)
@@ -348,9 +431,13 @@ def assemble(clips: list[ClipSpec], out_path: pathlib.Path, opts: AssembleOption
             if not normalize(src, dst, opts.width, opts.height, opts.fps, logf):
                 raise AssembleError(f"не удалось нормализовать {src.name}")
         info = probe(dst)
+        lufs = measure_loudness(dst)
+        gain = clip_gain_db(lufs)
+        if logf is not None:
+            logf.write(f"\n# clip {c.shot_id}: {lufs if lufs is not None else '—'} LUFS -> gain {gain:+.1f} dB\n")
         normalized.append(ClipSpec(path=str(dst), shot_id=c.shot_id, transition=c.transition,
                                    transition_seconds=c.transition_seconds, caption=c.caption, sfx=c.sfx,
-                                   narration=c.narration, trim_end=c.trim_end))
+                                   narration=c.narration, trim_end=c.trim_end, gain_db=gain))
         durations.append(info["duration"])
     # дополнительные входы в том же порядке, в котором граф их нумерует
     extra: list[str] = []
@@ -375,14 +462,25 @@ def assemble(clips: list[ClipSpec], out_path: pathlib.Path, opts: AssembleOption
                                                       opts.caption_font_size), encoding="utf-8")
         else:
             log("ВНИМАНИЕ: в этом ffmpeg нет libass — субтитры пропущены (на RunPod они будут)")
-    graph, segs, total = build_graph(normalized, durations, opts, extra, ass_name)
+    inputs: list[str] = []
+    for c in normalized:
+        inputs += ["-i", c.path]
+    for pre, path in zip(extra_pre, extra):
+        inputs += pre + ["-i", path]
+    loudnorm = None
+    if opts.loudnorm:
+        # первый проход: замер громкости микса -> линейный (постоянный) loudnorm вместо динамической накачки тишины
+        graph_a, _, _ = build_graph(normalized, durations, opts, extra, None, audio_only=True)
+        measured = measure_graph_loudness(inputs, graph_a, str(workdir))
+        loudnorm = loudnorm_filter(measured)
+        if logf is not None:
+            logf.write(f"\n# loudness pass 1: {json.dumps(measured) if measured else 'n/a'}\n# loudnorm: {loudnorm}\n")
+        if not measured:
+            log("ВНИМАНИЕ: замер громкости не удался, используется однопроходный loudnorm")
+    graph, segs, total = build_graph(normalized, durations, opts, extra, ass_name, loudnorm=loudnorm)
     script = workdir / "filter_complex.txt"
     script.write_text(graph, encoding="utf-8")
-    cmd = [ffmpeg_bin(), "-y", "-loglevel", "error"]
-    for c in normalized:
-        cmd += ["-i", c.path]
-    for pre, path in zip(extra_pre, extra):
-        cmd += pre + ["-i", path]
+    cmd = [ffmpeg_bin(), "-y", "-loglevel", "error", *inputs]
     cmd += _filter_complex_args(graph, script) + ["-map", "[vout]", "-map", "[aout]",
             "-c:v", "libx264", "-crf", str(opts.crf), "-preset", opts.preset, "-pix_fmt", "yuv420p", "-r", str(opts.fps),
             "-c:a", "aac", "-b:a", "192k", "-ar", "48000", "-movflags", "+faststart", "-t", f"{total:.3f}",
@@ -393,6 +491,7 @@ def assemble(clips: list[ClipSpec], out_path: pathlib.Path, opts: AssembleOption
     timeline = [{"shot": s.clip.shot_id, "start": s.start, "end": s.end, "transition": s.clip.transition,
                  "caption": s.clip.caption} for s in segs]
     report = {"film": str(out_path), "seconds": round(total, 2), "resolution": f"{opts.width}x{opts.height}",
-              "shots": len(clips), "music": bool(opts.music_path), "captions": bool(ass_name), "timeline": timeline}
+              "shots": len(clips), "music": bool(opts.music_path), "captions": bool(ass_name), "timeline": timeline,
+              "clip_gains_db": {c.shot_id: c.gain_db for c in normalized}, "loudnorm": loudnorm}
     (workdir / "timeline.json").write_text(json.dumps(timeline, ensure_ascii=False, indent=1), encoding="utf-8")
     return report
