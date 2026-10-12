@@ -77,3 +77,29 @@ def test_film_py_loop_closes_on_first_frame(tmp_path):
     log = (tmp_path / "proj" / "render.log").read_text(encoding="utf-8")
     last_cmd = [l for l in log.splitlines() if l.startswith("$") and "fake_ltx" in l and "shot_003" in l][-1]
     assert last_cmd.count("--image") == 1 and "_loop_end.png 120 1.0" in last_cmd   # только финальный кадр, стартового нет
+
+
+@needs_ffmpeg
+def test_film_py_user_first_frame(tmp_path):
+    from tests.test_references import make_png
+    for p in pathlib.Path("/tmp").glob("fake_ltx_failed_*"):
+        p.unlink()
+    make_png(tmp_path / "opening.png", 90, 160)
+    plan = {"title": "Ref", "format": "9:16", "quality": "high", "seed": 3, "shots": [
+        {"id": "001", "seconds": 5, "prompt": "p" * 40, "image": "opening.png", "image_strength": 0.8},
+        {"id": "002", "seconds": 4, "prompt": "p" * 40},
+    ]}
+    plan_path = tmp_path / "ref.json"
+    plan_path.write_text(json.dumps(plan), encoding="utf-8")
+    env = dict(os.environ, LTX_TEST_CMD=f"bash {ROOT / 'tests' / 'fake_ltx.sh'}", FILM_QUALITY="high",
+               FILM_DIR=str(tmp_path / "proj"), FILM_RETRIES="1")
+    r = subprocess.run([sys.executable, str(ROOT / "remote" / "film.py"), str(plan_path)], env=env,
+                       capture_output=True, text=True, timeout=600)
+    assert r.returncode == 0, r.stdout + r.stderr
+    log = (tmp_path / "proj" / "render.log").read_text(encoding="utf-8")
+    cmd1 = [l for l in log.splitlines() if l.startswith("$") and "fake_ltx" in l and "shot_001" in l][-1]
+    cmd2 = [l for l in log.splitlines() if l.startswith("$") and "fake_ltx" in l and "shot_002" in l][-1]
+    assert f"--image {tmp_path / 'opening.png'} 0 0.8" in cmd1 and "--pipeline dfr" in cmd1   # 121 кадр с кадром -> DFR
+    assert "--image" not in cmd2
+    report = json.loads((tmp_path / "proj" / "report.json").read_text(encoding="utf-8"))
+    assert report["shots_ok"] == 2 and report["shots_failed"] == []

@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
-import { Clapperboard, Sparkles, Trash2 } from "lucide-react";
-import { api, type Job, type PlanDetail } from "../api";
-import { Button, Chip, KV, Modal, Tabs, Textarea, useToast } from "../components/ui";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Clapperboard, ImagePlus, Loader2, Sparkles, Trash2, X } from "lucide-react";
+import { api, type Job, type PlanDetail, type Shot } from "../api";
+import { Button, Chip, KV, Modal, Tabs, Textarea, Toggle, useToast } from "../components/ui";
+import { uploadImages } from "../components/ReferencePicker";
 import { useStore } from "../store";
 
 type Tab = "shots" | "issues" | "json";
@@ -11,6 +12,10 @@ export function PlanModal({ name, initialTab = "shots" }: { name: string; initia
   const [d, setD] = useState<PlanDetail | null>(null);
   const [tab, setTab] = useState<Tab>(initialTab);
   const [raw, setRaw] = useState("");
+  const [adapt, setAdapt] = useState(true);
+  const [busyShot, setBusyShot] = useState<string | null>(null);
+  const fileFor = useRef<string | null>(null);
+  const picker = useRef<HTMLInputElement>(null);
   const load = useCallback(async () => {
     try { const x = await api<PlanDetail>(`/api/plan/${name}`); setD(x); setRaw(x.raw); } catch (e) { toast((e as Error).message, true); setModal(null); }
   }, [name, toast, setModal]);
@@ -37,6 +42,22 @@ export function PlanModal({ name, initialTab = "shots" }: { name: string; initia
     catch (e) { toast((e as Error).message, true); }
   };
   const brief = (p?.creative_brief ?? {}) as Record<string, unknown>;
+  const chooseFrame = (shot: Shot) => { fileFor.current = shot.id; picker.current?.click(); };
+  const onFrameFile = async (files: FileList | null) => {
+    const sid = fileFor.current;
+    if (!files?.length || !sid) return;
+    setBusyShot(sid);
+    try {
+      const [img] = await uploadImages(files);
+      const res = await api<PlanDetail & { job?: Job }>(`/api/plan/${name}/frame`, { method: "POST", body: JSON.stringify({ shot: sid, file: img.file, adapt }) });
+      if (res.job) { toast(`Claude is fitting shot ${sid} to the photo`); await refresh(); setModal({ type: "job", id: res.job.id }); }
+      else { setD(res); setRaw(res.raw); toast(`Shot ${sid} now starts from the photo`); await refresh(); }
+    } catch (e) { toast((e as Error).message, true); } finally { setBusyShot(null); }
+  };
+  const clearFrame = async (sid: string) => {
+    try { const res = await api<PlanDetail>(`/api/plan/${name}/frame?shot=${sid}`, { method: "DELETE" }); setD(res); setRaw(res.raw); toast(`First frame removed from shot ${sid}`); await refresh(); }
+    catch (e) { toast((e as Error).message, true); }
+  };
   return (
     <Modal open onClose={close} wide title={p?.title ?? name} subtitle={<span className="mono">{d?.path ?? name}</span>}
       actions={<>
@@ -70,21 +91,55 @@ export function PlanModal({ name, initialTab = "shots" }: { name: string; initia
             ["Characters", <span className="text-[13px]">{p.characters.length ? p.characters.map((c) => <div key={c.name}><b>{c.name}</b> — {c.descriptor || c.description}</div>) : "—"}</span>],
             ["Music", p.music ? `${p.music.file || "(no track chosen)"}${p.music.mood ? ` · ${p.music.mood}` : ""}` : "—"],
           ]} /></div>
+          <input ref={picker} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { void onFrameFile(e.target.files); e.target.value = ""; }} />
+          {(p.references?.length ?? 0) > 0 && (
+            <div className="mb-4">
+              <div className="label mb-2">Reference photos</div>
+              <div className="flex flex-wrap gap-2.5">
+                {p.references!.map((r) => (
+                  <div key={r.file + (r.shot ?? "")} className="w-[132px] rounded-lg overflow-hidden border border-line bg-bg-2" title={r.description || undefined}>
+                    <div className="h-[80px] bg-black">{r.url && <img src={r.url} alt="" className="w-full h-full object-cover" />}</div>
+                    <div className="px-2 py-1.5 text-[11.5px] flex items-center justify-between gap-1">
+                      <span className={r.role === "style" ? "text-muted" : "text-accent font-semibold"}>{r.role === "opening" ? "opening" : r.role === "frame" ? "shot frame" : "style"}</span>
+                      {r.shot && <span className="mono text-dim">{r.shot}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <div className="flex items-center justify-between gap-3 mb-2.5 flex-wrap">
+            <div className="label">Shots</div>
+            <Toggle checked={adapt} onChange={setAdapt} label={<span className="text-[13px] text-muted">When setting a first frame, let Claude rewrite the shot to match the photo</span>} />
+          </div>
           <div className="grid gap-2.5">
             {p.shots.map((s, i) => (
-              <div key={s.id} className="border border-line rounded-lg p-3.5 bg-bg-2 grid gap-2">
+              <div key={s.id} className={`border border-line rounded-lg p-3.5 bg-bg-2 grid gap-3 ${s.image_url ? "grid-cols-[150px_1fr]" : ""} max-sm:grid-cols-1`}>
+                {s.image_url && (
+                  <div className="relative w-[150px] h-[100px] rounded-md overflow-hidden bg-black self-start">
+                    <img src={s.image_url} alt="" className="w-full h-full object-cover" />
+                    <span className="absolute left-1.5 top-1.5 text-[10px] font-bold bg-accent text-[#1a1206] rounded px-1.5 py-px">FIRST FRAME</span>
+                    <button onClick={() => clearFrame(s.id)} title="Remove first frame" className="absolute right-1 top-1 w-6 h-6 rounded-full bg-black/60 text-white grid place-items-center hover:bg-bad cursor-pointer"><X size={13} /></button>
+                  </div>
+                )}
+                <div className="grid gap-2 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="mono font-bold text-accent">{s.id}</span><Chip>{s.seconds} s</Chip>
                   {i > 0 && <Chip tone={s.transition === "continue" ? "info" : s.transition === "dissolve" ? "accent" : "default"}>{s.transition || "cut"}</Chip>}
                   {s.caption && <Chip tone="warn">💬 {s.caption}</Chip>}
                   {(s.sfx ?? []).map((x) => <Chip key={x.file}>🔊 {x.file.split("/").pop()}</Chip>)}
                   {s.beat && <span className="text-muted text-[12.5px]">{s.beat}</span>}
+                  <button onClick={() => chooseFrame(s)} disabled={busyShot === s.id}
+                    className="ml-auto inline-flex items-center gap-1.5 text-[12.5px] text-muted hover:text-text px-2 py-1 rounded-md border border-line hover:border-line-2 cursor-pointer">
+                    {busyShot === s.id ? <Loader2 size={13} className="animate-spin" /> : <ImagePlus size={13} />}{s.image ? "Replace first frame" : "Set first frame"}
+                  </button>
                 </div>
                 <p className="m-0 text-[14px] text-[#cdd3df] leading-relaxed">{s.prompt}</p>
                 {s.direction && Object.keys(s.direction).length > 0 && (
                   <details><summary className="text-[12.5px] text-muted hover:text-text">Shot direction ▾</summary>
                     <div className="text-[13px] mt-1.5 grid gap-0.5">{Object.entries(s.direction).map(([k, v]) => <div key={k}><b className="text-muted">{k}</b>: {v}</div>)}</div></details>
                 )}
+                </div>
               </div>
             ))}
           </div>

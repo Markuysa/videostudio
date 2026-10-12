@@ -16,7 +16,7 @@ import math
 import pathlib
 import re
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .audio import library_summary
 from .knowledge import KIND_PRESETS, LTX_PROMPT_RULES, STYLE_REFERENCE, MOTION_PROMPT_RULES, DIRECTOR_RULES
@@ -46,6 +46,8 @@ class PlanRequest:
     seed: int | None = None
     notes: str = ""                   # доп. указания к этому плану
     loop: bool = False                # бесшовный луп
+    refs: list = field(default_factory=list)   # фото-референсы [{file, role: style|frame|opening}]
+    reference_info: dict = field(default_factory=dict)   # результат анализа (заполняет Planner)
 
 
 def _preset(kind: str) -> dict:
@@ -77,6 +79,9 @@ def system_prompt(req: PlanRequest, high: bool) -> str:
     ]
     if req.kind == "motion":
         parts.append(MOTION_PROMPT_RULES)
+    if req.reference_info:
+        from .references import reference_brief
+        parts.append(reference_brief(req.reference_info))
     if req.loop:
         parts.append("LOOP MODE: the piece must play as a seamless loop. The LAST shot must end in exactly the visual state "
                      "the FIRST shot begins with: same location, framing, subject position, weather and light (the studio "
@@ -128,7 +133,8 @@ Return JSON exactly in this shape:
    "prompt": str,                     // the LTX-2.5 prompt, one English paragraph, 70-180 words, ends with sound
    "caption": str|null,               // on-screen caption in the requested language (shorts only), 2-7 words
    "narration": str|null,             // voice-over text in the requested language, or null
-   "sfx": [{"file": str, "offset": number, "volume": number}]   // only files from the library, else []
+   "sfx": [{"file": str, "offset": number, "volume": number}],  // only files from the library, else []
+   "ref": int|null                    // index of a FRAME REFERENCE this shot starts from (only if references exist)
   }, ...]}
 Rules: the sum of seconds for this act must match the act duration (±10%). The first shot of the whole film is
 "cut". A "continue" shot must begin from the end state of the previous shot. Keep every recurring character's
@@ -193,6 +199,16 @@ class Planner:
     def plan(self, req: PlanRequest) -> Plan:
         preset = _preset(req.kind)
         high = req.quality == "high"
+        if req.refs and not req.reference_info:
+            from .references import analyze_references, format_for_aspect
+            req.reference_info = analyze_references(self.llm, req.refs, req.request, log=self.log)
+            self.trace.append({"stage": "references", "usage": getattr(self.llm, "last_usage", {})})
+            self.log("Эстетика референсов: " + req.reference_info["style"].get("anchor", "")[:160])
+            frames = [r for r in req.reference_info["references"] if r["role"] in ("opening", "frame") and r.get("size")]
+            if not req.format and frames:
+                lead = next((r for r in frames if r["role"] == "opening"), frames[0])
+                req.format = format_for_aspect(*lead["size"])
+                self.log(f"Формат кадра взят из референса: {req.format}")
         fmt = req.format or preset["default_format"]
         if fmt not in FORMATS:
             raise ValueError(f"формат {fmt} не поддерживается")
@@ -361,6 +377,14 @@ class Planner:
                 + "\n".join(f"{i + 1}. {b}" for i, b in enumerate(beats)))
         if req.loop and opening:
             user += "\nLOOP OPENING TO RETURN TO:\n" + json.dumps(opening, ensure_ascii=False)
+        if req.reference_info:
+            used = sorted({int(x["ref"]) for x in (history or []) if isinstance(x.get("ref"), int)})
+            frames = [i for i, r in enumerate(req.reference_info.get("references", [])) if r["role"] in ("frame", "opening")]
+            free = [i for i in frames if i not in used]
+            if frames:
+                user += (f"\n\nFRAME REFERENCES already used by earlier shots: {used or 'none'}; still to place: {free or 'none'}. "
+                         "Place the remaining ones in the acts where they fit the story best; the opening reference belongs "
+                         "to the very first shot of act 1.")
         if history:
             user += "\n\nSTATE LEDGER OF ALL EARLIER SHOTS (beat and end state; your first shot starts from the last end state):\n" \
                     + json.dumps(ledger(history), ensure_ascii=False)
@@ -422,6 +446,7 @@ class Planner:
         preset = _preset(req.kind)
         want_caps = req.captions if req.captions is not None else preset["captions"]
         shots: list[Shot] = []
+        used_refs: dict[int, str] = {}
         lib_files = {e["file"] for kind in ("music", "sfx") for e in (req.library or {}).get(kind, [])}
         for i, r in enumerate(raw_shots):
             if not str(r.get("prompt", "")).strip():
@@ -429,8 +454,16 @@ class Planner:
             tr = str(r.get("transition") or "cut").lower()
             if tr not in ("cut", "continue", "dissolve") or i == 0:
                 tr = "cut"
+            image = None
+            refs_all = (req.reference_info or {}).get("references", [])
+            ref = r.get("ref")
+            if isinstance(ref, int) and 0 <= ref < len(refs_all) and refs_all[ref]["role"] in ("frame", "opening") \
+                    and ref not in used_refs:
+                image = refs_all[ref]["file"]
+                used_refs[ref] = f"{len(shots) + 1:03d}"
+                tr = "cut"                     # фото задаёт первый кадр — продолжение от прошлой сцены невозможно
             secs = clamp_seconds(float(r.get("seconds") or 6), high,
-                                 conditioned=(tr == "continue") or (req.loop and i == len(raw_shots) - 1))
+                                 conditioned=(tr == "continue") or bool(image) or (req.loop and i == len(raw_shots) - 1))
             sfx = []
             for x in r.get("sfx") or []:
                 if isinstance(x, dict) and x.get("file") in lib_files:
@@ -439,9 +472,25 @@ class Planner:
                               transition_seconds=float(r.get("transition_seconds") or 0.5),
                               caption=(str(r["caption"]).strip() or None) if (want_caps and r.get("caption")) else None,
                               narration=(str(r["narration"]).strip() or None) if r.get("narration") else None,
-                              sfx=sfx, beat=r.get("beat"), direction=dict(r.get("direction") or {})))
+                              sfx=sfx, beat=r.get("beat"), direction=dict(r.get("direction") or {}), image=image))
         if not shots:
             raise RuntimeError("модель не вернула ни одной сцены")
+        info = req.reference_info or {}
+        refs_all = info.get("references", [])
+        opening = next((i for i, x in enumerate(refs_all) if x["role"] == "opening"), None)
+        if opening is not None and used_refs.get(opening) != "001":
+            # первый кадр фильма закреплён жёстко, даже если модель поставила его не туда
+            for k, sid in list(used_refs.items()):
+                if sid == "001":
+                    del used_refs[k]
+            used_refs.pop(opening, None)
+            shots[0].image = refs_all[opening]["file"]
+            shots[0].transition = "cut"
+            shots[0].seconds = clamp_seconds(shots[0].seconds, high, conditioned=True)
+            used_refs[opening] = "001"
+        missing = [i for i, x in enumerate(refs_all) if x["role"] in ("frame", "opening") and i not in used_refs]
+        if missing:
+            self.log(f"ВНИМАНИЕ: кадры-референсы {missing} не попали в сцены; их можно назначить вручную в плане")
         music = None
         m = outline.get("music") or {}
         if req.music == "none":
@@ -463,7 +512,14 @@ class Planner:
                     characters=characters, locations=list(outline.get("locations") or []),
                     series=(req.series_bible or {}).get("slug"), episode=req.episode, music=music,
                     captions=Captions(enabled=bool(want_caps)), request=req.request, loop=req.loop,
-                    creative_brief=dict(outline.get("creative_brief") or {}) | {"project_notes": req.notes})
+                    creative_brief=dict(outline.get("creative_brief") or {}) | {"project_notes": req.notes},
+                    references=[{"file": x["file"], "role": x["role"], "description": x.get("description", ""),
+                                 "shot": used_refs.get(i)} for i, x in enumerate(refs_all)])
+        if info.get("style"):
+            # эстетика референсов главнее жанровых догадок модели
+            plan.style = {**plan.style, **{k: v for k, v in info["style"].items() if v}}
+            if info.get("notes"):
+                plan.creative_brief["reference_notes"] = info["notes"]
         if req.kind == "short":
             plan.fade_in, plan.fade_out = 0.0, 0.4
         if req.loop:

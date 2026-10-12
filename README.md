@@ -11,7 +11,7 @@ seamless assembly with ffmpeg · a React control room to run it all.
 [![React](https://img.shields.io/badge/UI-React%2019%20%2B%20TypeScript-61DAFB?logo=react&logoColor=black)](#web-interface)
 [![LTX-2.5](https://img.shields.io/badge/video-LTX--2.5-f2b35b)](https://huggingface.co/Lightricks/LTX-2.5)
 [![Claude](https://img.shields.io/badge/brain-Claude%20Opus%205.5-d97757)](https://www.anthropic.com)
-[![Tests](https://img.shields.io/badge/tests-56%20passing-4ad092)](#tests)
+[![Tests](https://img.shields.io/badge/tests-76%20passing-4ad092)](#tests)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 <img src="docs/img/ui_studio.jpg" width="900" alt="Studio home" />
@@ -40,6 +40,7 @@ renders every shot in 1080p, stitches them into one film with continuity across 
 | | |
 |---|---|
 | 🧠 **Writes the film** | Story, acts, style bible, characters with verbatim visual descriptors, a prompt per shot optimized for LTX‑2.5 (camera → subject → action → light → sound). Director review checks the text against your request, continuity and feasibility. |
+| 🖼 **Follows your photos** | Reference photos set the look of the whole film; any photo can be the exact first frame of a shot. |
 | 🔗 **Keeps continuity** | A *world anchor* sentence is injected verbatim into every prompt; each shot carries `direction.start/end`, and the next shot starts from the previous end state. Pronouns without a character descriptor are lint errors. |
 | 🎞 **Renders on demand** | Spins up a RunPod GPU, installs LTX‑2.5 once on a network volume, renders DFR 1080p with a fallback chain (DFR → distilled → fast), caches clips, resumes after interruptions, deletes the pod. |
 | ✂️ **Assembles seamlessly** | Hard cuts with micro audio fades, `continue` shots conditioned on the previous last frame, dissolves, music with speech ducking, SFX, voice‑over, burned captions with a 9:16 safe zone. Seamless **loops**: the last shot is conditioned on the first frame of the film. |
@@ -48,6 +49,38 @@ renders every shot in 1080p, stitches them into one film with continuity across 
 | 🖥 **Control room** | React + TypeScript UI: compose, watch jobs with live logs and per‑shot progress, review and edit plans, play films, inspect per‑shot reports, re‑assemble, manage series bibles and the sound library. |
 
 ---
+
+## Reference photos and first frames
+
+Drop up to eight photos onto the **Reference photos** area of the form and give each one a role:
+
+| Role | What happens |
+|---|---|
+| **Style** | Claude looks at the photo and writes the style bible from it: palette, light logic, lens, grain, texture. The resulting *world anchor* sentence is pasted into every shot prompt, so the whole film takes that look. |
+| **Frame** | The photo becomes the exact first frame of one shot. Claude places it where it fits the story and writes that shot so it starts from the photo and continues with motion and sound. |
+| **Opening** | The same, pinned to the very first shot. The film's aspect ratio follows this photo unless you set a format. |
+
+<div align="center">
+<img src="docs/img/ui_references.jpg" width="900" alt="Reference photos in the form" />
+<sub>One photo as the opening frame, another as a style reference.</sub><br/><br/>
+<img src="docs/img/ui_first_frame.jpg" width="900" alt="First frame on a shot" />
+<sub>Any shot of an existing plan can start from a photo: <b>Set first frame</b>, optionally letting Claude rewrite the shot to match it.</sub>
+</div>
+
+In an existing plan, **Set first frame** on any shot uploads a photo as its first frame. With the toggle on, Claude
+looks at the photo and rewrites the shot prompt so it starts from the image and still leads into the next shot;
+contradictions with the film's world are reported in the review notes.
+
+```bash
+python studio.py make "a deer steps onto this forest path in a storm" --kind aesthetic \
+    --ref photos/path.jpg:opening --ref photos/moss.jpg:style
+python studio.py frame plans/x.json --shot 003 --image photos/door.jpg [--strength 0.8] [--no-adapt]
+```
+
+Honest limits: LTX‑2.5 has no image‑to‑style transfer, so shots built from text match the references in palette,
+light and mood rather than pixel for pixel; exact matches come from the first‑frame role. Shots with a first frame
+are capped at 5 s in `high` quality (DFR limit), and the image is center‑cropped to the film format. Reading photos
+needs the Anthropic provider; the local Ollama model cannot see images.
 
 ## Web interface
 

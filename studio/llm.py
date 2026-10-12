@@ -27,7 +27,7 @@ class LLMError(RuntimeError):
 class LLM(Protocol):
     name: str
 
-    def complete_json(self, system: str, user: str, max_tokens: int = 16000) -> dict: ...
+    def complete_json(self, system: str, user: str, max_tokens: int = 16000, images: list | None = None) -> dict: ...
 
     def complete_text(self, system: str, user: str, max_tokens: int = 4000) -> str: ...
 
@@ -73,9 +73,14 @@ class AnthropicLLM:
         self.effort = effort if effort in ("low", "medium", "high", "xhigh", "max") else "high"
         self.last_usage: dict = {}
 
-    def _stream(self, system: str, user: str, max_tokens: int):
+    def _stream(self, system: str, user: str, max_tokens: int, images: list | None = None):
+        content: str | list = user
+        if images:
+            # картинки идут перед текстом: так модель сначала смотрит, потом читает задачу
+            content = [{"type": "image", "source": {"type": "base64", "media_type": mt, "data": data}} for mt, data in images]
+            content.append({"type": "text", "text": user})
         kwargs = dict(model=self.model, max_tokens=max_tokens, system=system,
-                      messages=[{"role": "user", "content": user}],
+                      messages=[{"role": "user", "content": content}],
                       thinking={"type": "adaptive"}, output_config={"effort": self.effort})
         try:
             with self.client.beta.messages.stream(betas=["server-side-fallback-2026-07-01"], fallbacks="default",
@@ -89,11 +94,11 @@ class AnthropicLLM:
                     return stream.get_final_message()
             raise
 
-    def _call(self, system: str, user: str, max_tokens: int) -> str:
+    def _call(self, system: str, user: str, max_tokens: int, images: list | None = None) -> str:
         a = self._anthropic
         for attempt in range(3):
             try:
-                msg = self._stream(system, user, max_tokens)
+                msg = self._stream(system, user, max_tokens, images)
                 break
             except a.RateLimitError as e:
                 wait = int(getattr(e, "response", None) and e.response.headers.get("retry-after", "20") or 20)
@@ -123,9 +128,10 @@ class AnthropicLLM:
     def complete_text(self, system: str, user: str, max_tokens: int = 4000) -> str:
         return self._call(system, user, max_tokens)
 
-    def complete_json(self, system: str, user: str, max_tokens: int = 16000) -> dict:
+    def complete_json(self, system: str, user: str, max_tokens: int = 16000, images: list | None = None) -> dict:
+        """images — список (media_type, base64) для моделей со зрением (см. studio.references.image_for_llm)."""
         sys_json = system + "\n\nRespond with a single valid JSON object and nothing else: no prose, no markdown fences."
-        text = self._call(sys_json, user, max_tokens)
+        text = self._call(sys_json, user, max_tokens, images)
         try:
             return extract_json(text)
         except LLMError:
@@ -160,7 +166,10 @@ class OllamaLLM:
     def complete_text(self, system: str, user: str, max_tokens: int = 4000) -> str:
         return self._chat(system, user, max_tokens, json_mode=False)
 
-    def complete_json(self, system: str, user: str, max_tokens: int = 16000) -> dict:
+    def complete_json(self, system: str, user: str, max_tokens: int = 16000, images: list | None = None) -> dict:
+        if images:
+            raise LLMError(f"локальная модель {self.model} не видит изображения: для референсов нужен провайдер anthropic "
+                           "(ANTHROPIC_API_KEY)")
         text = self._chat(system + "\n\nRespond with one valid JSON object only.", user, max_tokens, json_mode=True)
         return extract_json(text)
 
@@ -173,10 +182,12 @@ class FakeLLM:
         self.responses = list(responses or [])
         self.handler = handler
         self.calls: list[tuple[str, str]] = []
+        self.images: list[list] = []
         self.last_usage = {}
 
-    def complete_json(self, system: str, user: str, max_tokens: int = 16000) -> dict:
+    def complete_json(self, system: str, user: str, max_tokens: int = 16000, images: list | None = None) -> dict:
         self.calls.append((system, user))
+        self.images.append(list(images or []))
         if self.handler:
             return self.handler(system, user)
         if not self.responses:

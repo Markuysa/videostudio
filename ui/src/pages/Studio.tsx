@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Clapperboard, FileText } from "lucide-react";
-import { api, KINDS, LANGS, type Job } from "../api";
+import { api, KINDS, LANGS, type Job, type RefItem } from "../api";
 import { Button, Empty, Field, Input, Segmented, Select, Stat, Textarea, Toggle, useToast } from "../components/ui";
 import { JobCard } from "../components/JobCard";
 import { FilmCard } from "../components/FilmCard";
 import { PromptAssistant } from "../components/PromptAssistant";
+import { ReferencePicker } from "../components/ReferencePicker";
 import { PageHeader } from "../components/PageHeader";
 import { useStore } from "../store";
 
@@ -20,6 +21,7 @@ export function Studio() {
   const [f, setF] = useState<Form>(initial);
   const [adv, setAdv] = useState(false);
   const [direction, setDirection] = useState<{ text: string; source: string } | null>(null);
+  const [refs, setRefs] = useState<RefItem[]>([]);
   const assistantContext = { request: f.request, kind: f.series ? "episode" : f.kind, series: f.series, duration: f.duration,
     format: f.format, language: f.language, music: f.music, captions: f.captions, loop: f.loop, notes: f.notes };
   const directionCurrent = direction?.source === JSON.stringify(assistantContext);
@@ -49,11 +51,13 @@ export function Studio() {
     setBusy(true);
     try {
       const notes = [f.notes, directionCurrent ? direction?.text : ""].filter(Boolean).join("\n\n");
-      const body = { ...f, notes, render, duration: f.duration || null, captions: f.captions === "" ? null : f.captions === "1", kind: f.series ? "episode" : f.kind };
+      const body = { ...f, notes, render, duration: f.duration || null, captions: f.captions === "" ? null : f.captions === "1", kind: f.series ? "episode" : f.kind,
+        refs: refs.map((r) => ({ file: r.file, role: r.role })) };
       const job = await api<Job>("/api/plan", { method: "POST", body: JSON.stringify(body) });
       toast(render ? "Started: script, then render" : "Writing the script");
       setF((p) => ({ ...p, request: "", notes: "", name: "" }));
       setDirection(null);
+      setRefs([]);
       await refresh();
       setModal({ type: "job", id: job.id });
     } catch (e) { toast((e as Error).message, true); } finally { setBusy(false); }
@@ -70,6 +74,7 @@ export function Studio() {
         <div className="card p-6 grid gap-4">
           <Textarea value={f.request} onChange={(e) => set("request", e.target.value)} rows={4} className="text-[16.5px] min-h-[130px] p-4"
             placeholder="For example: an aesthetic short about a rainy evening in Tokyo — a girl with a red umbrella walks down a neon street, lo-fi mood" />
+          <ReferencePicker value={refs} onChange={setRefs} />
           <PromptAssistant context={assistantContext} onApply={(text) => setDirection({ text, source: JSON.stringify(assistantContext) })} />
           {direction && <div className="text-sm text-muted">
             {directionCurrent ? "Creative direction is applied to the next script." : "Settings changed: apply updated direction before using it."}

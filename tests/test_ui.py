@@ -150,3 +150,31 @@ def test_prompt_assistant_api(server, monkeypatch):
     assert code == 502 and 'invalid' in data['error']
     code, _, _ = call(base + '/api/prompt-assistant', 'POST', {'request': ''})
     assert code == 400
+
+
+def test_reference_upload_and_shot_frame(server):
+    from tests.test_references import make_png
+    base, root = server
+    png = make_png(root / "ref.png", 90, 160).read_bytes()
+    boundary = "RR"
+    body = (f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"forest.png\"\r\n"
+            f"Content-Type: image/png\r\n\r\n").encode() + png + f"\r\n--{boundary}--\r\n".encode()
+    code, refs, _ = call(base + "/api/refs/upload", "POST", body, headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
+    assert code == 200 and refs[0]["file"].startswith("assets/refs/") and refs[0]["format"] == "9:16"
+    assert refs[0]["url"].startswith("/files/assets/refs/")
+    code, img, _ = call(base + refs[0]["url"], raw=True)
+    assert code == 200 and img == png
+    # первый кадр без переписывания промпта: длительность сцены ужимается до 5 с в high
+    code, d, _ = call(base + "/api/plan/storm/frame", "POST", {"shot": "001", "file": refs[0]["file"], "adapt": False})
+    assert code == 200
+    shot = d["plan"]["shots"][0]
+    assert shot["image_url"] == refs[0]["url"] and shot["seconds"] <= 5.05
+    assert any(r["shot"] == "001" and r["role"] == "frame" for r in d["plan"]["references"])
+    code, d, _ = call(base + "/api/plan/storm/frame?shot=001", "DELETE")
+    assert code == 200 and not d["plan"]["shots"][0].get("image")
+    # чужие пути не принимаются
+    code, err, _ = call(base + "/api/plan/storm/frame", "POST", {"shot": "001", "file": "film_config.json", "adapt": False})
+    assert code == 400
+    # референсы в новом фильме требуют провайдера с «зрением»
+    code, err, _ = call(base + "/api/plan", "POST", {"request": "fox", "refs": [{"file": refs[0]["file"], "role": "opening"}]})
+    assert code == 400 and "Anthropic" in err["error"]

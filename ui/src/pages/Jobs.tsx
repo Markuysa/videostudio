@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Calculator, Clapperboard, FileText, Film, ListX, Music2, ScrollText, Sparkles, Square, Trash2, Tv, type LucideIcon } from "lucide-react";
+import { Calculator, Clapperboard, FileText, Film, ImagePlus, ListX, Music2, ScrollText, Sparkles, Square, Trash2, Tv, type LucideIcon } from "lucide-react";
 import { api, elapsed, fmtAgo, type Job } from "../api";
 import { Button, Chip, Empty, Progress, Segmented, Stat, useToast } from "../components/ui";
 import { jobPct, STATUS } from "../components/JobCard";
@@ -9,7 +9,7 @@ import { useStore } from "../store";
 const KIND: Record<string, { label: string; icon: LucideIcon }> = {
   plan: { label: "Script", icon: FileText }, make: { label: "Script + render", icon: Clapperboard }, render: { label: "Render", icon: Film },
   review: { label: "Prompt fixes", icon: Sparkles }, assemble: { label: "Re-assembly", icon: Music2 }, series: { label: "Series bible", icon: Tv },
-  estimate: { label: "Estimate", icon: Calculator },
+  estimate: { label: "Estimate", icon: Calculator }, frame: { label: "Frame fit", icon: ImagePlus },
 };
 type Filter = "all" | "running" | "done" | "error";
 

@@ -42,6 +42,23 @@ def _prefs(cfg: dict) -> str:
     return "\n".join(l for l in p.read_text(encoding="utf-8").splitlines() if l.strip() and not l.lstrip().startswith("#"))
 
 
+def _refs(args, cfg: dict) -> list[dict]:
+    """--ref path[:style|frame|opening] -> копии в assets/refs (UI видит их и после рендера)."""
+    from .references import ReferenceError, normalize_refs, parse_ref_arg, store_reference
+    out = []
+    for raw in getattr(args, "ref", None) or []:
+        r = parse_ref_arg(raw)
+        try:
+            stored = store_reference(r["file"], path_in_root(cfg, "assets_dir"))
+        except ReferenceError as e:
+            _die(str(e))
+        out.append({"file": str(stored), "role": r["role"]})
+    try:
+        return normalize_refs(out)
+    except ReferenceError as e:
+        _die(str(e))
+
+
 def _plan_request(args, cfg: dict):
     from .audio import load_index
     from .planner import PlanRequest
@@ -63,7 +80,8 @@ def _plan_request(args, cfg: dict):
     return PlanRequest(request=args.request, kind=args.kind, seconds=args.duration, format=args.format,
                        quality=args.quality or cfg.get("quality", "high"), language=args.language, name=args.name,
                        series_bible=bible, episode=args.episode, music=args.music, captions=captions,
-                       prefs=_prefs(cfg), library=library, seed=args.seed, notes=args.notes or "", loop=bool(args.loop))
+                       prefs=_prefs(cfg), library=library, seed=args.seed, notes=args.notes or "", loop=bool(args.loop),
+                       refs=_refs(args, cfg))
 
 
 def _save_plan(plan, cfg: dict, name: str | None) -> pathlib.Path:
@@ -282,6 +300,59 @@ def cmd_doctor(args, cfg):
     print(f"Библиотека: музыка {n_music}, sfx {n_sfx} ({assets})")
 
 
+def cmd_frame(args, cfg):
+    """Задать / убрать первый кадр сцены в готовом плане; по умолчанию Claude переписывает сцену под кадр."""
+    from .references import ReferenceError, adapt_shot_to_image, store_reference
+    from .schema import clamp_seconds, MAX_FRAMES_HIGH_CONDITIONED
+    path = pathlib.Path(args.plan)
+    try:
+        plan = load_plan(path)
+    except (PlanError, FileNotFoundError) as e:
+        _die(str(e))
+    idx = next((i for i, s in enumerate(plan.shots) if s.id == args.shot), None)
+    if idx is None:
+        _die(f"в плане нет сцены {args.shot}")
+    shot = plan.shots[idx]
+    if args.clear:
+        shot.image = None
+        plan.references = [r for r in plan.references if r.get("shot") != shot.id or r.get("role") == "style"]
+        plan.save(path)
+        _log(f"Первый кадр у сцены {shot.id} убран")
+        print(f"Сохранено: {path}")
+        return
+    if not args.image:
+        _die("укажите --image путь или --clear")
+    try:
+        stored = store_reference(args.image, path_in_root(cfg, "assets_dir"))
+    except ReferenceError as e:
+        _die(str(e))
+    shot.image = str(stored)
+    shot.transition = "cut"
+    if args.strength is not None:
+        shot.image_strength = max(0.1, min(1.0, args.strength))
+    high = plan.is_high(cfg.get("quality", "fast"))
+    if high and shot.frames > MAX_FRAMES_HIGH_CONDITIONED:
+        shot.seconds = clamp_seconds(shot.seconds, True, conditioned=True)
+        _log(f"Сцена {shot.id}: с первым кадром в high максимум 5 с — длительность {shot.seconds} с")
+    plan.references = [r for r in plan.references if r.get("shot") != shot.id or r.get("role") == "style"]
+    plan.references.append({"file": str(stored), "role": "frame", "description": "", "shot": shot.id})
+    if not args.no_adapt:
+        llm = _llm(cfg)
+        _log(f"Подгоняю сцену {shot.id} под кадр: Claude смотрит на фото и переписывает промпт")
+        res = adapt_shot_to_image(llm, plan, idx, stored)
+        shot.prompt = res["prompt"]
+        if res["direction"]:
+            shot.direction = res["direction"]
+        from .planner import ensure_anchor
+        ensure_anchor(plan)
+        if res["conflict"]:
+            plan.review_notes = list(plan.review_notes or []) + [f"{shot.id}: {res['conflict']}"]
+            _log("Замечание: " + res["conflict"])
+        print(f"\nНовый промпт сцены {shot.id}:\n{shot.prompt}")
+    plan.save(path)
+    print(f"\nПлан сохранён: {path}")
+
+
 def cmd_ui(args, cfg):
     from .ui import serve
     serve(port=args.port, open_browser=not args.no_browser)
@@ -309,6 +380,9 @@ def build_parser() -> argparse.ArgumentParser:
         sp.add_argument("--seed", type=int)
         sp.add_argument("--notes", help="дополнительные указания планировщику")
         sp.add_argument("--loop", action="store_true", help="бесшовный луп: конец переходит в начало")
+        sp.add_argument("--ref", action="append", metavar="PATH[:ROLE]",
+                        help="фото-референс; роль style (эстетика, по умолчанию), frame (первый кадр одной из сцен) "
+                             "или opening (первый кадр фильма). Можно повторять")
         sp.add_argument("--audio", choices=("raw", "leveled"), default="raw",
                         help="raw — звук модели как есть (по умолчанию); leveled — выравнивание сцен и -14 LUFS")
         sp.add_argument("--keep-pod", action="store_true", help="(с рендером) не удалять Pod после рендера")
@@ -371,6 +445,15 @@ def build_parser() -> argparse.ArgumentParser:
     sp = sub.add_parser("doctor", help="проверить окружение и настройки")
     sp.set_defaults(fn=cmd_doctor)
 
+    sp = sub.add_parser("frame", help="задать первый кадр сцены фотографией (Claude подгонит сцену под кадр)")
+    sp.add_argument("plan")
+    sp.add_argument("--shot", required=True, help="id сцены, например 001")
+    sp.add_argument("--image", help="путь к jpg / png / webp")
+    sp.add_argument("--strength", type=float, help="сила условия 0.1-1.0 (1.0 = кадр точь-в-точь)")
+    sp.add_argument("--no-adapt", action="store_true", help="не переписывать промпт сцены")
+    sp.add_argument("--clear", action="store_true", help="убрать первый кадр")
+    sp.set_defaults(fn=cmd_frame)
+
     sp = sub.add_parser("ui", help="открыть веб-интерфейс студии в браузере")
     sp.add_argument("--port", type=int, default=8765)
     sp.add_argument("--no-browser", action="store_true")
@@ -391,8 +474,18 @@ def main(argv: list[str] | None = None) -> None:
             _die(f"series {args.action}: укажите --name slug")
         if args.action == "note" and not args.description:
             _die("series note: нужен текст заметки")
+    from .llm import LLMError
+    from .references import ReferenceError
     try:
         args.fn(args, cfg)
     except KeyboardInterrupt:
         print("\nОстановлено.")
         sys.exit(130)
+    except LLMError as e:
+        msg = str(e)
+        if "credit balance is too low" in msg:
+            msg = ("на счёте Anthropic закончились кредиты — пополните баланс в console.anthropic.com "
+                   "(Plans & Billing), затем повторите")
+        _die("LLM: " + msg)
+    except ReferenceError as e:
+        _die(str(e))

@@ -2,8 +2,11 @@ export interface PlanRow {
   name: string; title: string; kind?: string; format?: string; quality?: string; shots?: number; seconds?: number;
   logline?: string | null; series?: string | null; episode?: number | null; modified: number; has_film?: boolean; film_slug?: string | null;
   captions?: boolean; music?: boolean; loop?: boolean; audio?: string; anchor?: string | null;
-  errors?: number; warnings?: number; review_notes?: number; broken?: boolean;
+  errors?: number; warnings?: number; review_notes?: number; refs?: number; frames?: number; cover?: string | null; broken?: boolean;
 }
+export type RefRole = "style" | "frame" | "opening";
+export interface RefItem { file: string; url: string | null; name?: string; width?: number; height?: number; format?: string | null; role: RefRole }
+export interface PlanReference { file: string; role: RefRole; description?: string; shot?: string | null; url?: string | null }
 export interface ShotInfo { id: string; pipeline: string; size?: string; seconds_render?: number; continuity?: boolean; loop_closed?: boolean; cached?: boolean }
 export interface TimelineItem { shot: string; start: number; end: number; transition: string; caption?: string | null }
 export interface Film {
@@ -31,12 +34,14 @@ export interface State {
 export interface Shot {
   id: string; seconds: number; prompt: string; transition?: string; transition_seconds?: number; caption?: string | null;
   narration?: string | null; sfx?: { file: string; offset: number; volume: number }[]; beat?: string | null; direction?: Record<string, string>;
+  image?: string | null; image_url?: string | null; image_strength?: number;
 }
 export interface Plan {
   title: string; kind: string; format: string; quality?: string | null; seed: number; logline?: string | null; synopsis?: string | null;
   style: Record<string, string>; characters: { name: string; descriptor?: string; description?: string; voice?: string }[];
   locations?: { name: string; descriptor?: string }[]; music?: { file?: string | null; mood?: string | null; volume: number; duck: boolean } | null;
-  captions: { enabled: boolean }; loop?: boolean; audio?: "raw" | "leveled"; creative_brief?: Record<string, unknown>; review_notes?: string[]; shots: Shot[];
+  captions: { enabled: boolean }; loop?: boolean; audio?: "raw" | "leveled"; creative_brief?: Record<string, unknown>; review_notes?: string[];
+  references?: PlanReference[]; shots: Shot[];
 }
 export interface Issue { shot: string; level: "error" | "warn"; code: string; message: string }
 export interface PlanDetail { name: string; plan?: Plan; raw: string; summary?: string; issues: Issue[]; problems: string[]; path?: string; error?: string }

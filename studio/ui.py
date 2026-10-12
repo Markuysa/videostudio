@@ -80,7 +80,9 @@ class Studio:
                         "loop": plan.loop, "audio": plan.audio, "anchor": (plan.style or {}).get("anchor"),
                         "errors": sum(1 for i in issues if i.level == "error") + len(problems),
                         "warnings": sum(1 for i in issues if i.level == "warn"),
-                        "review_notes": len(plan.review_notes or [])})
+                        "review_notes": len(plan.review_notes or []),
+                        "refs": len(plan.references or []), "frames": sum(1 for x in plan.shots if x.image),
+                        "cover": next((self.asset_url(x.image) for x in plan.shots if x.image), None)})
         return out
 
     def films(self) -> list[dict]:
@@ -151,7 +153,12 @@ class Studio:
         from .planner import plan_summary
         q = plan.quality or self.cfg.get("quality", "fast")
         issues = [{"shot": i.shot_id, "level": i.level, "code": i.code, "message": i.message} for i in lint_plan(plan, q)]
-        return {"name": name, "plan": plan.to_dict(), "raw": raw, "summary": plan_summary(plan, self.cfg),
+        pd = plan.to_dict()
+        for sh in pd.get("shots", []):
+            sh["image_url"] = self.asset_url(sh.get("image"))
+        for r in pd.get("references", []) or []:
+            r["url"] = self.asset_url(r.get("file"))
+        return {"name": name, "plan": pd, "raw": raw, "summary": plan_summary(plan, self.cfg),
                 "issues": issues, "problems": validate(plan, q), "path": str(p)}
 
     def save_plan(self, name: str, raw: str) -> dict:
@@ -203,6 +210,16 @@ class Studio:
             args.append("--loop")
         if body.get("audio") in ("raw", "leveled"):
             args += ["--audio", str(body["audio"])]
+        refs = body.get("refs") or []
+        if not isinstance(refs, list) or len(refs) > 8:
+            raise ApiError("up to 8 reference images")
+        for r in refs:
+            role = str((r or {}).get("role") or "style")
+            if role not in ("style", "frame", "opening"):
+                raise ApiError(f"unknown reference role {role}")
+            args += ["--ref", f"{self.resolve_ref(str(r.get('file') or ''))}:{role}"]
+        if refs and not self.config_summary()["has_anthropic"]:
+            raise ApiError("reference photos need the Anthropic provider (the local model cannot see images)")
         title = ("Film: " if body.get("render") else "Plan: ") + req[:60]
         return self.jobs.start("make" if body.get("render") else "plan", title, args, meta={"request": req}).to_dict()
 
@@ -282,6 +299,79 @@ class Studio:
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(data)
         return index_assets(self.dir("assets_dir"))
+
+    # ---------- референсы ----------
+    def asset_url(self, file: str | None) -> str | None:
+        """URL для картинки из assets/ (иначе None — файл вне папки студии)."""
+        if not file:
+            return None
+        p = pathlib.Path(file)
+        if not p.is_absolute():
+            p = (self.dir("plans_dir") / p).resolve() if not (self.root / p).exists() else (self.root / p).resolve()
+        assets = self.dir("assets_dir").resolve()
+        try:
+            rel = p.resolve().relative_to(assets)
+        except ValueError:
+            return None
+        return "/files/assets/" + str(rel).replace("\\", "/")
+
+    def resolve_ref(self, file: str) -> pathlib.Path:
+        """Путь из запроса UI -> файл в assets/refs (только оттуда)."""
+        refs = (self.dir("assets_dir") / "refs").resolve()
+        p = pathlib.Path(file)
+        p = (self.root / p).resolve() if not p.is_absolute() else p.resolve()
+        if refs not in p.parents or not p.is_file():
+            raise ApiError("reference image not found (upload it first)")
+        return p
+
+    def upload_refs(self, files: list[tuple[str, bytes]]) -> list[dict]:
+        from .references import ReferenceError, format_for_aspect, image_size, store_reference
+        out = []
+        for name, data in files:
+            try:
+                dst = store_reference(name, self.dir("assets_dir"), data=data, name=name)
+            except ReferenceError as e:
+                raise ApiError(str(e))
+            w, h = image_size(dst) or (0, 0)
+            out.append({"file": str(dst.relative_to(self.root)), "url": self.asset_url(str(dst)), "name": name,
+                        "width": w, "height": h, "format": format_for_aspect(w, h) if w and h else None})
+        return out
+
+    def set_frame(self, name: str, body: dict) -> dict:
+        from .schema import MAX_FRAMES_HIGH_CONDITIONED, clamp_seconds
+        path = self.plan_path(name)
+        plan = load_plan(path)
+        sid = str(body.get("shot") or "")
+        shot = next((x for x in plan.shots if x.id == sid), None)
+        if shot is None:
+            raise ApiError(f"no shot {sid}")
+        img = self.resolve_ref(str(body.get("file") or ""))
+        strength = body.get("strength")
+        if body.get("adapt", True):
+            args = ["frame", str(path), "--shot", sid, "--image", str(img)]
+            if strength not in (None, ""):
+                args += ["--strength", str(float(strength))]
+            return {"job": self.jobs.start("frame", f"Frame fit: {plan.title} · shot {sid}", args, meta={"plan": name}).to_dict()}
+        shot.image, shot.transition = str(img), "cut"
+        if strength not in (None, ""):
+            shot.image_strength = max(0.1, min(1.0, float(strength)))
+        if plan.is_high(self.cfg.get("quality", "fast")) and shot.frames > MAX_FRAMES_HIGH_CONDITIONED:
+            shot.seconds = clamp_seconds(shot.seconds, True, conditioned=True)
+        plan.references = [r for r in plan.references if r.get("shot") != sid or r.get("role") == "style"]
+        plan.references.append({"file": str(img), "role": "frame", "description": "", "shot": sid})
+        plan.save(path)
+        return self.plan_detail(name)
+
+    def clear_frame(self, name: str, sid: str) -> dict:
+        path = self.plan_path(name)
+        plan = load_plan(path)
+        shot = next((x for x in plan.shots if x.id == sid), None)
+        if shot is None:
+            raise ApiError(f"no shot {sid}")
+        shot.image = None
+        plan.references = [r for r in plan.references if r.get("shot") != sid or r.get("role") == "style"]
+        plan.save(path)
+        return self.plan_detail(name)
 
     def delete_plan(self, name: str) -> None:
         p = self.plan_path(name)
@@ -507,6 +597,8 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError("not found", 404)
 
         if method == "DELETE":
+            if len(parts) == 4 and parts[:2] == ["api", "plan"] and parts[3] == "frame":
+                return self._json(s.clear_frame(parts[2], q.get("shot", [""])[0]))
             if path == "/api/jobs":
                 return self._json({"removed": s.jobs.remove_finished()})
             if len(parts) == 3 and parts[:2] == ["api", "jobs"]:
@@ -544,6 +636,18 @@ class Handler(BaseHTTPRequestHandler):
                 raise ApiError(str(e), 502) from e
         if path == "/api/plan":
             return self._json(s.start_plan(self._json_body()))
+        if len(parts) == 4 and parts[:2] == ["api", "plan"] and parts[3] == "frame":
+            return self._json(s.set_frame(parts[2], self._json_body()))
+        if path == "/api/refs/upload":
+            ctype = self.headers.get("Content-Type", "")
+            if not ctype.startswith("multipart/form-data"):
+                raise ApiError("multipart/form-data expected")
+            msg = email.message_from_bytes(b"Content-Type: " + ctype.encode() + b"\r\nMIME-Version: 1.0\r\n\r\n" + self._body(),
+                                           policy=email.policy.HTTP)
+            files = [(part.get_filename(), part.get_payload(decode=True) or b"") for part in msg.iter_parts() if part.get_filename()]
+            if not files:
+                raise ApiError("no file in the request")
+            return self._json(s.upload_refs(files))
         if path == "/api/render":
             return self._json(s.start_render(str(self._json_body().get("plan", ""))))
         if path == "/api/review":

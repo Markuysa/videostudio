@@ -200,6 +200,7 @@ class Plan:
     source_path: str | None = None
     creative_brief: dict = field(default_factory=dict)
     review_notes: list[str] = field(default_factory=list)
+    references: list[dict] = field(default_factory=list)   # [{file, role: style|frame|opening, description, shot}]
 
     # ---------- производные ----------
     @property
@@ -224,6 +225,8 @@ class Plan:
         d.pop("source_path", None)
         if not d.get("loop"):
             d.pop("loop", None)
+        if not d.get("references"):
+            d.pop("references", None)
         if d.get("audio") == "raw":
             d.pop("audio", None)
         d["shots"] = [{k: v for k, v in asdict(s).items() if v not in (None, [], "")} | {"seconds": s.seconds}
@@ -272,6 +275,7 @@ class Plan:
             fade_in=float(d.get("fade_in", 0.5)), fade_out=float(d.get("fade_out", 1.5)),
             loop=bool(d.get("loop", False)), audio=str(d.get("audio") or "raw").lower(), request=d.get("request"), version=int(d.get("version", 1)), source_path=source_path,
             creative_brief=dict(d.get("creative_brief") or {}), review_notes=list(d.get("review_notes") or []),
+            references=[dict(r) for r in (d.get("references") or []) if isinstance(r, dict) and r.get("file")],
         )
         if plan.music and d.get("music_volume") is not None:   # совместимость с версией 1
             plan.music.volume = float(d["music_volume"])

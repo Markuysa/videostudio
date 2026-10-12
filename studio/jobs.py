@@ -28,8 +28,9 @@ STAGES = [   # (шаблон в логе CLI, подпись для интерф
     ("Собираю фильм", "Assembling the film"), ("ФИЛЬМ СКАЧАН", "Film downloaded"), ("Планирую", "Planning"),
     ("Сюжет:", "Story ready, writing shots"), ("Раунд правок", "Prompt fixes"),
     ("Промпты прошли проверку", "Prompts checked"), ("Pod .* удалён", "Pod deleted"),
+    ("Изучаю референсы", "Studying reference photos"), ("Подгоняю сцену", "Fitting the shot to the frame"),
 ]
-TERMINAL_OK = ("ФИЛЬМ СКАЧАН", "План сохранён", "Готово:", "Библия сохранена", "Исправленный план сохранён")
+TERMINAL_OK = ("ФИЛЬМ СКАЧАН", "План сохранён", "Готово:", "Библия сохранена", "Исправленный план сохранён", "Сохранено:")
 
 
 class Job:

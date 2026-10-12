@@ -55,7 +55,8 @@ export function Plans() {
             return (
               <div key={p.name} className="card p-5 grid gap-3 content-start hover:border-line-2 transition">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-panel-2 text-accent grid place-items-center shrink-0"><Icon size={18} /></div>
+                  {p.cover ? <img src={p.cover} alt="" className="w-10 h-10 rounded-lg object-cover shrink-0 border border-line" title="first frame from a reference photo" />
+                    : <div className="w-10 h-10 rounded-lg bg-panel-2 text-accent grid place-items-center shrink-0"><Icon size={18} /></div>}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
                       <button className="font-bold text-[16px] leading-tight text-left hover:text-accent cursor-pointer" onClick={() => setModal({ type: "plan", name: p.name })}>{p.title}</button>
@@ -75,6 +76,7 @@ export function Plans() {
                   {p.captions && <Chip>💬 captions</Chip>}
                   {p.music && <Chip>♫ music</Chip>}
                   {p.audio === "leveled" && <Chip><Volume2 size={11} />leveled</Chip>}
+                  {p.refs ? <Chip tone="accent" title="reference photos">🖼 {p.refs} refs{p.frames ? ` · ${p.frames} frames` : ""}</Chip> : null}
                 </div>
                 <div className="flex items-center gap-2 flex-wrap text-[12.5px]">
                   {clean ? <Chip tone="good">✓ prompts clean</Chip> : (<>
