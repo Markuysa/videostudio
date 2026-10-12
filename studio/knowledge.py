@@ -66,6 +66,9 @@ low- and mid-frequency sources — "heavy drops drumming on the wooden roof", "r
 rolling thunder", "water lapping against stone", "a low gust pushing through the trees". Never call a sound
 "hiss", "hissing", "static", "white noise" or "sizzle": the model then generates a thin high-frequency hiss that
 sounds like a whine on phone speakers. Name the deepest, most physical sound first, the fine detail last.
+Give ambience an intensity: "a loud, heavy downpour", "pounding rain". Words like "soft", "gentle", "faint" or
+"quiet" on the main sound make LTX render a near-silent clip, which then drops out between louder shots; keep
+loudness consistent across shots that should sound continuous (a distant thunder roll is a good shared anchor).
 
 Hard rules:
 - Describe exactly what the camera sees in these seconds. One location, one continuous time span per clip,

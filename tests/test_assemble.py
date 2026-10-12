@@ -112,3 +112,10 @@ def test_raw_mode_leaves_model_audio_untouched():
     graph, _, _ = build_graph(clips, [5.0, 5.0], AssembleOptions(704, 1280), [], None)
     assert "volume=" not in graph and "loudnorm" not in graph and "alimiter" not in graph
     assert "aresample=48000" in graph and "afade" in graph          # только формат и микрофейды на стыках
+
+
+def test_quiet_shots_detection():
+    from studio.assemble import quiet_shots
+    assert quiet_shots({"001": -42.4, "002": -45.9, "003": -13.5, "004": -14.6, "005": -15.0}) == ["001", "002"]
+    assert quiet_shots({"001": -20.0, "002": -22.0}) == []
+    assert quiet_shots({"001": -20.0}) == []

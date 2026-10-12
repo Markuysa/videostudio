@@ -49,3 +49,9 @@ def test_hissy_sound_words_are_flagged():
     bad = GOOD.replace("torrential rain on wood", "rain hissing on the lake")
     assert any(i.code == "hissy_sound" for i in lint_shot(Shot(id="1", seconds=8, prompt=bad), high=True))
     assert not any(i.code == "hissy_sound" for i in lint_shot(Shot(id="1", seconds=8, prompt=GOOD), high=True))
+
+
+def test_quiet_main_sound_is_flagged():
+    quiet = GOOD.replace("Sound: torrential rain on wood", "Sound: soft rain on wood")
+    assert any(i.code == "quiet_sound" for i in lint_shot(Shot(id="1", seconds=8, prompt=quiet), high=True))
+    assert not any(i.code == "quiet_sound" for i in lint_shot(Shot(id="1", seconds=8, prompt=GOOD), high=True))

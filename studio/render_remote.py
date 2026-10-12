@@ -313,6 +313,9 @@ def download(remote: Remote, slug: str, films_dir: pathlib.Path, with_clips: boo
     for name in ("report.json", "manifest.json", "render.log", "timeline.json"):
         remote.get(f"/workspace/film/{slug}/{name}", out_dir / name)
     if ok and with_clips:
+        # scp -r кладёт папку ВНУТРЬ существующей (clips/norm/...), поэтому старую копию убираем:
+        # на томе в norm/ лежат все версии клипов, так что ничего не теряется
+        shutil.rmtree(out_dir / "clips", ignore_errors=True)
         if remote.get(f"/workspace/film/{slug}/norm", out_dir / "clips", recursive=True):
             log(f"Клипы скачаны в {out_dir / 'clips'} (для пересборки без GPU: studio assemble {out_dir})")
     if ok:

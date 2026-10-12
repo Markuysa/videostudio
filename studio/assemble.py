@@ -163,6 +163,15 @@ def measure_loudness(path: str | pathlib.Path) -> float | None:
     return None if val <= -70 else val      # -70 = тишина по R128
 
 
+def quiet_shots(levels: dict, gap_db: float = 18.0) -> list[str]:
+    """Сцены, которые тише медианы фильма больше чем на gap_db (в режиме raw слышны как провалы звука)."""
+    vals = sorted(v for v in levels.values() if v is not None)
+    if len(vals) < 2:
+        return []
+    median = vals[len(vals) // 2]
+    return [k for k, v in levels.items() if v is None or v < median - gap_db]
+
+
 def clip_gain_db(lufs: float | None, target: float = CLIP_TARGET_LUFS, max_boost: float = CLIP_MAX_BOOST_DB,
                  max_cut: float = CLIP_MAX_CUT_DB) -> float:
     """Постоянное усиление клипа к целевому уровню, ограниченное сверху и снизу."""
@@ -426,6 +435,7 @@ def assemble(clips: list[ClipSpec], out_path: pathlib.Path, opts: AssembleOption
     norm_dir.mkdir(exist_ok=True)
     normalized: list[ClipSpec] = []
     durations: list[float] = []
+    levels: dict[str, float | None] = {}
     for c in clips:
         src = pathlib.Path(c.path)
         dst = norm_dir / (src.stem + ".mp4")
@@ -434,8 +444,9 @@ def assemble(clips: list[ClipSpec], out_path: pathlib.Path, opts: AssembleOption
                 raise AssembleError(f"не удалось нормализовать {src.name}")
         info = probe(dst)
         gain = 0.0
+        lufs = measure_loudness(dst)
+        levels[c.shot_id] = lufs
         if opts.leveling:
-            lufs = measure_loudness(dst)
             gain = clip_gain_db(lufs)
             if logf is not None:
                 logf.write(f"\n# clip {c.shot_id}: {lufs if lufs is not None else '—'} LUFS -> gain {gain:+.1f} dB\n")
@@ -497,6 +508,7 @@ def assemble(clips: list[ClipSpec], out_path: pathlib.Path, opts: AssembleOption
     report = {"film": str(out_path), "seconds": round(total, 2), "resolution": f"{opts.width}x{opts.height}",
               "shots": len(clips), "music": bool(opts.music_path), "captions": bool(ass_name), "timeline": timeline,
               "audio": "leveled" if (opts.leveling or opts.loudnorm) else "raw",
+              "clip_lufs": levels, "quiet_shots": quiet_shots(levels),
               "clip_gains_db": {c.shot_id: c.gain_db for c in normalized}, "loudnorm": loudnorm}
     (workdir / "timeline.json").write_text(json.dumps(timeline, ensure_ascii=False, indent=1), encoding="utf-8")
     return report

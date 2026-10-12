@@ -191,6 +191,11 @@ def render_shots(plan: Plan, proj: pathlib.Path, high: bool, w: int, h: int, log
                     prev_clip = None
                     continue
         end_image = None
+        if loop_last and image:
+            # distilled с условием и на первый, и на последний кадр мерцает (проверено 2026-10-12:
+            # целые кадры прыгают в другую композицию) — луп со своим первым кадром закрывается склейкой
+            log(f"  сцена {s.id}: у финальной сцены лупа свой первый кадр — луп закроется склейкой, без условия на последний кадр")
+            loop_last = False
         if loop_last:
             if first_clip is None:
                 log(f"  сцена {s.id}: первая сцена не получилась, луп замкнуть нечем")
@@ -336,6 +341,12 @@ def main() -> int:
               "minutes": round((time.time() - t_all) / 60)}
     (proj / "manifest.json").write_text(json.dumps({"plan": plan.to_dict(), "shots": done}, ensure_ascii=False, indent=1),
                                         encoding="utf-8")
+    (proj / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
+    if rep.get("quiet_shots"):
+        log(f"Внимание: в сценах {', '.join(rep['quiet_shots'])} звук почти пропадает (модель сгенерировала тихий клип); "
+            "задайте в промпте интенсивность звука или включите audio: leveled")
+    report["quiet_shots"] = rep.get("quiet_shots", [])
+    report["clip_lufs"] = rep.get("clip_lufs", {})
     (proj / "report.json").write_text(json.dumps(report, ensure_ascii=False, indent=1), encoding="utf-8")
     log(f"ФИЛЬМ ГОТОВ: {final} ({rep['seconds']} с)" + (f" (без сцен: {', '.join(failed)})" if failed else ""))
     return 0 if not failed else 2

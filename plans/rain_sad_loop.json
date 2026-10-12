@@ -1,0 +1,183 @@
+{
+ "title": "Бесконечный дождь",
+ "shots": [
+  {
+   "id": "001",
+   "seconds": 5.042,
+   "prompt": "Portrait-format static wide shot at night in pouring rain: the lone hooded figure in a heather-gray hoodie with the hood up and dark pants, face hidden, the hoodie reading near-charcoal in the night rain, sits hunched on a wet concrete curb at center-right, knees drawn up, arms wrapped around them, head bowed. A cold, rain-soaked, melancholic world in heavy rain, desaturated blue-gray palette with muted moss green, soft wide lens, fine film grain, photoreal. The curb runs diagonally from bottom-left, with lit moss-green grass on the left, blue-black wet asphalt with reflections on the right and green leaves at the left edge, while a cool white streetlight overhead and slightly behind turns the dense rain into silver vertical streaks against black. The locked-off camera holds perfectly still as rain pours through the lamp cone. Drops dimple the puddles on the asphalt, the leaves tremble under the impacts, and the shoulders rise once in a faint breath and settle. Sound: a loud, heavy downpour roars on the asphalt and drums on the curb, big drops splash into the puddles and slap the leaves, and a deep distant thunder roll rumbles low under the rain.",
+   "transition": "cut",
+   "image": "/Users/markuysa/GolandProjects/film_studio/assets/refs/6d286f20736dbad9.png",
+   "beat": "001 (ref 0, cut, 5 s): The street photo comes alive. Static portrait wide shot of the hooded figure hunched on the curb under the cool white streetlight; dense silver rain streaks fall through the lamp cone, drops dimple the puddles on the blue-black asphalt, leaves at the left edge tremble, and the shoulders rise once in a faint breath. Sound: heavy drops drumming on asphalt and splashing into puddles.",
+   "direction": {
+    "start": "Reference 0 exactly. Portrait static wide shot at night in pouring rain. The lone hooded figure in a heather-gray hoodie with the hood up and dark pants, face hidden, the hoodie reading near-charcoal at night, sits hunched on the wet curb at center-right. Knees are drawn up, arms are wrapped around them and the head is bowed. The curb runs diagonally from bottom-left. Moss-green grass is on the left, blue-black wet asphalt with reflections is on the right and green leaves sit at the left edge. A cool white streetlight overhead and slightly behind turns the rain into silver streaks against black.",
+    "action": "Only the rain and light move: dense silver streaks fall through the lamp cone, drops dimple the puddles and the leaves tremble. The figure's shoulders rise once in a faint breath and settle back down.",
+    "camera": "Locked-off tripod portrait wide shot at slightly elevated eye level, no movement.",
+    "end": "The composition is identical to the opening frame. The figure is still hunched on the curb at center-right with knees up, arms wrapped and head bowed, at the low point of a breath. Steady heavy rain continues under the cool white streetlight, and the asphalt and grass are wet and reflective."
+   }
+  },
+  {
+   "id": "002",
+   "seconds": 5.042,
+   "prompt": "Portrait-format static wide shot from behind at overcast dusk: the lone hooded figure in a heather-gray hoodie with the hood up and dark pants, face hidden, sits facing away in a black folding camp chair at the center of a weathered concrete slab jutting into a choppy slate-gray lake. A cold, rain-soaked, melancholic world in heavy rain, desaturated blue-gray palette with muted moss green, soft wide lens, fine film grain, photoreal. Patches of snow lie on the slab, dry dark reeds fill the lower foreground corners, and a distant shoreline of village houses with snowy roofs and a thin mast sits under a heavy flat gray sky in cold blue tones. Fine steady rain falls in thin gray streaks, scattering countless small ripple rings across the water and spattering on the wet concrete. The reeds sway slightly while the figure stays seated and still. The locked-off camera holds still. Once, a faint cold-white lightning flash flickers far beyond the shoreline and fades back to flat gray, and the light on the figure stays unchanged. Sound: loud, heavy rain pounds the lake surface and drums on the wet concrete and the chair, a low gust pushes across the water, and after the far flash a deep rolling thunder rumbles across the lake.",
+   "transition": "cut",
+   "image": "/Users/markuysa/GolandProjects/film_studio/assets/refs/62f93ec145a42e70.png",
+   "beat": "002 (ref 1, cut on a rain beat, 5 s): The lake photo comes alive. Static portrait wide shot from behind of the hooded figure seated still in the black camp chair on the snowy concrete slab; rain dimples the choppy slate-gray water, the reeds in the corners sway, and a far cold-white lightning flash flickers once over the distant shoreline. Sound: rain splashing on the lake and spattering on concrete.",
+   "direction": {
+    "start": "Place jump to the lake at overcast dusk, matching reference 1 exactly. Portrait static wide shot from behind. The lone hooded figure in a heather-gray hoodie with the hood up and dark pants, face hidden, sits in a black folding camp chair at the center of a weathered concrete slab jutting into a choppy slate-gray lake, facing away. Patches of snow lie on the slab and dry dark reeds fill the lower foreground corners. A distant shoreline of village houses with snowy roofs and a thin mast sits under a heavy flat gray sky in cold blue tones.",
+    "action": "Fine steady rain falls from the first frame, scatters ripple rings across the gray water and spatters on the concrete, and the reeds sway slightly. The figure stays seated and still. One faint cold-white lightning flash flickers far beyond the shoreline and fades back to flat gray, and the exposure on the figure stays the same.",
+    "camera": "Locked-off tripod portrait wide shot from behind at eye level, with no movement.",
+    "end": "Same frame as the opening. The figure sits still in the black camp chair at the center of the snow-patched slab, facing the lake. Steady rain dimples the slate-gray water and spatters on the wet concrete, the sky is back to flat gray after the flash, and the reeds stir in the lower corners."
+   }
+  },
+  {
+   "id": "003",
+   "seconds": 5.042,
+   "prompt": "The same locked-off portrait wide shot from behind at overcast dusk continues: the lone hooded figure in a heather-gray hoodie with the hood up and dark pants, face hidden, sits still in the black folding camp chair on the snow-patched concrete slab, facing the choppy slate-gray lake and the distant snowy-roofed shoreline under a flat gray sky. A cold, rain-soaked, melancholic world in heavy rain, desaturated blue-gray palette with muted moss green, soft wide lens, fine film grain, photoreal. Steady rain keeps dimpling the gray water in countless small rings and beading on the slab, the dry reeds in the lower corners sway, and only the edge of the hood shifts slightly in the wind. The camera holds perfectly still. A deep, distant thunder roll rumbles slowly across the water, low and long, under the steady splash of rain on the lake and the spatter of drops on the concrete.",
+   "transition": "continue",
+   "transition_seconds": 0.5,
+   "beat": "003 (continue, 5 s): The same locked-off lake frame holds: rain keeps dimpling the gray water, the figure stays seated with only the hood edge shifting in the wind, and a deep distant thunder rolls slowly across the water. Sound: steady rain on the lake and concrete under a long low thunder roll.",
+   "direction": {
+    "start": "Same frame as the end of shot 002. The lone hooded figure in a heather-gray hoodie with the hood up and dark pants, face hidden, sits still in the black folding camp chair at the center of the snow-patched concrete slab, facing the choppy slate-gray lake. Steady rain dimples the water, the sky is flat gray after the flash, and the reeds stir in the lower corners.",
+    "action": "Rain keeps dimpling the water and beading on the slab while the reeds sway. Only the edge of the hood shifts slightly in the wind, and a deep distant thunder roll travels slowly across the lake.",
+    "camera": "The same locked-off tripod portrait wide shot from behind, with no movement.",
+    "end": "Unchanged composition. The figure is still seated in the black camp chair at the center of the slab, facing away toward the lake and the snowy-roofed shoreline. Steady rain falls on the gray water under a flat gray sky as the thunder fades out."
+   }
+  },
+  {
+   "id": "004",
+   "seconds": 5.042,
+   "prompt": "Back at the curb at night in pouring rain, portrait-format static wide shot: the lone hooded figure in a heather-gray hoodie with the hood up and dark pants, face hidden, the hoodie reading near-charcoal in the night rain, sits hunched on a wet concrete curb at center-right, knees drawn up, arms wrapped around them, head bowed. A cold, rain-soaked, melancholic world in heavy rain, desaturated blue-gray palette with muted moss green, soft wide lens, fine film grain, photoreal. The curb runs diagonally from bottom-left, with lit moss-green grass on the left, blue-black wet asphalt with reflections on the right and green leaves at the left edge, while a cool white streetlight overhead and slightly behind turns the dense rain into silver vertical streaks against black. In the first second a faint, distant cold-white lightning glow high in the black sky fades away, leaving only the lamp cone. The locked-off camera holds still. Drops dimple the puddles, the leaves tremble, and the shoulders settle at the low point of a breath. For the final seconds the frame rests unchanged on this exact composition, and only the rain moves. A last deep, distant thunder rumble fades into heavy drops drumming on the asphalt and splashing into the puddles, with a soft patter on the leaves.",
+   "transition": "cut",
+   "beat": "004 (cut on the thunder tail, 5 s): Back at the curb, the same street composition. A fading cold lightning glow drains from the black sky, the silver rain streaks steady under the streetlight, the hunched figure settles at the low point of a breath, and the frame comes to rest exactly on the opening composition, closing the loop. Sound: the last thunder rumble dies into heavy drops drumming on asphalt and puddles.",
+   "direction": {
+    "start": "Place jump back to the street curb at night in pouring rain; the lake shot ended with the figure seated still in the camp chair as the thunder faded. The lone hooded figure in a heather-gray hoodie with the hood up and dark pants, face hidden, the hoodie reading near-charcoal at night, sits hunched on the wet curb at center-right. Knees are drawn up, arms are wrapped around them and the head is bowed. The curb runs diagonally from bottom-left. Moss-green grass is on the left, blue-black wet asphalt with reflections is on the right and green leaves sit at the left edge. A cool white streetlight overhead and slightly behind turns the rain into silver streaks, and a faint distant cold-white lightning glow still lingers high in the black sky.",
+    "action": "Within the first second the lingering lightning glow fades, leaving only the lamp cone with its steady silver rain streaks. Drops dimple the puddles and the leaves tremble. The figure's shoulders settle at the low point of a breath, and the frame then holds still on the opening composition.",
+    "camera": "Locked-off tripod portrait wide shot at slightly elevated eye level, identical to shot 001, with no movement.",
+    "end": "Exactly the opening frame (reference 0). The figure is hunched on the curb at center-right with knees up, arms wrapped and head bowed, at the low point of a breath. Steady heavy rain falls as silver streaks under the cool white streetlight against black, the lightning glow is fully gone, and the grass and asphalt are wet and reflective. The loop closes into shot 001."
+   },
+   "image": "/Users/markuysa/GolandProjects/film_studio/assets/refs/6d286f20736dbad9.png"
+  }
+ ],
+ "slug": "rain_sad_loop",
+ "kind": "aesthetic",
+ "format": "9:16",
+ "quality": "high",
+ "seed": 32208,
+ "language": "ru",
+ "logline": "Одинокий человек в капюшоне неподвижно сидит под ночным ливнем у фонаря и на краю бетонной плиты у серого озера, а дождь, молния и далёкий гром идут по кругу без конца.",
+ "synopsis": "Ночь, проливной дождь. Человек в капюшоне сидит, сгорбившись, на бордюре под холодным фонарём; свет превращает струи в серебряные нити, а сам человек лишь едва заметно дышит. Затем тот же человек сидит на складном стуле на краю бетонной плиты у серого озера; дождь рябит воду, вдали беззвучно вспыхивает молния. Кадр замирает, и через несколько секунд по небу катится низкий гром. Мы возвращаемся к бордюру под фонарём, и всё складывается ровно в первый кадр, так что ролик начинается заново.",
+ "style": {
+  "anchor": "A cold, rain-soaked, melancholic world in heavy rain, desaturated blue-gray palette with muted moss green, soft wide lens, fine film grain, photoreal.",
+  "visual": "Melancholic, near-static cinemagraph realism with a phone-camera, documentary feel. A single small human figure is placed off-center in a large, empty, wet environment, with lots of negative space above: a black rain curtain or a heavy gray sky. Surfaces read wet and reflective, with dense vertical rain streaks catching the light. Mood is lonely and quiet, with no other people.",
+  "palette": "Desaturated cold blue-gray dominates: slate-gray sky and water, blue-black wet asphalt, charcoal and near-black shadows. Accents are muted moss and olive green on grass and leaves, dull brown-red in dark hedges and dry reeds, and off-white in snow patches and lit rain streaks. The figures wear dark charcoal and heather-gray clothing. There are no saturated colors and no warm highlights beyond faint yellowish grass.",
+  "lens": "Moderate wide angle, about 28-35mm full-frame equivalent, with a smartphone-like perspective. Depth of field is deep to medium, with the background slightly softened by rain haze and atmosphere. Expect fine digital grain and noise in the shadows, soft low-contrast highlights, gentle bloom around the overhead lamp, no anamorphic flare, and slight compression softness.",
+  "lighting": "Night scenes use a single cool white streetlight overhead and slightly behind, top-center. It forms a hard top-light cone that rim-lights the falling rain into silver vertical streaks. The figure is lit from above and behind, with the face hidden. Ground spill catches the grass and wet asphalt, and everything beyond falls to black. Day scenes use flat, shadowless, cold overcast skylight at dusk, around 7000K, with soft gray reflections on the water. Distant lightning gives brief, cold white flashes across the sky.",
+  "camera": "Locked-off static tripod frame, eye-level or slightly elevated, in a portrait-oriented composition. The figure is seen from behind or in three-quarter profile at mid-distance. There is no camera movement, or at most an imperceptible slow push-in. Seamless-loop cinemagraph behavior: only rain, water ripples, splashes, leaves and tiny breathing or hood movements animate.",
+  "sound": "Rain and thunder only. Heavy drops drum on asphalt and splash into puddles at the street; rain patters on lake water and spatters on concrete and the chair at the lake. Deep, low, distant thunder rolls in long after the flashes. There is no music and there are no voices.",
+  "pace": "Extremely slow and meditative. Use long holds of 8-10 seconds per shot with almost no action: continuous rain, droplets hitting puddles and the lake, the subject barely shifting or breathing. Occasional distant lightning flashes are followed later by rolling thunder. Transitions are slow dissolves or hard cuts on a thunder beat."
+ },
+ "characters": [
+  {
+   "name": "Человек в капюшоне",
+   "descriptor": "the lone hooded figure in a heather-gray hoodie with the hood up and dark pants, face hidden",
+   "description": "A single anonymous person, always seen from behind or in three-quarter view, with the face never visible. On the curb they sit hunched with knees drawn up, arms wrapped around them and head bowed. On the lake slab they sit still in a black folding camp chair, facing the water. The only movement is a faint rise and fall of the shoulders and a slight sway of the soaked hood.",
+   "voice": "silent, no voice"
+  }
+ ],
+ "locations": [
+  {
+   "name": "Бордюр под фонарём",
+   "descriptor": "a wet concrete curb at night in pouring rain, running diagonally from bottom-left to center-right, with lit moss-green grass on the left, blue-black wet asphalt with reflections on the right, green tree leaves at the left edge, and a single cool white streetlight overhead turning the rain into silver streaks against black"
+  },
+  {
+   "name": "Плита у озера",
+   "descriptor": "a weathered concrete slab with snow patches jutting into a choppy slate-gray lake at overcast dusk in the rain, a black folding camp chair at its center, dry dark reeds in the lower corners, and a distant shoreline of village houses with snowy roofs and a thin mast under a heavy flat gray sky"
+  }
+ ],
+ "captions": {
+  "enabled": false,
+  "position": "bottom",
+  "font_size": 0
+ },
+ "fade_in": 0.0,
+ "fade_out": 0.0,
+ "loop": true,
+ "request": "Грустный дождливый бесконечный ролик по двум фото: ожившие фотографии, синемаграф. Человек в капюшоне сидит, сгорбившись, на бордюре под фонарём в ночной ливень; затем тот же одинокий человек в капюшоне сидит на стуле на краю бетонной плиты у серого озера под дождём. Почти ничего не происходит: льёт дождь, капли бьют по лужам и воде, человек едва шевелится, вдали вспыхивает молния и катится гром. Звук: только дождь и гром.",
+ "version": 2,
+ "creative_brief": {
+  "must_keep": [
+   "Two living photographs (cinemagraph): the street-curb photo and the lake-slab photo",
+   "One lone hooded person, hunched, barely moving",
+   "Street: hunched on a curb under a streetlight in a night downpour",
+   "Lake: seated on a chair at the edge of a concrete slab by a gray lake, in the rain",
+   "Rain drops hitting puddles and lake water",
+   "Distant lightning flash and rolling thunder",
+   "Sound is only rain and thunder",
+   "4 shots of 5 s: 001 street (ref 0), 002 lake (ref 1), 003 continue lake, 004 street closing the loop on the first frame",
+   "Locked-off camera in every shot, photoreal, melancholic, 9:16",
+   "Seamless infinite loop"
+  ],
+  "avoid": [
+   "Music",
+   "Dialogue or voices",
+   "Any other people",
+   "New actions or gestures beyond tiny breathing and hood movement",
+   "Camera movement",
+   "Saturated or warm colors",
+   "On-screen text, titles, fades"
+  ],
+  "assumptions": [
+   "The same person appears in both photos, unified under one descriptor: a heather-gray hoodie with the hood up and dark pants, which reads near-charcoal at night",
+   "The lake shot keeps the snow patches and dry reeds from reference 1 and adds steady rain over the water as requested",
+   "The lightning in shot 002 is a far, soft cold-white sky flicker that does not relight the figure, so the cut to 003 stays clean",
+   "Shot 004 opens on a fading cold lightning flicker over the street, then settles into the exact opening frame",
+   "Hard cuts between locations land on rain and thunder beats"
+  ],
+  "visual_anchors": [
+   "the lone hooded figure in a heather-gray hoodie with the hood up and dark pants, face hidden",
+   "a wet concrete curb running diagonally from bottom-left to center-right, lit moss-green grass on the left, blue-black wet asphalt with reflections on the right, green tree leaves at the left edge",
+   "a single cool white streetlight overhead and slightly behind, turning dense rain into silver vertical streaks against black",
+   "a weathered concrete slab with snow patches jutting into a choppy slate-gray lake, a black folding camp chair at its center, dry dark reeds in the lower corners",
+   "a distant shoreline of village houses with snowy roofs and a thin mast under a heavy flat gray sky"
+  ],
+  "loop_anchor": "Reference 0, the opening frame: portrait static wide shot at night in pouring rain, the hooded figure hunched on the curb at center-right with knees drawn up, arms wrapped around them and head bowed, the curb running diagonally from bottom-left, moss-green grass on the left, wet blue-gray asphalt on the right, and the cool white streetlight making silver rain streaks against black. Motion phase: steady rain, still figure at the low point of a breath.",
+  "project_notes": "Structure: 4 shots of 5 s. 001 = the street photo, alive: heavy rain under the streetlight, the person stays hunched, only rain, light and a tiny breath move. 002 = the lake photo, alive: rain dimples the grey water, the hooded person stays seated, a far lightning flash. 003 = continue the lake shot: still frame, rain, distant rolling thunder. 004 = back to the street, settling into exactly the opening composition (the loop closes on the first frame). Locked-off camera in every shot, no new actions, no people besides the one sitting figure, photoreal, melancholic. Sound only rain and thunder: heavy drops drumming on asphalt and puddles, rain splashing on lake water and concrete, deep distant thunder rolls.",
+  "reference_notes": [
+   "Dominant shared look: a lone hooded figure, cold desaturated blue-gray, static wide framing, small subject in large empty wet space. Both references are portrait, so keep all shots vertical.",
+   "Image 1 shows no visible rain; it is dry overcast dusk with snow patches. Per the producer, add steady rain in the prompt, with fine streaks and countless ripple rings on the lake surface. Keep the flat gray light and do not brighten the scene.",
+   "Image 0's cool white overhead streetlight top-light is unique to the night shot; do not carry a lamp into the lake shot. The yellowish-green grass glow was kept only as a muted accent.",
+   "Lightning and thunder are not in either reference. Render lightning as brief, distant, cold-white sky flashes far in the background (behind the far shoreline in the lake shot, behind the rain curtain in the night shot), without changing the base exposure for long.",
+   "For the cinemagraph loop, keep the camera locked and subject motion minimal: slight breathing, a small head or shoulder shift. Avoid faces, since both subjects are seen from behind or with heads bowed; no identifiable features.",
+   "Audio should be rain and thunder only: no music, no voices, no footsteps."
+  ]
+ },
+ "review_notes": [
+  "002: убрано «rain darkens the concrete». Это постепенное превращение сухой плиты в мокрую на протяжении клипа, что ломает статичность синемаграфа и стык с 003. Теперь плита мокрая и дождь идёт с первого кадра. Добавлены «facing away» и «in cold blue tones», чтобы первая фраза дословно повторяла референс 1. Отдельно оговорено, что вспышка молнии не меняет свет на фигуре.",
+  "001 и 004: к дескриптору добавлено «the hoodie reading near-charcoal in the night rain». В референсе 0 одежда тёмная, а в 004 нет изображения-условия, поэтому слова «heather-gray» без этой оговорки могли дать заметно более светлую толстовку, и стык петли 004→001 разошёлся бы. Формулировка в 001 и 004 совпадает дословно.",
+  "004: молния сокращена до затухающего свечения в первой секунде. Явно добавлены последние секунды, в которых кадр неподвижно стоит на исходной композиции. Это нужно для чистого замыкания петли на первый кадр 001.",
+  "Расхождение с запросом: в запросе стул стоит «на краю бетонной плиты», а в референсе 1 он в центре плиты. По правилу референс-кадра сохранён центр. Если важен именно край, нужен другой референс.",
+  "Расхождение по темпу: style.pace требует удержаний по 8–10 с, а план строится из клипов по 5 с. Это вынужденно: ref-шоты и continue-шоты ограничены 5 с. Тайминг не менялся. Для более медленного ритма можно добавить ещё один continue-шот по 5 с к 001 и к 004.",
+  "style.anchor с формулировками «at night or overcast dusk» и «streetlight or flat gray sky» вставляется в каждый промпт и двусмысленен. Он может подмешивать фонарь в озёрные шоты, а сумерки в ночные. Стиль здесь не правится, но стоит рассмотреть нейтральный якорь без альтернатив «или».",
+  "Звук во всех шотах ограничен дождём и громом, музыки и голосов нет. Формулировки без «hiss/static», что соответствует запросу."
+ ],
+ "references": [
+  {
+   "file": "/Users/markuysa/GolandProjects/film_studio/assets/refs/6d286f20736dbad9.png",
+   "role": "opening",
+   "description": "Portrait-format, static wide shot at night in pouring rain. A person in dark hooded clothing sits hunched on a concrete curb at center-right, knees drawn up, arms wrapped around them, head bowed. The curb runs diagonally from bottom-left toward center-right, with lit moss-green grass on the left and wet blue-gray asphalt with reflections on the right. A cool white overhead streetlight turns the dense rain into silver streaks against black; green tree leaves sit at the left edge.",
+   "shot": "001"
+  },
+  {
+   "file": "/Users/markuysa/GolandProjects/film_studio/assets/refs/62f93ec145a42e70.png",
+   "role": "frame",
+   "description": "Portrait-format, static wide shot from behind at overcast dusk. A person in a heather-gray hoodie with the hood up and dark pants sits in a black folding camp chair at the center of a weathered concrete slab jutting into a choppy slate-gray lake, facing away. Patches of snow lie on the slab, with dry dark reeds in the lower foreground corners. A distant shoreline of village houses with snowy roofs and a thin mast sits under a heavy flat gray sky in cold blue tones.",
+   "shot": "002"
+  },
+  {
+   "file": "/Users/markuysa/GolandProjects/film_studio/assets/refs/6d286f20736dbad9.png",
+   "role": "frame",
+   "description": "street photo again: closes the loop",
+   "shot": "004"
+  }
+ ]
+}

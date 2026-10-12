@@ -88,6 +88,10 @@ def lint_shot(shot: Shot, high: bool, known_characters: list[str] | None = None,
         add("warn", "mood_only", "абстрактное настроение без конкретного источника звука/движения")
     if QUOTE.search(p) and not VOICE_WORDS.search(p):
         add("warn", "dialogue_voice", "есть реплика, но не описан голос говорящего")
+    snd = p.split("Sound:", 1)[1] if "Sound:" in p else p[-300:]
+    if re.search(r"\b(soft|gentle|faint|quiet|hushed|muted)\b", snd.split(",")[0], re.I):
+        add("warn", "quiet_sound", "главный звук описан как soft/gentle/faint — LTX может выдать почти беззвучный клип; "
+            "задайте интенсивность (a loud, heavy downpour)")
     if HISSY.search(p):
         add("warn", "hissy_sound", "звук описан как hiss/static/white noise — LTX сгенерирует тонкое высокочастотное "
             "шипение; опишите источник физически (drops drumming on wood, rain splashing into the lake, rolling thunder)")
