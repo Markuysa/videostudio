@@ -134,3 +134,19 @@ def test_prefs_and_upload(server):
                         headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
     assert code == 200 and idx["music"][0]["file"].endswith("rain_calm.mp3") and "rain" in idx["music"][0]["tags"]
     assert (root / "assets" / "music" / "rain_calm.mp3").read_bytes() == b"ID3fake"
+
+
+def test_prompt_assistant_api(server, monkeypatch):
+    from studio.llm import FakeLLM
+    from studio.prompt_assistant import FIELDS
+    result = {**{key: 'Direction' for key in FIELDS}, 'assumptions': [], 'questions': []}
+    llm = FakeLLM([result, {'subject': 'broken'}])
+    monkeypatch.setattr('studio.llm.make_llm', lambda cfg: llm)
+    base, root = server
+    code, data, _ = call(base + '/api/prompt-assistant', 'POST', {'request': 'Rain'})
+    assert code == 200 and data == result
+    assert not list((root / '.studio').glob('**/job*.json'))
+    code, data, _ = call(base + '/api/prompt-assistant', 'POST', {'request': 'Rain'})
+    assert code == 502 and 'invalid' in data['error']
+    code, _, _ = call(base + '/api/prompt-assistant', 'POST', {'request': ''})
+    assert code == 400

@@ -71,6 +71,13 @@ build is committed to `studio/web/` and served by the Python server, so **no Nod
 To work on the UI: `cd ui && pnpm install && pnpm dev` (proxies `/api` and `/files` to :8765), then
 `pnpm build`.
 
+Use **Help develop the idea** below the idea field to draft editable creative direction:
+subject, setting, action, camera, light, sound and continuity. The assistant uses the configured
+Anthropic/Ollama provider, standing preferences and the selected series bible. Review its assumptions
+and questions, edit the fields, then choose **Apply direction**. The next script receives this direction
+alongside your original idea; the existing planner creates the final LTX-2.5 shot prompts.
+Changing the idea or creative settings requires updating the direction. This step does not start a GPU render.
+
 ---
 
 ## Installation

@@ -527,6 +527,21 @@ class Handler(BaseHTTPRequestHandler):
             raise ApiError("not found", 404)
 
         # POST
+        if path == "/api/prompt-assistant":
+            from .llm import make_llm, LLMError
+            from .prompt_assistant import suggest_direction
+            body = self._json_body()
+            if not isinstance(body, dict) or not isinstance(body.get("request"), str) or not body["request"].strip():
+                raise ApiError("describe what we are shooting")
+            body.pop("series_bible", None)
+            if body.get("series"):
+                body["series_bible"] = s.bible(str(body["series"]))
+            try:
+                prefs_path = s.dir("prefs_file")
+                prefs = prefs_path.read_text(encoding="utf-8") if prefs_path.exists() else ""
+                return self._json(suggest_direction(make_llm(s.cfg), body, prefs))
+            except LLMError as e:
+                raise ApiError(str(e), 502) from e
         if path == "/api/plan":
             return self._json(s.start_plan(self._json_body()))
         if path == "/api/render":
