@@ -155,6 +155,11 @@ def lint_plan(plan: Plan, default_quality: str = "fast") -> list[Issue]:
             issues.append(Issue(s.id, "warn", "dfr_conditioned_length",
                                 f"сцена со стартовым кадром длиннее 5 с ({s.seconds} с): DFR на ней падает, рендер пойдёт "
                                 "distilled-пайплайном; для полного качества разбейте на сцены-продолжения по 5 с"))
+    if plan.sound:
+        if plan.sound.foley:
+            # звук LTX под фоли заглушён — его тембр и громкость больше не важны
+            issues = [i for i in issues if i.code not in ("hissy_sound", "quiet_sound")]
+        issues += lint_sound(plan)
     if plan.kind == "short":
         first = plan.shots[0]
         if first.seconds > 6:
@@ -163,6 +168,27 @@ def lint_plan(plan: Plan, default_quality: str = "fast") -> list[Issue]:
             issues.append(Issue("*", "warn", "captions", "в шортсе включены субтитры, но заданы меньше чем у половины сцен"))
     if plan.kind == "film" and len({s.prompt.split(".")[0][:30] for s in plan.shots}) < max(2, len(plan.shots) // 2):
         issues.append(Issue("*", "warn", "variety", "сцены начинаются одинаково — разнообразьте крупность и ракурсы"))
+    return issues
+
+
+def lint_sound(plan: Plan) -> list[Issue]:
+    """Звуковая студия: реплики должны быть озвучиваемы и совпадать с тем, что говорит лицо в кадре."""
+    issues: list[Issue] = []
+    names = {str(c.get("name") or "").strip().lower(): c for c in plan.characters}
+    for s in plan.shots:
+        quoted = " ".join(re.findall(r"[\"“«]([^\"”»]+)[\"”»]", s.prompt)).lower()
+        for ln in s.dialogue:
+            c = names.get(ln.speaker.strip().lower())
+            if c is None:
+                issues.append(Issue(s.id, "warn", "unknown_speaker", f"говорящий {ln.speaker!r} не описан в characters — "
+                                    "голос будет нейтральным и не совпадёт между сценами"))
+            elif not c.get("voice"):
+                issues.append(Issue(s.id, "warn", "no_voice", f"у персонажа {ln.speaker!r} нет описания голоса (voice)"))
+            if ln.on_screen and ln.text.lower()[:12] not in quoted:
+                issues.append(Issue(s.id, "warn", "line_not_in_prompt", f"реплика «{ln.text[:30]}» не процитирована в "
+                                    "промпте — видеомодель не нарисует говорящее лицо, липсинку не за что зацепиться"))
+            if len(ln.text) > 140:
+                issues.append(Issue(s.id, "warn", "long_line", "реплика длиннее ~8 с речи — разбейте на две сцены"))
     return issues
 
 

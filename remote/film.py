@@ -24,6 +24,9 @@ import time
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))   # /workspace/studio
 from studio.assemble import AssembleError, AssembleOptions, ClipSpec, assemble, probe  # noqa: E402
 from studio.schema import FPS, MAX_FRAMES_HIGH_CONDITIONED, Plan, load_plan, normalize_durations, validate  # noqa: E402
+from studio import sound as SND  # noqa: E402
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import sound_pod  # noqa: E402
 
 MODELS = os.environ.get("LTX_MODELS", "/workspace/models/ltx-2.5")
 REPO = os.environ.get("LTX_REPO", "/workspace/LTX-2")
@@ -90,6 +93,23 @@ def ltx_cmd(pipeline: str, prompt: str, w: int, h: int, frames: int, seed: int, 
     elif frames > 241:
         cmd += ["--chunked"]
     return cmd + EXTRA
+
+
+def lipsync_args() -> list[str]:
+    """Веса для remote/audio/lipsync.py (LTX retake с замороженным звуком)."""
+    return ["--transformer-path", f"{MODELS}/diffusion_models/ltx-2.5-22b-distilled-transformer-bf16.safetensors",
+            "--text-encoder-path", f"{MODELS}/text_encoders/gemma4-12b-with-proj-ltx-2.5-bf16.safetensors",
+            "--video-vae-path", f"{MODELS}/vae/ltx-2.5-video-vae-bf16.safetensors",
+            "--audio-vae-path", f"{MODELS}/vae/ltx-2.5-audio-vae-bf16.safetensors"]
+
+
+def run_lipsync(logf):
+    script = pathlib.Path(__file__).resolve().parent / "audio" / "lipsync.py"
+
+    def go(args: list[str]) -> int:
+        cmd = shlex.split(TEST_CMD) + args if TEST_CMD else [LTX_PY, str(script), *args, *EXTRA]
+        return run(cmd, logf)[0]
+    return go
 
 
 def last_frame(video: pathlib.Path, png: pathlib.Path, logf) -> bool:
@@ -275,17 +295,26 @@ def main() -> int:
     proj = pathlib.Path(os.environ.get("FILM_DIR", f"/workspace/film/{plan.slug or plan_path.stem}"))
     proj.mkdir(parents=True, exist_ok=True)
     logf = open(proj / "render.log", "a", encoding="utf-8")
+    assets_dir = plan_path.parent / f"{plan_path.stem}_assets"
     log(f"Фильм «{plan.title}»: {len(plan.shots)} сцен, ~{plan.total_seconds / 60:.1f} мин, {plan.format} {w}x{h}, "
-        f"качество {'high (DFR)' if high else 'fast'}")
+        f"качество {'high (DFR)' if high else 'fast'}" + (", звуковая студия" if plan.sound else ""))
     log(f"Папка проекта: {proj}")
     t_all = time.time()
+    # реплики озвучиваются до видео: по их длине подгоняется длина сцен
+    durations = sound_pod.prepare_dialogue(plan, proj, assets_dir, high, logf)
     done, failed = render_shots(plan, proj, high, w, h, logf)
     if not done:
         log("Ни одной сцены не получилось, склеивать нечего")
         return 1
+    score_path = None
+    if plan.sound:
+        sound_pod.lipsync(plan, done, proj, durations, lipsync_args(), logf, run_lipsync(logf))
+        sound_pod.foley(plan, done, proj, logf)
+        score_path = sound_pod.score(plan, proj, plan.total_seconds, logf)
+    sound_dir = proj / SND.SOUND_DIR
+    manifest = sound_pod.write_manifest(plan, done, proj, durations, score_path) if plan.sound else {}
 
     log("Собираю фильм (переходы, музыка, звуки, субтитры, громкость)...")
-    assets_dir = plan_path.parent / f"{plan_path.stem}_assets"
     root = plan_path.parent
 
     def asset(file: str | None) -> str | None:
@@ -310,15 +339,17 @@ def main() -> int:
             transition = "cut"      # непрерывность не удалась (откат без картинки) — честная склейка
         narration = asset(f"narration_{s.id}.mp3") if s.narration else None
         sfx = [(asset(x.file), x.offset, x.volume) for x in s.sfx]
+        stems = SND.stems_for(plan, s.id, sound_dir, manifest)
         clips.append(ClipSpec(path=d["clip"], shot_id=s.id, transition=transition,
                               transition_seconds=s.transition_seconds, caption=s.caption,
-                              sfx=[x for x in sfx if x[0]], narration=narration,
-                              trim_end=(1 / FPS) if (plan.loop and d.get("loop_closed")) else 0.0))
+                              sfx=[x for x in sfx if x[0]] + stems["foley"], narration=narration,
+                              trim_end=(1 / FPS) if (plan.loop and d.get("loop_closed")) else 0.0,
+                              voices=stems["voices"], audio_volume=stems["model"]))
         first = False
     loop_closed = bool(plan.loop and clips and done and done[-1].get("loop_closed"))
     if plan.loop and not loop_closed:
         log("Луп не замкнут (финальная сцена без условия на первый кадр) — стык будет обычной склейкой")
-    music_path = asset(plan.music.file) if plan.music and plan.music.file else None
+    music_path = asset(plan.music.file) if plan.music and plan.music.file else score_path
     opts = AssembleOptions(width=w, height=h, fps=FPS, music_path=music_path,
                            music_volume=plan.music.volume if plan.music else 0.25,
                            music_duck=plan.music.duck if plan.music else True,
@@ -327,7 +358,7 @@ def main() -> int:
                            captions=plan.captions.enabled, caption_position=plan.captions.position,
                            caption_font_size=plan.captions.font_size,
                            fade_in=0.0 if plan.loop else plan.fade_in, fade_out=0.0 if plan.loop else plan.fade_out,
-                           leveling=plan.audio == "leveled", loudnorm=plan.audio == "leveled")
+                           leveling=plan.audio == "leveled", loudnorm=plan.audio == "leveled" or bool(plan.sound))
     final = proj / "film.mp4"
     try:
         rep = assemble(clips, final, opts, proj, logf=logf, log=log)
@@ -338,6 +369,10 @@ def main() -> int:
               "resolution": f"{w}x{h}", "seconds": rep["seconds"], "shots_ok": len(done), "shots_failed": failed,
               "shots": done, "music": bool(music_path), "captions": rep["captions"], "timeline": rep["timeline"],
               "loop": plan.loop, "loop_closed": loop_closed, "audio": plan.audio,
+              "sound": {"lines": sum(len(x.get("lines") or []) for x in (manifest.get("shots") or {}).values()),
+                        "lipsync": [k for k, x in (manifest.get("shots") or {}).items() if x.get("lipsync")],
+                        "foley": [k for k, x in (manifest.get("shots") or {}).items() if x.get("foley")],
+                        "score": bool(score_path)} if plan.sound else None,
               "minutes": round((time.time() - t_all) / 60)}
     (proj / "manifest.json").write_text(json.dumps({"plan": plan.to_dict(), "shots": done}, ensure_ascii=False, indent=1),
                                         encoding="utf-8")

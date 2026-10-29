@@ -6,6 +6,9 @@ marker="/tmp/fake_ltx_failed_$(echo "$out" | md5sum | cut -c1-8)"
 if [ -n "$FAKE_LTX_FAIL_ONCE" ] && [[ "$out" == *"$FAKE_LTX_FAIL_ONCE"* ]] && [ ! -f "$marker" ]; then
   touch "$marker"; echo "RuntimeError: CUDA error: CUBLAS_STATUS_INTERNAL_ERROR" >&2; exit 1
 fi
+for ((i=1;i<$#;i++)); do   # липсинк (retake): видео перерисовывается, длина и звук холста сохраняются
+  if [ "${!i}" = "--video-path" ]; then j=$((i+1)); cp "${!j}" "$out"; exit 0; fi
+done
 frames=121; size="704x1280"; pipeline="distilled"
 args=("$@")
 for ((i=0;i<${#args[@]};i++)); do

@@ -23,7 +23,8 @@ export function FilmModal({ slug }: { slug: string }) {
         <KV rows={[
           ["Resolution", film.resolution ?? "—"], ["Running time", fmtDur(film.seconds)], ["Quality", film.quality ?? "—"],
           ["Shots", <span>{film.shots_ok ?? "—"} ok{film.shots_failed.length ? <span className="text-bad"> · {film.shots_failed.length} failed ({film.shots_failed.join(", ")})</span> : null}{distilled ? <span className="text-warn"> · {distilled} distilled</span> : null}</span>],
-          ["Audio", film.audio === "leveled" ? "leveled (scenes matched, -14 LUFS)" : "raw (model sound untouched)"],
+          ["Audio", film.sound ? <span>sound studio · {film.sound.lines} lines{film.sound.lipsync.length ? `, lip-sync in ${film.sound.lipsync.join(", ")}` : ""} · Foley {film.sound.foley.length}/{film.shots.length}{film.sound.score ? " · score" : ""}</span>
+            : film.audio === "leveled" ? "leveled (scenes matched, -14 LUFS)" : "raw (model sound untouched)"],
           ["Loop", film.loop ? (film.loop_closed ? <Chip tone="good">closed on the first frame</Chip> : <Chip tone="warn">not closed</Chip>) : "no"],
           ["Extras", <span>{film.captions ? "captions " : ""}{film.music ? "music " : ""}{!film.captions && !film.music ? "—" : ""}</span>],
           ["GPU time", film.minutes ? `${film.minutes} min` : "—"], ["File", fmtSize(film.size)],
@@ -46,7 +47,7 @@ export function FilmModal({ slug }: { slug: string }) {
         <div className="label mt-5 mb-2">Per-shot report</div>
         <div className="card overflow-hidden">
           <table className="table w-full text-[13.5px]">
-            <thead><tr><th>Shot</th><th>Pipeline</th><th>Size</th><th>Render</th><th>Continuity</th><th>Timeline</th></tr></thead>
+            <thead><tr><th>Shot</th><th>Pipeline</th><th>Size</th><th>Render</th><th>Continuity</th>{film.sound && <th>Sound</th>}<th>Timeline</th></tr></thead>
             <tbody>{film.shots.map((s) => {
               const t = film.timeline.find((x) => x.shot === s.id);
               return (
@@ -56,6 +57,7 @@ export function FilmModal({ slug }: { slug: string }) {
                   <td className="text-muted">{s.size ?? "—"}</td>
                   <td className="text-muted">{s.seconds_render != null ? `${s.seconds_render} s` : "—"}</td>
                   <td className="text-muted">{s.continuity ? "from previous frame" : s.loop_closed ? "closes the loop" : "—"}</td>
+                  {film.sound && <td className="text-muted">{[s.lipsync ? "lip-sync" : "", s.foley ? "Foley" : "model audio"].filter(Boolean).join(" · ")}</td>}
                   <td className="text-muted">{t ? `${t.start}–${t.end} s · ${t.transition}` : "—"}</td>
                 </tr>
               );

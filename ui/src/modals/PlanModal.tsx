@@ -135,6 +135,14 @@ export function PlanModal({ name, initialTab = "shots" }: { name: string; initia
                   </button>
                 </div>
                 <p className="m-0 text-[14px] text-[#cdd3df] leading-relaxed">{s.prompt}</p>
+                {(s.dialogue?.length || s.foley) ? (
+                  <div className="grid gap-1 text-[13px] border-l-2 border-accent/50 pl-3">
+                    {(s.dialogue ?? []).map((ln, k) => (
+                      <div key={k}><span className="mono text-muted">{ln.at.toFixed(1)} s</span> <b>{ln.speaker}</b>{ln.on_screen === false ? <span className="text-muted"> (off-screen)</span> : null}: «{ln.text}»</div>
+                    ))}
+                    {s.foley && <div className="text-muted">Foley: {s.foley}</div>}
+                  </div>
+                ) : null}
                 {s.direction && Object.keys(s.direction).length > 0 && (
                   <details><summary className="text-[12.5px] text-muted hover:text-text">Shot direction ▾</summary>
                     <div className="text-[13px] mt-1.5 grid gap-0.5">{Object.entries(s.direction).map(([k, v]) => <div key={k}><b className="text-muted">{k}</b>: {v}</div>)}</div></details>

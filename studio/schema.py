@@ -94,6 +94,20 @@ class Sfx:
 
 
 @dataclass
+class Line:
+    """Реплика персонажа: озвучивается отдельно (TTS) и, если лицо в кадре, по ней перерисовываются губы."""
+    speaker: str
+    text: str
+    at: float = 0.5            # секунды от начала сцены
+    on_screen: bool = True     # говорящий виден в кадре -> липсинк
+
+    @staticmethod
+    def from_dict(d: dict) -> "Line":
+        return Line(speaker=str(d.get("speaker") or "").strip(), text=str(d.get("text") or "").strip(),
+                    at=float(d.get("at", 0.5)), on_screen=bool(d.get("on_screen", True)))
+
+
+@dataclass
 class Shot:
     id: str
     seconds: float
@@ -108,6 +122,8 @@ class Shot:
     beat: str | None = None            # короткое описание смысла сцены (для людей и LLM)
     notes: str | None = None
     direction: dict = field(default_factory=dict)  # постановка: start/action/camera/end, не текст для рендера
+    dialogue: list[Line] = field(default_factory=list)   # реплики для звуковой студии
+    foley: str | None = None           # описание шумов и эмбиента для модели фоли (английский)
 
     @property
     def frames(self) -> int:
@@ -134,6 +150,9 @@ class Shot:
             beat=d.get("beat") or None,
             notes=d.get("notes") or None,
             direction=dict(d.get("direction") or {}),
+            dialogue=[ln for ln in (Line.from_dict(x) for x in (d.get("dialogue") or []) if isinstance(x, dict))
+                      if ln.text],
+            foley=(str(d["foley"]).strip() or None) if d.get("foley") else None,
         )
 
 
@@ -154,6 +173,41 @@ class Music:
             return Music(file=d)
         return Music(file=d.get("file") or None, volume=float(d.get("volume", 0.25)), duck=bool(d.get("duck", True)),
                      fade_in=float(d.get("fade_in", 1.0)), fade_out=float(d.get("fade_out", 2.5)), mood=d.get("mood"))
+
+
+VOICE_ENGINES = ("qwen", "elevenlabs")
+SOUND_LEVELS = {"dialogue": 1.0, "foley": 0.7, "model": 0.0}
+
+
+@dataclass
+class Sound:
+    """Звуковая студия: голоса, фоли и музыка генерируются отдельными моделями и сводятся по стемам.
+
+    Звук самой LTX (`levels.model`) по умолчанию заглушён: его заменяют фоли и реплики. Если фоли
+    для сцены не получилось, в ней остаётся звук LTX.
+    """
+    voices: str = "qwen"             # qwen (на Pod) | elevenlabs (API, нужен ключ)
+    lipsync: bool = True             # перерисовать губы под реплики говорящих в кадре
+    foley: bool = True
+    score: bool = True               # сгенерировать музыку, если в плане нет трека из библиотеки
+    score_prompt: str | None = None  # описание музыки для модели (английский)
+    bpm: int | None = None
+    levels: dict = field(default_factory=lambda: dict(SOUND_LEVELS))
+
+    def level(self, name: str) -> float:
+        return float(self.levels.get(name, SOUND_LEVELS[name]))
+
+    @staticmethod
+    def from_dict(d: Any) -> "Sound | None":
+        if not d:
+            return None
+        if d is True:
+            return Sound()
+        return Sound(voices=str(d.get("voices") or "qwen").lower(), lipsync=bool(d.get("lipsync", True)),
+                     foley=bool(d.get("foley", True)), score=bool(d.get("score", True)),
+                     score_prompt=d.get("score_prompt") or None, bpm=int(d["bpm"]) if d.get("bpm") else None,
+                     levels={**SOUND_LEVELS, **{k: float(v) for k, v in (d.get("levels") or {}).items()
+                                                if k in SOUND_LEVELS}})
 
 
 @dataclass
@@ -201,6 +255,7 @@ class Plan:
     creative_brief: dict = field(default_factory=dict)
     review_notes: list[str] = field(default_factory=list)
     references: list[dict] = field(default_factory=list)   # [{file, role: style|frame|opening, description, shot}]
+    sound: Sound | None = None       # звуковая студия; None — звук LTX как есть (как раньше)
 
     # ---------- производные ----------
     @property
@@ -238,6 +293,7 @@ class Plan:
                 s.pop("image_strength", None)
         d["music"] = asdict(self.music) if self.music else None
         d["captions"] = asdict(self.captions)
+        d["sound"] = asdict(self.sound) if self.sound else None
         return {k: v for k, v in d.items() if v is not None}
 
     def save(self, path: pathlib.Path) -> None:
@@ -276,6 +332,7 @@ class Plan:
             loop=bool(d.get("loop", False)), audio=str(d.get("audio") or "raw").lower(), request=d.get("request"), version=int(d.get("version", 1)), source_path=source_path,
             creative_brief=dict(d.get("creative_brief") or {}), review_notes=list(d.get("review_notes") or []),
             references=[dict(r) for r in (d.get("references") or []) if isinstance(r, dict) and r.get("file")],
+            sound=Sound.from_dict(d.get("sound")),
         )
         if plan.music and d.get("music_volume") is not None:   # совместимость с версией 1
             plan.music.volume = float(d["music_volume"])
@@ -298,6 +355,14 @@ def validate(plan: Plan, default_quality: str = "fast") -> list[str]:
     high = plan.is_high(default_quality)
     if plan.audio not in ("raw", "leveled"):
         problems.append(f"audio должен быть raw или leveled, а не {plan.audio!r}")
+    if plan.sound and plan.sound.voices not in VOICE_ENGINES:
+        problems.append(f"sound.voices должен быть одним из {VOICE_ENGINES}, а не {plan.sound.voices!r}")
+    for s in plan.shots:
+        for ln in s.dialogue:
+            if not ln.speaker:
+                problems.append(f"сцена {s.id}: у реплики «{ln.text[:30]}» не указан speaker")
+            if not (0 <= ln.at < s.seconds):
+                problems.append(f"сцена {s.id}: реплика начинается в {ln.at} с — вне сцены ({s.seconds} с)")
     if plan.loop and len(plan.shots) < 2:
         problems.append("для замыкания лупа нужны минимум две сцены")
     ids = [s.id for s in plan.shots]

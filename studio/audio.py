@@ -103,11 +103,12 @@ class TTSError(RuntimeError):
 
 
 def tts_elevenlabs(text: str, out_path: pathlib.Path, api_key: str, voice_id: str,
-                   model_id: str = "eleven_multilingual_v2") -> pathlib.Path:
-    """Text-to-speech через ElevenLabs REST API. Возвращает путь к mp3."""
+                   model_id: str = "eleven_multilingual_v2", wav: bool = False) -> pathlib.Path:
+    """Text-to-speech через ElevenLabs REST API. Возвращает путь к mp3 (или WAV при wav=True)."""
     if not api_key or not voice_id:
         raise TTSError("не заданы elevenlabs_api_key / elevenlabs_voice_id в film_config.json")
-    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format=mp3_44100_128"
+    fmt = "pcm_44100" if wav else "mp3_44100_128"
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format={fmt}"
     body = json.dumps({"text": text, "model_id": model_id}).encode()
     req = urllib.request.Request(url, data=body, method="POST", headers={
         "xi-api-key": api_key, "Content-Type": "application/json", "Accept": "audio/mpeg"})
@@ -119,7 +120,15 @@ def tts_elevenlabs(text: str, out_path: pathlib.Path, api_key: str, voice_id: st
     except urllib.error.URLError as e:
         raise TTSError(f"нет связи с ElevenLabs: {e}") from e
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_bytes(data)
+    if wav:
+        import wave
+        with wave.open(str(out_path), "wb") as w:      # pcm_44100: 16-бит моно без заголовка
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(44100)
+            w.writeframes(data)
+    else:
+        out_path.write_bytes(data)
     return out_path
 
 
@@ -140,3 +149,30 @@ def prepare_narration(plan: Plan, cfg: dict, out_dir: pathlib.Path, log=print) -
             tts_elevenlabs(s.narration, out, key, voice, cfg.get("elevenlabs_model", "eleven_multilingual_v2"))
         result[s.id] = str(out)
     return result
+
+
+def prepare_dialogue(plan: Plan, cfg: dict, out_dir: pathlib.Path, log=print) -> int:
+    """Реплики звуковой студии через ElevenLabs (если выбран этот движок) — локально, до загрузки на Pod.
+
+    Голос персонажа: `characters[].voice.elevenlabs_voice_id`, иначе общий `elevenlabs_voice_id` из конфига.
+    Чего не удалось озвучить здесь, Pod озвучит Qwen3-TTS. Возвращает число готовых реплик.
+    """
+    from . import sound
+    if not plan.sound or plan.sound.voices != "elevenlabs" or not sound.lines(plan):
+        return 0
+    key = cfg.get("elevenlabs_api_key")
+    if not key:
+        log("Голоса: выбран ElevenLabs, но нет elevenlabs_api_key — реплики озвучит Qwen3-TTS на Pod")
+        return 0
+    ready = 0
+    for s, i, ln in sound.lines(plan):
+        voice = sound.voice_spec(plan, ln.speaker)["elevenlabs_voice_id"] or cfg.get("elevenlabs_voice_id")
+        if not voice:
+            log(f"Голоса: у персонажа {ln.speaker!r} нет elevenlabs_voice_id — реплику озвучит Qwen3-TTS")
+            continue
+        out = out_dir / sound.line_name(plan, s, i, "elevenlabs")
+        if not out.exists():
+            log(f"Голоса: {ln.speaker} — «{ln.text[:50]}»")
+            tts_elevenlabs(ln.text, out, key, voice, cfg.get("elevenlabs_model", "eleven_multilingual_v2"), wav=True)
+        ready += 1
+    return ready

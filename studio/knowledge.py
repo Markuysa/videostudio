@@ -210,3 +210,24 @@ Style bible fields you must fill (short, concrete, reusable in every prompt):
 - sound: the sonic signature (ambience, materials, music mood if the studio adds music later).
 - pace: cutting rhythm.
 """
+
+
+SOUND_STUDIO_RULES = """\
+SOUND STUDIO (active): the final soundtrack is NOT the video model's audio. The studio records every spoken line
+with a dedicated TTS voice per character, re-animates the speaker's lips to that recording, generates Foley and
+ambience from the finished picture with a video-to-audio model, and scores the film with a music model. So:
+- Every spoken line goes into the shot's `dialogue` list: speaker = the character's name exactly as in
+  `characters`, text in the dialogue language, `at` = seconds from the shot start when the line begins (leave
+  0.6-1.2 s of stillness before it), `on_screen` = true only when the speaker's face is clearly visible in this
+  shot (false for voices from off-screen or from behind). Keep each line short: 1-2 sentences, under ~4 s spoken.
+  The same line stays quoted in the prompt as well, so the video model animates the speaking face.
+- A character's `voice` is a casting note for a voice-design model, in English, one sentence: gender, age, timbre,
+  pitch, pace and manner ("Woman in her late twenties, warm husky alto, slow sleepy delivery, slight smile in the
+  voice"). The same voice is cloned in every shot, so describe the person, not the scene.
+- `foley` (every shot, English, 8-25 words) lists only physical sounds and ambience the picture shows, deepest
+  sound first, with intensity: "steady heavy rain on a tin roof, a ceramic cup set down on oak, distant traffic".
+  No speech, no music, no "hiss".
+- music.prompt describes the score for the music model in English: genre, instruments, tempo, mood arc
+  ("sparse felt piano and warm cello, 70 bpm, quiet melancholy that brightens at the end"); music.bpm is a number.
+  The score is instrumental and ducks under dialogue automatically.
+"""

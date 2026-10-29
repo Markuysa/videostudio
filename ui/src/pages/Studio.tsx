@@ -11,9 +11,9 @@ import { useStore } from "../store";
 
 interface Form {
   request: string; kind: string; duration: number; custom: boolean; format: string; quality: string; language: string;
-  music: string; captions: "" | "1" | "0"; series: string; name: string; notes: string; loop: boolean; audio: "raw" | "leveled";
+  music: string; captions: "" | "1" | "0"; series: string; name: string; notes: string; loop: boolean; audio: "raw" | "leveled"; sound: boolean; voices: "qwen" | "elevenlabs";
 }
-const initial: Form = { request: "", kind: "short", duration: 45, custom: false, format: "", quality: "", language: "ru", music: "auto", captions: "", series: "", name: "", notes: "", loop: false, audio: "raw" };
+const initial: Form = { request: "", kind: "short", duration: 45, custom: false, format: "", quality: "", language: "ru", music: "auto", captions: "", series: "", name: "", notes: "", loop: false, audio: "raw", sound: true, voices: "qwen" };
 
 export function Studio() {
   const { state, refresh, setModal, setView, prefill, setPrefill } = useStore();
@@ -103,13 +103,15 @@ export function Studio() {
                 <Field label="Music"><Select value={f.music} onChange={(v) => set("music", v)} options={musicOpts} /></Field>
                 <Field label="Captions"><Select value={f.captions} onChange={(v) => set("captions", v)} options={[{ value: "", label: "By preset" }, { value: "1", label: "On" }, { value: "0", label: "Off" }]} /></Field>
                 <Field label="Series"><Select value={f.series} onChange={(v) => set("series", v)} options={[{ value: "", label: "—" }, ...s.series.map((x) => ({ value: x.slug, label: x.title }))]} /></Field>
-                <Field label="Audio"><Select value={f.audio} onChange={(v) => set("audio", v)} options={[{ value: "raw", label: "As generated", hint: "the model's sound untouched" }, { value: "leveled", label: "Leveled", hint: "scenes matched, -14 LUFS, limiter" }]} /></Field>
+                {!f.sound && <Field label="Audio"><Select value={f.audio} onChange={(v) => set("audio", v)} options={[{ value: "raw", label: "As generated", hint: "the model's sound untouched" }, { value: "leveled", label: "Leveled", hint: "scenes matched, -14 LUFS, limiter" }]} /></Field>}
+                {f.sound && <Field label="Voices"><Select value={f.voices} onChange={(v) => set("voices", v)} options={[{ value: "qwen", label: "Qwen3-TTS", hint: "on the GPU, voice designed per character" }, { value: "elevenlabs", label: "ElevenLabs", hint: s.config.has_elevenlabs ? "API voices from the config" : "needs elevenlabs_api_key" }]} /></Field>}
               </div>
               <div className="grid grid-cols-[1fr_2fr] gap-3 max-sm:grid-cols-1">
                 <Field label="File name"><Input value={f.name} onChange={(e) => set("name", e.target.value)} placeholder="auto" /></Field>
                 <Field label="Creative direction · what must stay exact"><Input value={f.notes} onChange={(e) => set("notes", e.target.value)} placeholder="e.g. natural overcast light, locked camera, no neon or dialogue, photoreal" /></Field>
               </div>
               <Toggle checked={f.loop} onChange={(v) => set("loop", v)} label="Seamless loop: the end flows into the beginning" />
+              <Toggle checked={f.sound} onChange={(v) => set("sound", v)} label="Sound studio: voices, lip-sync, Foley and score by separate models" />
             </div>
           )}
         </div>

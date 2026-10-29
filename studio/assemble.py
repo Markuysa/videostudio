@@ -53,6 +53,8 @@ class ClipSpec:
     narration: str | None = None     # путь к аудиофайлу озвучки
     trim_end: float = 0.0            # с: отрезать с конца (луп: последний кадр дублирует первый кадр фильма)
     gain_db: float = 0.0             # выравнивание громкости сцены (см. clip_gain_db)
+    voices: list[tuple[str, float, float]] = field(default_factory=list)  # реплики звуковой студии (файл, смещение, громкость)
+    audio_volume: float = 1.0        # звук самой LTX: 0 — заглушён (его заменили фоли и реплики)
 
 
 @dataclass
@@ -333,6 +335,8 @@ def build_graph(clips: list[ClipSpec], durations: list[float], opts: AssembleOpt
         # усиленный клип тут же ограничиваем по пикам (-3 dBTP): транзиенты тихих сцен иначе
         # задирают пик всего фильма и не дают поднять общий уровень
         gain = f"volume={c.gain_db:+.1f}dB," if abs(c.gain_db) >= 0.05 else ""
+        if abs(c.audio_volume - 1.0) > 1e-3:
+            gain = f"volume={max(0.0, c.audio_volume):.3f}," + gain
         if c.gain_db > 0.05:
             gain += f"alimiter=limit={10 ** (-3 / 20):.4f}:attack=5:release=80:level=false,"
         lines.append(f"[{i}:a]atrim=start={trim:.4f}:end={end:.4f},asetpts=PTS-STARTPTS,"
@@ -383,6 +387,12 @@ def build_graph(clips: list[ClipSpec], durations: list[float], opts: AssembleOpt
                          f"adelay={at_ms}|{at_ms},apad=whole_dur={total:.3f},atrim=end={total:.3f}[nar{idx}]")
             nar_labels.append(f"[nar{idx}]")
             idx += 1
+        for (_, offset, vol) in seg.clip.voices:
+            at_ms = int(round(max(0.0, seg.start + offset) * 1000))
+            lines.append(f"[{idx}:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,"
+                         f"volume={vol},adelay={at_ms}|{at_ms},apad=whole_dur={total:.3f},atrim=end={total:.3f}[vox{idx}]")
+            nar_labels.append(f"[vox{idx}]")
+            idx += 1
         for (_, offset, vol) in seg.clip.sfx:
             at_ms = int(round(max(0.0, seg.start + offset) * 1000))
             lines.append(f"[{idx}:a]aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo,"
@@ -427,7 +437,8 @@ def assemble(clips: list[ClipSpec], out_path: pathlib.Path, opts: AssembleOption
     absf = lambda x: str(pathlib.Path(x).resolve()) if x else x  # noqa: E731
     clips = [ClipSpec(path=absf(c.path), shot_id=c.shot_id, transition=c.transition, transition_seconds=c.transition_seconds,
                       caption=c.caption, sfx=[(absf(f), o, v) for (f, o, v) in c.sfx], narration=absf(c.narration),
-                      trim_end=c.trim_end, gain_db=c.gain_db) for c in clips]
+                      trim_end=c.trim_end, gain_db=c.gain_db, voices=[(absf(f), o, v) for (f, o, v) in c.voices],
+                      audio_volume=c.audio_volume) for c in clips]
     if opts.music_path:
         opts = AssembleOptions(**{**opts.__dict__, "music_path": absf(opts.music_path)})
     workdir.mkdir(parents=True, exist_ok=True)
@@ -452,7 +463,8 @@ def assemble(clips: list[ClipSpec], out_path: pathlib.Path, opts: AssembleOption
                 logf.write(f"\n# clip {c.shot_id}: {lufs if lufs is not None else '—'} LUFS -> gain {gain:+.1f} dB\n")
         normalized.append(ClipSpec(path=str(dst), shot_id=c.shot_id, transition=c.transition,
                                    transition_seconds=c.transition_seconds, caption=c.caption, sfx=c.sfx,
-                                   narration=c.narration, trim_end=c.trim_end, gain_db=gain))
+                                   narration=c.narration, trim_end=c.trim_end, gain_db=gain, voices=c.voices,
+                                   audio_volume=c.audio_volume))
         durations.append(info["duration"])
     # дополнительные входы в том же порядке, в котором граф их нумерует
     extra: list[str] = []
@@ -465,6 +477,9 @@ def assemble(clips: list[ClipSpec], out_path: pathlib.Path, opts: AssembleOption
         if seg.clip.narration:
             extra_pre.append([])
             extra.append(seg.clip.narration)
+        for (f, _, _) in seg.clip.voices:
+            extra_pre.append([])
+            extra.append(f)
         for (f, _, _) in seg.clip.sfx:
             extra_pre.append([])
             extra.append(f)

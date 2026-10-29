@@ -11,7 +11,7 @@ seamless assembly with ffmpeg · a React control room to run it all.
 [![React](https://img.shields.io/badge/UI-React%2019%20%2B%20TypeScript-61DAFB?logo=react&logoColor=black)](#web-interface)
 [![LTX-2.5](https://img.shields.io/badge/video-LTX--2.5-f2b35b)](https://huggingface.co/Lightricks/LTX-2.5)
 [![Claude](https://img.shields.io/badge/brain-Claude%20Opus%205.5-d97757)](https://www.anthropic.com)
-[![Tests](https://img.shields.io/badge/tests-76%20passing-4ad092)](#tests)
+[![Tests](https://img.shields.io/badge/tests-87%20passing-4ad092)](#tests)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 <img src="docs/img/ui_studio.jpg" width="900" alt="Studio home" />
@@ -44,7 +44,7 @@ renders every shot in 1080p, stitches them into one film with continuity across 
 | 🔗 **Keeps continuity** | A *world anchor* sentence is injected verbatim into every prompt; each shot carries `direction.start/end`, and the next shot starts from the previous end state. Pronouns without a character descriptor are lint errors. |
 | 🎞 **Renders on demand** | Spins up a RunPod GPU, installs LTX‑2.5 once on a network volume, renders DFR 1080p with a fallback chain (DFR → distilled → fast), caches clips, resumes after interruptions, deletes the pod. |
 | ✂️ **Assembles seamlessly** | Hard cuts with micro audio fades, `continue` shots conditioned on the previous last frame, dissolves, music with speech ducking, SFX, voice‑over, burned captions with a 9:16 safe zone. Seamless **loops**: the last shot is conditioned on the first frame of the film. |
-| 🔊 **Respects the sound** | By default the model's audio is passed through untouched; optional scene leveling with a true‑peak limiter. Prompt rules prevent “hiss”‑style audio. |
+| 🔊 **Sound studio** | Voices, Foley and score come from dedicated models and are mixed as stems: every character gets a designed voice (Qwen3‑TTS or ElevenLabs) that stays the same across shots, the speaker's lips are re‑animated to the recorded line, Foley is generated from the finished picture, music is scored to the film's length and ducks under dialogue. |
 | 📺 **Formats** | `short` (9:16, hook, captions), `aesthetic` (mood piece), `film` (drama), `episode` (series with a character bible), `motion` (graphic animation). |
 | 🖥 **Control room** | React + TypeScript UI: compose, watch jobs with live logs and per‑shot progress, review and edit plans, play films, inspect per‑shot reports, re‑assemble, manage series bibles and the sound library. |
 
@@ -81,6 +81,37 @@ Honest limits: LTX‑2.5 has no image‑to‑style transfer, so shots built from
 light and mood rather than pixel for pixel; exact matches come from the first‑frame role. Shots with a first frame
 are capped at 5 s in `high` quality (DFR limit), and the image is center‑cropped to the film format. Reading photos
 needs the Anthropic provider; the local Ollama model cannot see images.
+
+## Sound studio
+
+LTX‑2.5 renders sound together with the picture, and sound is its weak side: speech is mumbled, a character's
+voice changes from shot to shot, Foley and ambience are flat. With the sound studio (on by default, `--no-sound`
+to turn it off) the soundtrack is built from separate models instead:
+
+| Stem | How | Model |
+|---|---|---|
+| 🗣 **Dialogue** | Lines live in `shot.dialogue` (`speaker`, `text`, `at`, `on_screen`). Before any video is rendered, each character's voice is **designed from `characters[].voice`** and cached (one voice per character for the whole film or series), then every line is cloned in that voice. A shot that is too short for its lines is lengthened before rendering. | [Qwen3‑TTS](https://github.com/QwenLM/Qwen3-TTS) VoiceDesign + Base on the pod (Apache 2.0), or ElevenLabs (`--voices elevenlabs`, `elevenlabs_voice_id` per character) |
+| 👄 **Lip‑sync** | For speakers visible in frame, LTX re‑renders only the time window of the line with the voice track **frozen**, so the mouth follows the recorded words. | LTX‑2.5 retake (distilled) + modality guidance ×3 (`remote/audio/lipsync.py`) |
+| 👣 **Foley & ambience** | A video‑to‑audio model watches each finished clip and generates synchronized sounds from `shot.foley` (or the sound part of the prompt, with speech removed). | [HunyuanVideo‑Foley](https://github.com/Tencent-Hunyuan/HunyuanVideo-Foley) XXL |
+| 🎵 **Score** | One instrumental track for the whole film from `sound.score_prompt` / `bpm`, unless the plan uses a library track. | [ACE‑Step 1.5](https://github.com/ace-step/ACE-Step-1.5) (MIT) |
+| 🎚 **Mix** | Each stem is leveled to its own target (dialogue −20, Foley −24, music −20 LUFS), then mixed: dialogue on top, music ducks under it, LTX's own audio muted under Foley (kept where Foley failed), one linear gain to the platform level. | ffmpeg |
+
+Stems and `sound/sound.json` come back with the film, so the balance can be changed without a GPU:
+
+```bash
+python studio.py make "..." --voices qwen                  # default; --no-sound keeps the old behaviour
+python studio.py assemble films/<slug> --dialogue 1.2 --foley 0.5 --model-audio 0.2
+```
+
+The models install themselves on the network volume the first time a film uses them (~70 GB, 10–20 minutes,
+`remote/audio/install.sh`). Extra GPU time per film: ~40 s for voices, ~3.5 min per lip‑synced shot,
+~2 min for Foley, ~30 s for the score.
+
+Honest limits, measured on a real render (2026‑10‑29): lip‑sync clearly improves mouth–speech correlation
+(0.82 vs 0.62 for the raw LTX shot), but the mouth still trails the line by ~0.3 s on a whispered line, and a
+window that covers the whole shot makes it worse — keep lines short and give the speaker a still moment.
+HunyuanVideo‑Foley weights are under the Tencent Hunyuan Community License (not valid in the EU, UK and South
+Korea); check it before commercial use.
 
 ## Web interface
 
@@ -136,11 +167,11 @@ model (works, but scripts are noticeably weaker).
 
 | Command | What it does |
 |---|---|
-| `studio.py make "request" [--kind] [--duration] [--format] [--quality] [--loop] [--audio raw\|leveled]` | script + render + download |
+| `studio.py make "request" [--kind] [--duration] [--format] [--quality] [--loop] [--voices qwen\|elevenlabs] [--no-sound]` | script + render + download |
 | `studio.py plan "request" ...` | script only → `plans/<slug>.json` |
 | `studio.py render plans/x.json [--keep-pod]` | render an existing plan |
 | `studio.py review plans/x.json [--fix]` | lint; with `--fix` run the director review and repair prompts |
-| `studio.py assemble films/<slug> [--music track] [--captions] [--audio raw\|leveled]` | re‑assemble from downloaded clips, no GPU |
+| `studio.py assemble films/<slug> [--music track] [--captions] [--audio raw\|leveled] [--dialogue/--foley/--model-audio N]` | re‑assemble from downloaded clips and sound stems, no GPU |
 | `studio.py series new "description" --name tokyo --episodes 6` | create a series bible |
 | `studio.py plan "episode request" --series tokyo` | an episode driven by the bible |
 | `studio.py prefs "photoreal, never 3D-animated"` | standing preferences for every future plan |
@@ -169,7 +200,7 @@ no on‑screen text, no negations, no “hiss”. `studio/lint.py` checks every 
 decoder, so conditioned shots are kept at 5 s and fall back to distilled 1080p with the same frame;
 the final shot of a loop always renders distilled. Clips are cached by prompt content.
 
-**Audio** — `audio: raw` (default) passes the model's sound through with only format conversion and
+**Audio** — with the sound studio, see [Sound studio](#sound-studio). Without it, `audio: raw` (default) passes the model's sound through with only format conversion and
 60 ms fades at cuts; `audio: leveled` matches scenes (+18/−12 dB, −3 dBTP limiter) and applies one
 measured gain toward −14 LUFS with a true‑peak limiter — never a dynamic normalizer.
 
@@ -200,10 +231,12 @@ studio/              package (shipped to the pod)
   knowledge.py       LTX-2.5 prompting rules, format presets
   lint.py            deterministic prompt linter
   schema.py          plan model, validation, 8k+1 frame grid
-  assemble.py        ffmpeg assembly (cuts, dissolves, loop, music, sfx, captions, audio modes)
+  assemble.py        ffmpeg assembly (cuts, dissolves, loop, music, sfx, captions, audio modes, stems)
+  sound.py           sound studio: voices, lip-sync windows, Foley prompts, stem manifest
   render_remote.py   RunPod orchestration
   ui.py, jobs.py     HTTP API + background jobs     studio/web/   built UI (committed)
-remote/              pod side: ltx_studio.sh, film.py, film_night.sh
+remote/              pod side: ltx_studio.sh, film.py, film_night.sh, sound_pod.py
+  audio/             sound models: install.sh, tts/foley/music workers, lipsync.py
 plans/ films/ series/ assets/ docs/
 ```
 

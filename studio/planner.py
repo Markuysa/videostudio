@@ -16,13 +16,13 @@ import math
 import pathlib
 import re
 import time
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 
 from .audio import library_summary
-from .knowledge import KIND_PRESETS, LTX_PROMPT_RULES, STYLE_REFERENCE, MOTION_PROMPT_RULES, DIRECTOR_RULES
+from .knowledge import KIND_PRESETS, LTX_PROMPT_RULES, STYLE_REFERENCE, MOTION_PROMPT_RULES, DIRECTOR_RULES, SOUND_STUDIO_RULES
 from .lint import Issue, errors_only, issues_by_shot, lint_plan
 from .llm import LLM, LLMError
-from .schema import (FORMATS, MIN_SHOT_SECONDS, Captions, Music, Plan, Shot, Sfx, clamp_seconds, is_conditioned,
+from .schema import (FORMATS, MIN_SHOT_SECONDS, Captions, Line, Music, Plan, Shot, Sfx, Sound, clamp_seconds, is_conditioned,
                      max_seconds, normalize_durations, slugify, validate)
 
 SHOTS_PER_CALL = 12
@@ -48,6 +48,15 @@ class PlanRequest:
     loop: bool = False                # бесшовный луп
     refs: list = field(default_factory=list)   # фото-референсы [{file, role: style|frame|opening}]
     reference_info: dict = field(default_factory=dict)   # результат анализа (заполняет Planner)
+    sound: bool = True                # звуковая студия: голоса, фоли и музыка отдельными моделями
+    voices: str = "qwen"              # qwen | elevenlabs
+
+
+def _int(value) -> int | None:
+    try:
+        return int(float(value)) if value not in (None, "") else None
+    except (TypeError, ValueError):
+        return None
 
 
 def _preset(kind: str) -> dict:
@@ -79,6 +88,8 @@ def system_prompt(req: PlanRequest, high: bool) -> str:
     ]
     if req.kind == "motion":
         parts.append(MOTION_PROMPT_RULES)
+    if req.sound:
+        parts.append(SOUND_STUDIO_RULES)
     if req.reference_info:
         from .references import reference_brief
         parts.append(reference_brief(req.reference_info))
@@ -114,7 +125,7 @@ Return JSON exactly in this shape:
  "style": {"anchor": str, "visual": str, "palette": str, "lens": str, "lighting": str, "camera": str, "sound": str, "pace": str},
  "characters": [{"name": str, "descriptor": str, "description": str, "voice": str}],   // descriptor = exact phrase for prompts
  "locations": [{"name": str, "descriptor": str}],
- "music": {"file": str|null, "mood": str, "volume": 0.15-0.35, "duck": bool} ,   // file from the library or null
+ "music": {"file": str|null, "mood": str, "volume": 0.15-0.35, "duck": bool, "prompt": str, "bpm": int},   // file from the library or null
  "acts": [{"name": str, "seconds": int, "beats": [str, ...]}]   // beats = one line per planned shot, in order
 }
 Rules: sum of acts.seconds must equal the target duration (±5%). Number of beats per act = how many shots that act
@@ -134,6 +145,8 @@ Return JSON exactly in this shape:
    "caption": str|null,               // on-screen caption in the requested language (shorts only), 2-7 words
    "narration": str|null,             // voice-over text in the requested language, or null
    "sfx": [{"file": str, "offset": number, "volume": number}],  // only files from the library, else []
+   "dialogue": [{"speaker": str, "text": str, "at": number, "on_screen": bool}],  // spoken lines (sound studio), else []
+   "foley": str,                      // physical sounds and ambience for the Foley model, English, no speech
    "ref": int|null                    // index of a FRAME REFERENCE this shot starts from (only if references exist)
   }, ...]}
 Rules: the sum of seconds for this act must match the act duration (±10%). The first shot of the whole film is
@@ -258,8 +271,8 @@ class Planner:
             context = {
                 "request": plan.request, "creative_brief": plan.creative_brief, "style": plan.style,
                 "characters": plan.characters, "locations": plan.locations, "loop": plan.loop,
-                "format": plan.format, "opening": vars(plan.shots[0]) | {"sfx": []},
-                "ending": vars(plan.shots[-1]) | {"sfx": []},
+                "format": plan.format, "opening": asdict(plan.shots[0]) | {"sfx": []},
+                "ending": asdict(plan.shots[-1]) | {"sfx": []},
                 "previous": plan.shots[start - 1].prompt if start else None,
                 "next": plan.shots[start + len(batch)].prompt if start + len(batch) < len(plan.shots) else None,
                 "shots": [{"id": s.id, "seconds": s.seconds, "beat": s.beat, "prompt": s.prompt,
@@ -472,7 +485,11 @@ class Planner:
                               transition_seconds=float(r.get("transition_seconds") or 0.5),
                               caption=(str(r["caption"]).strip() or None) if (want_caps and r.get("caption")) else None,
                               narration=(str(r["narration"]).strip() or None) if r.get("narration") else None,
-                              sfx=sfx, beat=r.get("beat"), direction=dict(r.get("direction") or {}), image=image))
+                              sfx=sfx, beat=r.get("beat"), direction=dict(r.get("direction") or {}), image=image,
+                              dialogue=[ln for ln in (Line.from_dict(x) for x in (r.get("dialogue") or [])
+                                                      if isinstance(x, dict)) if ln.text and ln.speaker]
+                              if req.sound else [],
+                              foley=(str(r.get("foley") or "").strip() or None) if req.sound else None))
         if not shots:
             raise RuntimeError("модель не вернула ни одной сцены")
         info = req.reference_info or {}
@@ -514,7 +531,10 @@ class Planner:
                     captions=Captions(enabled=bool(want_caps)), request=req.request, loop=req.loop,
                     creative_brief=dict(outline.get("creative_brief") or {}) | {"project_notes": req.notes},
                     references=[{"file": x["file"], "role": x["role"], "description": x.get("description", ""),
-                                 "shot": used_refs.get(i)} for i, x in enumerate(refs_all)])
+                                 "shot": used_refs.get(i)} for i, x in enumerate(refs_all)],
+                    sound=Sound(voices=req.voices, score=req.music != "none",
+                                score_prompt=(str(m.get("prompt") or "").strip() or None),
+                                bpm=_int(m.get("bpm"))) if req.sound else None)
         if info.get("style"):
             # эстетика референсов главнее жанровых догадок модели
             plan.style = {**plan.style, **{k: v for k, v in info["style"].items() if v}}

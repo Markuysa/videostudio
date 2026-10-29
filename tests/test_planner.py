@@ -72,3 +72,25 @@ def test_planner_rescales_duration_and_drops_unknown_sfx():
     assert 45 <= total <= 66          # 3 сцены по 8 с растянуты к 60 с, с учётом лимитов
     assert plan.music is None and all(not s.sfx for s in plan.shots)
     assert all(s.frames <= 481 for s in plan.shots)
+
+
+def test_planner_fills_sound_studio_fields_and_drops_them_without_it():
+    outline = {**OUTLINE, "music": {"file": None, "mood": "lo-fi", "volume": 0.2, "duck": True,
+                                    "prompt": "sparse felt piano and warm cello", "bpm": 70.0}}
+    act = shots_response(2)
+    act["shots"][0]["dialogue"] = [{"speaker": "Старик", "text": "Я подожду.", "at": 1.0, "on_screen": True},
+                                   {"speaker": "", "text": "без говорящего"}]
+    act["shots"][0]["foley"] = "heavy rain drumming on a tin awning"
+    llm = FakeLLM(responses=[outline, act, shots_response(1), {"shots": [], "notes": []}])
+    req = PlanRequest(request="x", kind="aesthetic", seconds=24, quality="fast", library=None, voices="elevenlabs")
+    plan = Planner(llm, log=lambda *_: None).plan(req)
+    assert "SOUND STUDIO" in llm.calls[0][0]
+    assert plan.sound.voices == "elevenlabs" and plan.sound.score_prompt.startswith("sparse") and plan.sound.bpm == 70
+    s = plan.shots[0]
+    assert [ln.text for ln in s.dialogue] == ["Я подожду."]          # реплика без говорящего отброшена
+    assert s.foley == "heavy rain drumming on a tin awning"
+    llm = FakeLLM(responses=[outline, act, shots_response(1), {"shots": [], "notes": []}])
+    plan = Planner(llm, log=lambda *_: None).plan(PlanRequest(request="x", kind="aesthetic", seconds=24,
+                                                              quality="fast", library=None, sound=False))
+    assert plan.sound is None and not plan.shots[0].dialogue and plan.shots[0].foley is None
+    assert "SOUND STUDIO" not in llm.calls[0][0]

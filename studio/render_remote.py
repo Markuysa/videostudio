@@ -312,6 +312,11 @@ def download(remote: Remote, slug: str, films_dir: pathlib.Path, with_clips: boo
     ok = remote.get(f"/workspace/film/{slug}/film.mp4", out_dir / "film.mp4")
     for name in ("report.json", "manifest.json", "render.log", "timeline.json"):
         remote.get(f"/workspace/film/{slug}/{name}", out_dir / name)
+    if ok:
+        # стемы звуковой студии (реплики, фоли, музыка) — для пересведения без GPU
+        shutil.rmtree(out_dir / "sound", ignore_errors=True)
+        remote.run(f"test -d /workspace/film/{slug}/sound && rm -rf /workspace/film/{slug}/sound/canvas")
+        remote.get(f"/workspace/film/{slug}/sound", out_dir / "sound", recursive=True)
     if ok and with_clips:
         # scp -r кладёт папку ВНУТРЬ существующей (clips/norm/...), поэтому старую копию убираем:
         # на томе в norm/ лежат все версии клипов, так что ничего не теряется
@@ -383,6 +388,11 @@ def render(plan_path: pathlib.Path, cfg: dict, keep: bool = False, with_clips: b
         prepare_narration(plan, cfg, plan_assets_dir(plan_path))
     except Exception as e:  # noqa: BLE001 — озвучка не должна срывать рендер
         log(f"Озвучка пропущена: {e}")
+    try:
+        from .audio import prepare_dialogue
+        prepare_dialogue(plan, cfg, plan_assets_dir(plan_path))
+    except Exception as e:  # noqa: BLE001 — недостающие реплики озвучит Pod
+        log(f"ElevenLabs недоступен ({e}) — реплики озвучит Qwen3-TTS на Pod")
     slug = plan.slug
     log(f"Качество: {'high — DFR, 1080p, карта 80-96 ГБ' if is_high(cfg) else 'fast — RTX 5090, 720p'}")
     log(f"План «{plan.title}»: {len(plan.shots)} сцен, ~{plan.total_seconds / 60:.1f} мин видео")

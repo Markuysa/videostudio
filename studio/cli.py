@@ -81,7 +81,8 @@ def _plan_request(args, cfg: dict):
                        quality=args.quality or cfg.get("quality", "high"), language=args.language, name=args.name,
                        series_bible=bible, episode=args.episode, music=args.music, captions=captions,
                        prefs=_prefs(cfg), library=library, seed=args.seed, notes=args.notes or "", loop=bool(args.loop),
-                       refs=_refs(args, cfg))
+                       refs=_refs(args, cfg), sound=not getattr(args, "no_sound", False),
+                       voices=getattr(args, "voices", None) or cfg.get("voices", "qwen"))
 
 
 def _save_plan(plan, cfg: dict, name: str | None) -> pathlib.Path:
@@ -201,6 +202,11 @@ def cmd_assemble(args, cfg):
         plan = load_plan(args.plan)   # обновлённый план (новая музыка, субтитры, переходы)
     clips_dir = film_dir / "clips"
     rendered = {d["id"]: d for d in data["shots"]}
+    from . import sound as snd
+    sound_dir = film_dir / snd.SOUND_DIR
+    sound_manifest = snd.load_manifest(sound_dir)
+    levels = {k: v for k, v in (("dialogue", args.dialogue), ("foley", args.foley), ("model", args.model_audio))
+              if v is not None}
     root = pathlib.Path(cfg["_root"])
     clips = []
     first = True
@@ -217,18 +223,23 @@ def cmd_assemble(args, cfg):
             tr = "cut"
         sfx = [(str(resolve_asset(x.file, root)), x.offset, x.volume) for x in s.sfx if resolve_asset(x.file, root)]
         nar = film_dir / f"narration_{s.id}.mp3"
+        stems = snd.stems_for(plan, s.id, sound_dir, sound_manifest, levels)
         clips.append(ClipSpec(path=str(clip), shot_id=s.id, transition=tr, transition_seconds=s.transition_seconds,
-                              caption=s.caption, sfx=sfx, narration=str(nar) if nar.exists() else None))
+                              caption=s.caption, sfx=sfx + stems["foley"], narration=str(nar) if nar.exists() else None,
+                              voices=stems["voices"], audio_volume=stems["model"]))
         first = False
     high = (data["plan"].get("quality") or "fast") == "high"
     w, h = plan.size(high)
     music = args.music if args.music else (plan.music.file if plan.music else None)
     music_path = resolve_asset(music, root) if music and music != "none" else None
+    if music_path is None and music != "none" and sound_manifest.get("score") and (sound_dir / sound_manifest["score"]).exists():
+        music_path = sound_dir / sound_manifest["score"]      # партитура звуковой студии
     opts = AssembleOptions(width=w, height=h, fps=FPS, music_path=str(music_path) if music_path else None,
                            music_volume=args.music_volume if args.music_volume is not None else (plan.music.volume if plan.music else 0.25),
                            music_duck=plan.music.duck if plan.music else True, captions=plan.captions.enabled or args.captions,
                            caption_position=plan.captions.position, fade_in=plan.fade_in, fade_out=plan.fade_out,
-                           leveling=(args.audio or plan.audio) == "leveled", loudnorm=(args.audio or plan.audio) == "leveled")
+                           leveling=(args.audio or plan.audio) == "leveled",
+                           loudnorm=(args.audio or plan.audio) == "leveled" or bool(plan.sound))
     out = pathlib.Path(args.out) if args.out else film_dir / f"film_recut_{time.strftime('%m%d_%H%M')}.mp4"
     try:
         with open(film_dir / "assemble.log", "a", encoding="utf-8") as lf:
@@ -385,6 +396,10 @@ def build_parser() -> argparse.ArgumentParser:
                              "или opening (первый кадр фильма). Можно повторять")
         sp.add_argument("--audio", choices=("raw", "leveled"), default="raw",
                         help="raw — звук модели как есть (по умолчанию); leveled — выравнивание сцен и -14 LUFS")
+        sp.add_argument("--no-sound", action="store_true",
+                        help="без звуковой студии: звук LTX как есть (по умолчанию голоса, фоли и музыка отдельными моделями)")
+        sp.add_argument("--voices", choices=("qwen", "elevenlabs"),
+                        help="голоса персонажей: qwen — Qwen3-TTS на Pod (по умолчанию), elevenlabs — API (нужен ключ)")
         sp.add_argument("--keep-pod", action="store_true", help="(с рендером) не удалять Pod после рендера")
 
     sp = sub.add_parser("plan", help="составить план с оптимизированными промптами")
@@ -417,6 +432,9 @@ def build_parser() -> argparse.ArgumentParser:
     sp.add_argument("--music-volume", type=float)
     sp.add_argument("--captions", action="store_true")
     sp.add_argument("--audio", choices=("raw", "leveled"), help="raw — как у модели, leveled — выровнять (по умолчанию из плана)")
+    sp.add_argument("--dialogue", type=float, help="громкость реплик звуковой студии (1.0)")
+    sp.add_argument("--foley", type=float, help="громкость фоли и эмбиента (0.7)")
+    sp.add_argument("--model-audio", type=float, help="громкость звука самой LTX под фоли (0 — заглушить)")
     sp.add_argument("--out")
     sp.set_defaults(fn=cmd_assemble)
 

@@ -1,18 +1,19 @@
 export interface PlanRow {
   name: string; title: string; kind?: string; format?: string; quality?: string; shots?: number; seconds?: number;
   logline?: string | null; series?: string | null; episode?: number | null; modified: number; has_film?: boolean; film_slug?: string | null;
-  captions?: boolean; music?: boolean; loop?: boolean; audio?: string; anchor?: string | null;
+  captions?: boolean; music?: boolean; loop?: boolean; audio?: string; anchor?: string | null; sound?: boolean; lines?: number;
   errors?: number; warnings?: number; review_notes?: number; refs?: number; frames?: number; cover?: string | null; broken?: boolean;
 }
 export type RefRole = "style" | "frame" | "opening";
 export interface RefItem { file: string; url: string | null; name?: string; width?: number; height?: number; format?: string | null; role: RefRole }
 export interface PlanReference { file: string; role: RefRole; description?: string; shot?: string | null; url?: string | null }
-export interface ShotInfo { id: string; pipeline: string; size?: string; seconds_render?: number; continuity?: boolean; loop_closed?: boolean; cached?: boolean }
+export interface ShotInfo { id: string; pipeline: string; size?: string; seconds_render?: number; continuity?: boolean; loop_closed?: boolean; cached?: boolean; lipsync?: number[]; foley?: string }
+export interface SoundReport { lines: number; lipsync: string[]; foley: string[]; score: boolean }
 export interface TimelineItem { shot: string; start: number; end: number; transition: string; caption?: string | null }
 export interface Film {
   slug: string; title: string; file: string; seconds?: number | null; resolution?: string | null; quality?: string | null;
   shots_ok?: number | null; shots_failed: string[]; shots: ShotInfo[]; timeline: TimelineItem[]; music?: boolean; captions?: boolean;
-  minutes?: number | null; loop?: boolean; loop_closed?: boolean; audio?: string | null; plan?: string | null;
+  minutes?: number | null; loop?: boolean; loop_closed?: boolean; audio?: string | null; plan?: string | null; sound?: SoundReport | null;
   modified: number; size: number; has_clips: boolean; has_manifest: boolean; recuts: string[]; legacy?: boolean;
 }
 export interface SeriesRow { slug: string; title: string; premise?: string; episodes: number; characters: number; planned: number }
@@ -35,6 +36,7 @@ export interface Shot {
   id: string; seconds: number; prompt: string; transition?: string; transition_seconds?: number; caption?: string | null;
   narration?: string | null; sfx?: { file: string; offset: number; volume: number }[]; beat?: string | null; direction?: Record<string, string>;
   image?: string | null; image_url?: string | null; image_strength?: number;
+  dialogue?: { speaker: string; text: string; at: number; on_screen?: boolean }[]; foley?: string | null;
 }
 export interface Plan {
   title: string; kind: string; format: string; quality?: string | null; seed: number; logline?: string | null; synopsis?: string | null;
@@ -42,6 +44,7 @@ export interface Plan {
   locations?: { name: string; descriptor?: string }[]; music?: { file?: string | null; mood?: string | null; volume: number; duck: boolean } | null;
   captions: { enabled: boolean }; loop?: boolean; audio?: "raw" | "leveled"; creative_brief?: Record<string, unknown>; review_notes?: string[];
   references?: PlanReference[]; shots: Shot[];
+  sound?: { voices: "qwen" | "elevenlabs"; lipsync: boolean; foley: boolean; score: boolean; score_prompt?: string | null; bpm?: number | null; levels: Record<string, number> } | null;
 }
 export interface Issue { shot: string; level: "error" | "warn"; code: string; message: string }
 export interface PlanDetail { name: string; plan?: Plan; raw: string; summary?: string; issues: Issue[]; problems: string[]; path?: string; error?: string }

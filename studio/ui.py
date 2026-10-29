@@ -78,6 +78,7 @@ class Studio:
                         "film_slug": plan.slug if plan.slug in films else (p.stem if p.stem in films else None),
                         "captions": plan.captions.enabled, "music": bool(plan.music and plan.music.file),
                         "loop": plan.loop, "audio": plan.audio, "anchor": (plan.style or {}).get("anchor"),
+                        "sound": bool(plan.sound), "lines": sum(len(x.dialogue) for x in plan.shots),
                         "errors": sum(1 for i in issues if i.level == "error") + len(problems),
                         "warnings": sum(1 for i in issues if i.level == "warn"),
                         "review_notes": len(plan.review_notes or []),
@@ -100,6 +101,7 @@ class Studio:
                             "shots": rep.get("shots") or [], "timeline": rep.get("timeline") or [],
                             "music": rep.get("music"), "captions": rep.get("captions"), "minutes": rep.get("minutes"),
                             "loop": rep.get("loop"), "loop_closed": rep.get("loop_closed"), "audio": rep.get("audio"),
+                            "sound": rep.get("sound"),
                             "plan": (_read_json(d / "manifest.json") or {}).get("plan", {}).get("slug") if (d / "manifest.json").exists() else None,
                             "modified": (d / "film.mp4").stat().st_mtime, "size": (d / "film.mp4").stat().st_size,
                             "has_clips": (d / "clips").is_dir(), "has_manifest": (d / "manifest.json").exists(),
@@ -210,6 +212,10 @@ class Studio:
             args.append("--loop")
         if body.get("audio") in ("raw", "leveled"):
             args += ["--audio", str(body["audio"])]
+        if body.get("sound") is False:
+            args.append("--no-sound")
+        if body.get("voices") in ("qwen", "elevenlabs"):
+            args += ["--voices", str(body["voices"])]
         refs = body.get("refs") or []
         if not isinstance(refs, list) or len(refs) > 8:
             raise ApiError("up to 8 reference images")
@@ -255,6 +261,9 @@ class Studio:
             args.append("--captions")
         if body.get("audio") in ("raw", "leveled"):
             args += ["--audio", str(body["audio"])]
+        for key, flag in (("dialogue", "--dialogue"), ("foley", "--foley"), ("model_audio", "--model-audio")):
+            if body.get(key) not in (None, ""):
+                args += [flag, str(max(0.0, min(2.0, float(body[key]))))]
         return self.jobs.start("assemble", f"Re-assembly: {slug}", args, meta={"film": slug}).to_dict()
 
     def start_series(self, body: dict) -> dict:
