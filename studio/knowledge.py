@@ -221,6 +221,7 @@ ambience from the finished picture with a video-to-audio model, and scores the f
   0.6-1.2 s of stillness before it), `on_screen` = true only when the speaker's face is clearly visible in this
   shot (false for voices from off-screen or from behind). Keep each line short: 1-2 sentences, under ~4 s spoken.
   The same line stays quoted in the prompt as well, so the video model animates the speaking face.
+  `delivery` (English, 1-4 words) is how the line is said: "warmly, teasing", "tired, quiet", "whispers".
 - A character's `voice` is a casting note for a voice-design model, in English, one sentence: gender, age, timbre,
   pitch, pace and manner ("Woman in her late twenties, warm husky alto, slow sleepy delivery, slight smile in the
   voice"). The same voice is cloned in every shot, so describe the person, not the scene.

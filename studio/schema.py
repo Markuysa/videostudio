@@ -99,12 +99,14 @@ class Line:
     speaker: str
     text: str
     at: float = 0.5            # секунды от начала сцены
-    on_screen: bool = True     # говорящий виден в кадре -> липсинк
+    on_screen: bool = True     # говорящий виден в кадре -> реплика встаёт на движение его рта
+    delivery: str | None = None   # подача по-английски: «warmly, teasing» (ElevenLabs v3/v4 — тег перед текстом)
 
     @staticmethod
     def from_dict(d: dict) -> "Line":
         return Line(speaker=str(d.get("speaker") or "").strip(), text=str(d.get("text") or "").strip(),
-                    at=float(d.get("at", 0.5)), on_screen=bool(d.get("on_screen", True)))
+                    at=float(d.get("at", 0.5)), on_screen=bool(d.get("on_screen", True)),
+                    delivery=(str(d["delivery"]).strip() or None) if d.get("delivery") else None)
 
 
 @dataclass
@@ -176,18 +178,20 @@ class Music:
 
 
 VOICE_ENGINES = ("qwen", "elevenlabs")
-SOUND_LEVELS = {"dialogue": 1.0, "foley": 0.7, "model": 0.0}
+SOUND_LEVELS = {"dialogue": 1.0, "foley": 0.7, "model": 0.45}
 
 
 @dataclass
 class Sound:
     """Звуковая студия: голоса, фоли и музыка генерируются отдельными моделями и сводятся по стемам.
 
-    Звук самой LTX (`levels.model`) по умолчанию заглушён: его заменяют фоли и реплики. Если фоли
-    для сцены не получилось, в ней остаётся звук LTX.
+    Звук самой LTX (`levels.model`) идёт тихой подложкой под фоли: он синхронен картинке по построению.
+    Отрезки, где LTX «говорит», вырезаются. Если фоли для сцены не получилось, звук LTX остаётся целиком.
     """
     voices: str = "qwen"             # qwen (на Pod) | elevenlabs (API, нужен ключ)
-    lipsync: bool = True             # перерисовать губы под реплики говорящих в кадре
+    # перерисовать губы под голос (LatentSync / LTX retake). По умолчанию выключено: реплика и так ставится
+    # туда, где LTX сам анимировал речь, а перерисованный рот на реальном фильме дрожал и выглядел чужим
+    lipsync: bool = False
     foley: bool = True
     score: bool = True               # сгенерировать музыку, если в плане нет трека из библиотеки
     score_prompt: str | None = None  # описание музыки для модели (английский)
@@ -203,7 +207,7 @@ class Sound:
             return None
         if d is True:
             return Sound()
-        return Sound(voices=str(d.get("voices") or "qwen").lower(), lipsync=bool(d.get("lipsync", True)),
+        return Sound(voices=str(d.get("voices") or "qwen").lower(), lipsync=bool(d.get("lipsync", False)),
                      foley=bool(d.get("foley", True)), score=bool(d.get("score", True)),
                      score_prompt=d.get("score_prompt") or None, bpm=int(d["bpm"]) if d.get("bpm") else None,
                      levels={**SOUND_LEVELS, **{k: float(v) for k, v in (d.get("levels") or {}).items()

@@ -28,6 +28,8 @@ WORKERS = {
     "tts": (f"{AUDIO}/tts/venv/bin/python", HERE / "tts_worker.py", "TTS_TEST_CMD"),
     "foley": (f"{AUDIO}/foley/venv/bin/python", HERE / "foley_worker.py", "FOLEY_TEST_CMD"),
     "music": (f"{AUDIO}/music/ACE-Step-1.5/.venv/bin/python", HERE / "music_worker.py", "MUSIC_TEST_CMD"),
+    "vad": (f"{AUDIO}/tts/venv/bin/python", HERE / "vad_worker.py", "VAD_TEST_CMD"),
+    "lipsync": (f"{AUDIO}/lipsync/venv/bin/python", None, "LATENTSYNC_TEST_CMD"),
 }
 VOICES_DIR = pathlib.Path(os.environ.get("VOICES_DIR", "/workspace/film/voices"))
 # Целевая громкость стемов до сведения. Модели отдают от −43 (фоли тихой сцены) до −17 LUFS (музыка),
@@ -48,7 +50,9 @@ def _run(cmd: list[str], logf, env: dict | None = None) -> int:
 def ensure_installed(kinds: list[str], logf) -> list[str]:
     """Ставит недостающие окружения. Возвращает список доступных."""
     missing = [k for k in kinds if not os.environ.get(WORKERS[k][2]) and not os.path.exists(WORKERS[k][0])]
-    if missing:
+    # ставим только на Pod: локальная пересборка звука однажды запустила установщик на Mac пользователя
+    if missing and pathlib.Path(AUDIO).parent.is_dir() and os.access(pathlib.Path(AUDIO).parent, os.W_OK) \
+            and pathlib.Path("/workspace/ltx-ui").exists():
         log(f"Звуковая студия: ставлю {', '.join(missing)} (первый раз 10-20 минут)")
         _run(["bash", str(HERE / "install.sh"), *missing], logf)
     return [k for k in kinds if os.environ.get(WORKERS[k][2]) or os.path.exists(WORKERS[k][0])]
@@ -101,10 +105,12 @@ def prepare_dialogue(plan: Plan, proj: pathlib.Path, assets_dir: pathlib.Path, h
         # реплики ElevenLabs озвучены локально до загрузки (ключ API на Pod не едет)
         for s, i, _ in S.lines(plan):
             src = assets_dir / S.line_name(plan, s, i, "elevenlabs")
-            dst = lines_dir / S.line_name(plan, s, i, "qwen")
+            dst = lines_dir / src.name
             if src.exists() and not dst.exists():
                 subprocess.call(["ffmpeg", "-y", "-loglevel", "error", "-i", str(src), "-ar", "48000", str(dst)])
-        missing = [(s, i) for s, i, _ in S.lines(plan) if not (lines_dir / S.line_name(plan, s, i, "qwen")).exists()]
+                if dst.exists():
+                    level_stem(dst, "dialogue", logf)
+        missing = [(s, i) for s, i, _ in S.lines(plan) if not S.line_path(plan, s, i, lines_dir).exists()]
         if missing:
             log(f"Голоса: {len(missing)} реплик ElevenLabs не пришли с компьютера — озвучиваю их Qwen3-TTS")
             engine = "qwen"
@@ -123,7 +129,7 @@ def prepare_dialogue(plan: Plan, proj: pathlib.Path, assets_dir: pathlib.Path, h
             log(f"  готово за {time.time() - t0:.0f} с")
     durations = {}
     for s, i, _ in S.lines(plan):
-        p = lines_dir / S.line_name(plan, s, i, "qwen")
+        p = S.line_path(plan, s, i, lines_dir)
         if p.exists() and (d := duration(p)):
             durations[(s.id, i)] = d
     for note in S.fit_dialogue(plan, durations, high):
@@ -131,20 +137,66 @@ def prepare_dialogue(plan: Plan, proj: pathlib.Path, assets_dir: pathlib.Path, h
     return durations
 
 
+def speech_spans(plan: Plan, done: list[dict], proj: pathlib.Path, logf) -> tuple[dict, dict]:
+    """VAD: где LTX «говорит» в своих клипах и где начинается речь в каждой TTS-реплике.
+
+    Возвращает ({shot_id: [[начало, конец], ...]}, {(shot_id, i): тишина в начале реплики, с}).
+    """
+    sound_dir = proj / S.SOUND_DIR
+    by_id = {d["id"]: d for d in done}
+    items, lines = [], []
+    for s in plan.shots:
+        d = by_id.get(s.id)
+        if not d or not any(ln.on_screen for ln in s.dialogue):
+            continue
+        clip = d.get("clip_original") or d["clip"]
+        items.append({"media": clip, "out": str(sound_dir / "vad" / f"{pathlib.Path(clip).stem}.json"), "shot": s.id})
+        for i in range(len(s.dialogue)):
+            f = S.line_path(plan, s, i, sound_dir / "lines")
+            if f.exists():
+                items.append({"media": str(f), "out": str(sound_dir / "vad" / f"{f.stem}.json"), "line": [s.id, i]})
+    if not items or not ensure_installed(["tts"], logf):
+        return {}, {}
+    (sound_dir / "vad").mkdir(parents=True, exist_ok=True)
+    todo = [x for x in items if not pathlib.Path(x["out"]).exists()]
+    if todo:
+        worker("vad", {"items": todo}, sound_dir / "jobs" / "vad.json", logf)
+    spans, leads = {}, {}
+    for x in items:
+        p = pathlib.Path(x["out"])
+        if not p.exists():
+            continue
+        found = json.loads(p.read_text(encoding="utf-8"))
+        if "shot" in x:
+            spans[x["shot"]] = found
+        elif found:
+            leads[tuple(x["line"])] = float(found[0][0])
+    return spans, leads
+
+
 def lipsync(plan: Plan, done: list[dict], proj: pathlib.Path, durations: dict, ltx_args: list[str], logf,
             run_ltx) -> None:
-    """Перерисовывает губы говорящих в кадре под озвученные реплики (LTX retake, звук заморожен)."""
-    if not plan.sound or not plan.sound.lipsync or not durations:
+    """Реплики — на место речи LTX, затем губы под записанный голос (LatentSync; запасной путь — LTX retake)."""
+    if not plan.sound or not durations:
         return
     lines_dir = proj / S.SOUND_DIR / "lines"
     by_id = {d["id"]: d for d in done}
+    spans, leads = speech_spans(plan, done, proj, logf)
+    for s in plan.shots:
+        if s.id in spans:
+            by_id[s.id]["model_speech"] = spans[s.id]
+            for note in S.align_to_speech(s, spans[s.id], durations, leads):
+                log("  " + note)
+    if not plan.sound.lipsync:
+        return
+    engine = "latentsync" if ensure_installed(["lipsync"], logf) else "retake"
     for s in plan.shots:
         d = by_id.get(s.id)
         win = S.lipsync_window(s, durations)
         if not d or not win:
             continue
-        clip = pathlib.Path(d["clip"])
-        key = S._h(clip.name, win, [(ln.text, ln.at) for ln in s.dialogue])
+        clip = pathlib.Path(d.get("clip_original") or d["clip"])
+        key = S._h(clip.name, engine, win, [(ln.text, ln.at) for ln in s.dialogue])
         out = clip.with_name(f"{clip.stem}_lips_{key}.mp4")
         if not out.exists():
             canvas = proj / S.SOUND_DIR / "canvas" / f"{s.id}_{key}.mp4"
@@ -152,35 +204,88 @@ def lipsync(plan: Plan, done: list[dict], proj: pathlib.Path, durations: dict, l
             if not dialogue_canvas(plan, s, clip, lines_dir, canvas, logf):
                 log(f"  сцена {s.id}: не собрался холст для липсинка, остаётся исходный клип")
                 continue
-            log(f"Липсинк сцены {s.id}: окно {win[0]:.2f}–{win[1]:.2f} с")
             t0 = time.time()
             tmp = out.with_suffix(".tmp.mp4")
-            code = run_ltx(ltx_args + ["--video-path", str(canvas), "--start-time", f"{win[0]:.3f}",
-                                       "--end-time", f"{win[1]:.3f}", "--seed", str(plan.seed),
-                                       "--prompt", s.prompt, "--output-path", str(tmp)])
-            if code != 0 or not tmp.exists():
+            if engine == "latentsync":
+                log(f"Липсинк сцены {s.id} (LatentSync): реплики {win[0]:.2f}–{win[1]:.2f} с")
+                ok = latentsync(canvas, tmp, proj / S.SOUND_DIR / "canvas" / f"{s.id}_{key}_work", logf)
+            else:
+                log(f"Липсинк сцены {s.id} (LTX retake): окно {win[0]:.2f}–{win[1]:.2f} с")
+                ok = run_ltx(ltx_args + ["--video-path", str(canvas), "--start-time", f"{win[0]:.3f}",
+                                         "--end-time", f"{win[1]:.3f}", "--seed", str(plan.seed),
+                                         "--prompt", s.prompt, "--output-path", str(tmp)]) == 0
+            # звук клипа — исходный звук LTX (подложка), а не голос холста: голос идёт отдельным стемом
+            if not ok or not tmp.exists() or not with_audio_of(tmp, clip, out, logf):
                 tmp.unlink(missing_ok=True)
-                log(f"  липсинк не удался (код {code}), остаётся исходный клип")
+                log("  липсинк не удался, остаётся исходный клип (подробности в render.log)")
                 continue
-            tmp.replace(out)
+            tmp.unlink(missing_ok=True)
             log(f"  готово за {time.time() - t0:.0f} с")
-        d["clip_original"] = d.get("clip_original") or d["clip"]
+        d["clip_original"] = str(clip)
         d["clip"] = str(out)
         d["lipsync"] = list(win)
+        d["lipsync_engine"] = engine
+
+
+LATENTSYNC = os.environ.get("LATENTSYNC_REPO", f"{AUDIO}/lipsync/LatentSync")
+
+
+def latentsync(canvas: pathlib.Path, out: pathlib.Path, work: pathlib.Path, logf) -> bool:
+    """LatentSync 1.6 работает на 25 к/с. Чтобы не терять и не дублировать кадры, клип временно ускоряется
+    до 25 к/с вместе с голосом (оба на 25/24), а результат замедляется обратно — каждый кадр на месте."""
+    work.mkdir(parents=True, exist_ok=True)
+    v25, a25, o25 = work / "v25.mp4", work / "a25.wav", work / "out25.mp4"
+    frames = _frames(canvas)
+    steps = [
+        ["ffmpeg", "-y", "-loglevel", "error", "-i", str(canvas), "-an", "-vf", "setpts=PTS*24/25", "-r", "25",
+         "-c:v", "libx264", "-crf", "12", "-pix_fmt", "yuv420p", str(v25)],
+        ["ffmpeg", "-y", "-loglevel", "error", "-i", str(canvas), "-vn", "-af", "atempo=1.0416667", "-ac", "1",
+         "-ar", "16000", str(a25)],
+    ]
+    for cmd in steps:
+        if _run(cmd, logf) != 0:
+            return False
+    test = os.environ.get("LATENTSYNC_TEST_CMD")
+    if test:
+        cmd = shlex.split(test) + [str(v25), str(a25), str(o25)]
+    else:
+        cmd = [WORKERS["lipsync"][0], "-m", "scripts.inference", "--unet_config_path", "configs/unet/stage2_512.yaml",
+               "--inference_ckpt_path", "checkpoints/latentsync_unet.pt", "--inference_steps", "20",
+               "--guidance_scale", "1.5", "--enable_deepcache", "--video_path", str(v25), "--audio_path", str(a25),
+               "--video_out_path", str(o25), "--temp_dir", str(work / "tmp")]
+    logf.write("\n$ " + " ".join(shlex.quote(c) for c in cmd) + "\n")
+    logf.flush()
+    if subprocess.call(cmd, stdout=logf, stderr=subprocess.STDOUT, cwd=None if test else LATENTSYNC) != 0 \
+            or not o25.exists():
+        return False
+    # LatentSync отдаёт на пару кадров меньше (кратно своему окну): добиваем повтором последнего кадра
+    return _run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(o25), "-an", "-vf",
+                 "setpts=PTS*25/24,tpad=stop_mode=clone:stop=8", "-r", "24", "-frames:v", str(frames), "-c:v", "libx264", "-crf", "16", "-pix_fmt", "yuv420p", str(out)], logf) == 0
+
+
+def with_audio_of(video: pathlib.Path, audio_src: pathlib.Path, out: pathlib.Path, logf) -> bool:
+    code = _run(["ffmpeg", "-y", "-loglevel", "error", "-i", str(video), "-i", str(audio_src), "-map", "0:v:0",
+                 "-map", "1:a:0?", "-c:v", "copy", "-af", "apad", "-c:a", "aac", "-b:a", "192k", "-shortest", str(out)],
+                logf)   # apad: длину задаёт видео — AAC-дорожка исходника на кадр-два короче и обрезала бы картинку
+    return code == 0 and out.exists()
+
+
+def _frames(clip: pathlib.Path) -> int:
+    r = subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-count_packets", "-show_entries",
+                        "stream=nb_read_packets", "-of", "csv=p=0", str(clip)], capture_output=True, text=True)
+    return int(r.stdout.strip() or 0)
 
 
 def dialogue_canvas(plan: Plan, shot, clip: pathlib.Path, lines_dir: pathlib.Path, out: pathlib.Path, logf) -> bool:
     """Клип сцены с дорожкой реплик вместо звука LTX: по ней retake двигает губы."""
-    frames = int(subprocess.run(["ffprobe", "-v", "error", "-select_streams", "v:0", "-count_packets", "-show_entries",
-                                 "stream=nb_read_packets", "-of", "csv=p=0", str(clip)],
-                                capture_output=True, text=True).stdout.strip() or 0)
+    frames = _frames(clip)
     if not frames:
         return False
     total = frames / FPS
     cmd = ["ffmpeg", "-y", "-loglevel", "error", "-i", str(clip)]
     parts, labels = [], []
     for i, ln in enumerate(shot.dialogue):
-        f = lines_dir / S.line_name(plan, shot, i, "qwen")
+        f = S.line_path(plan, shot, i, lines_dir)
         if not f.exists():
             continue
         cmd += ["-i", str(f)]
@@ -196,7 +301,7 @@ def dialogue_canvas(plan: Plan, shot, clip: pathlib.Path, lines_dir: pathlib.Pat
     return _run(cmd, logf) == 0 and out.exists()
 
 
-def foley(plan: Plan, done: list[dict], proj: pathlib.Path, logf) -> None:
+def foley(plan: Plan, done: list[dict], proj: pathlib.Path, logf, durations: dict | None = None) -> None:
     if not plan.sound or not plan.sound.foley or not done or not ensure_installed(["foley"], logf):
         return
     sound_dir = proj / S.SOUND_DIR
@@ -220,6 +325,32 @@ def foley(plan: Plan, done: list[dict], proj: pathlib.Path, logf) -> None:
     for d in done:
         if not pathlib.Path(d["foley"]).exists():
             d.pop("foley")
+    clean_foley_speech(plan, done, sound_dir, durations or {}, logf)
+
+
+def clean_foley_speech(plan: Plan, done: list[dict], sound_dir: pathlib.Path, durations: dict, logf) -> None:
+    """Модель фоли видит говорящий рот и дорисовывает бормотание поверх реплики TTS («две озвучки»).
+    В сценах с репликами речь из стема фоли вырезается и заполняется соседним дождём/эмбиентом."""
+    by_id = {s.id: s for s in plan.shots}
+    items = []
+    for d in done:
+        s = by_id[d["id"]]
+        if not d.get("foley") or not s.dialogue:
+            continue
+        raw = pathlib.Path(d.get("foley_raw") or d["foley"])
+        clean = raw.with_name(raw.stem + "_clean_" + S._h([(ln.at, durations.get((s.id, i))) for i, ln in
+                                                           enumerate(s.dialogue)]) + ".wav")
+        d["foley_raw"], d["foley"] = str(raw), str(clean)
+        if not clean.exists():
+            extra = [[ln.at, ln.at + durations[(s.id, i)]] for i, ln in enumerate(s.dialogue) if (s.id, i) in durations]
+            items.append({"media": str(raw), "out": str(raw.with_suffix(".vad.json")),
+                          "fill": {"out": str(clean), "extra": extra}})
+    if items and ensure_installed(["tts"], logf):
+        log(f"Чищу фоли от «речи» модели: {len(items)} сцен с репликами")
+        worker("vad", {"items": items}, sound_dir / "jobs" / "foley_clean.json", logf)
+    for d in done:
+        if d.get("foley_raw") and not pathlib.Path(d["foley"]).exists():
+            d["foley"] = d.pop("foley_raw")       # не вышло почистить — лучше грязное фоли, чем дыра
 
 
 def score(plan: Plan, proj: pathlib.Path, seconds: float, logf) -> str | None:
@@ -250,9 +381,10 @@ def write_manifest(plan: Plan, done: list[dict], proj: pathlib.Path, durations: 
         d = by_id.get(s.id)
         if not d:
             continue
-        entry = {"lines": [], "foley": None, "lipsync": d.get("lipsync")}
+        entry = {"lines": [], "foley": None, "lipsync": d.get("lipsync"), "lipsync_engine": d.get("lipsync_engine"),
+                 "model_speech": d.get("model_speech")}
         for i, ln in enumerate(s.dialogue):
-            f = sound_dir / "lines" / S.line_name(plan, s, i, "qwen")
+            f = S.line_path(plan, s, i, sound_dir / "lines")
             if f.exists():
                 entry["lines"].append({"file": str(f.relative_to(sound_dir)), "at": ln.at, "speaker": ln.speaker,
                                        "text": ln.text, "seconds": durations.get((s.id, i))})

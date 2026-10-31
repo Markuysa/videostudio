@@ -55,6 +55,7 @@ class ClipSpec:
     gain_db: float = 0.0             # выравнивание громкости сцены (см. clip_gain_db)
     voices: list[tuple[str, float, float]] = field(default_factory=list)  # реплики звуковой студии (файл, смещение, громкость)
     audio_volume: float = 1.0        # звук самой LTX: 0 — заглушён (его заменили фоли и реплики)
+    mute: list[tuple[float, float]] = field(default_factory=list)   # отрезки клипа, где звук LTX вырезать (его «речь»)
 
 
 @dataclass
@@ -337,6 +338,8 @@ def build_graph(clips: list[ClipSpec], durations: list[float], opts: AssembleOpt
         gain = f"volume={c.gain_db:+.1f}dB," if abs(c.gain_db) >= 0.05 else ""
         if abs(c.audio_volume - 1.0) > 1e-3:
             gain = f"volume={max(0.0, c.audio_volume):.3f}," + gain
+        for a, b in c.mute:
+            gain = f"volume=0:enable='between(t,{max(0.0, a - 0.1):.2f},{b + 0.15:.2f})'," + gain
         if c.gain_db > 0.05:
             gain += f"alimiter=limit={10 ** (-3 / 20):.4f}:attack=5:release=80:level=false,"
         lines.append(f"[{i}:a]atrim=start={trim:.4f}:end={end:.4f},asetpts=PTS-STARTPTS,"
@@ -438,7 +441,7 @@ def assemble(clips: list[ClipSpec], out_path: pathlib.Path, opts: AssembleOption
     clips = [ClipSpec(path=absf(c.path), shot_id=c.shot_id, transition=c.transition, transition_seconds=c.transition_seconds,
                       caption=c.caption, sfx=[(absf(f), o, v) for (f, o, v) in c.sfx], narration=absf(c.narration),
                       trim_end=c.trim_end, gain_db=c.gain_db, voices=[(absf(f), o, v) for (f, o, v) in c.voices],
-                      audio_volume=c.audio_volume) for c in clips]
+                      audio_volume=c.audio_volume, mute=c.mute) for c in clips]
     if opts.music_path:
         opts = AssembleOptions(**{**opts.__dict__, "music_path": absf(opts.music_path)})
     workdir.mkdir(parents=True, exist_ok=True)
@@ -464,7 +467,7 @@ def assemble(clips: list[ClipSpec], out_path: pathlib.Path, opts: AssembleOption
         normalized.append(ClipSpec(path=str(dst), shot_id=c.shot_id, transition=c.transition,
                                    transition_seconds=c.transition_seconds, caption=c.caption, sfx=c.sfx,
                                    narration=c.narration, trim_end=c.trim_end, gain_db=gain, voices=c.voices,
-                                   audio_volume=c.audio_volume))
+                                   audio_volume=c.audio_volume, mute=c.mute))
         durations.append(info["duration"])
     # дополнительные входы в том же порядке, в котором граф их нумерует
     extra: list[str] = []

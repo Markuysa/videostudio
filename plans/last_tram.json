@@ -22,7 +22,8 @@
      "speaker": "Бабушка",
      "text": "Последний уже ушёл, сынок.",
      "at": 1.2,
-     "on_screen": true
+     "on_screen": true,
+     "delivery": "gently, with a knowing smile"
     }
    ],
    "foley": "heavy rain pattering on umbrella fabric, steady rain roaring on a street, a drip from the shelter edge"
@@ -39,7 +40,8 @@
      "speaker": "Парень",
      "text": "Тогда подожду первый.",
      "at": 1.4,
-     "on_screen": true
+     "on_screen": true,
+     "delivery": "tired, quiet"
     }
    ],
    "foley": "rain drumming on a shelter roof, a deep gust of wind through a street, fabric of a raincoat rustling"
@@ -56,7 +58,8 @@
      "speaker": "Бабушка",
      "text": "Ну и я с тобой подожду.",
      "at": 1.3,
-     "on_screen": true
+     "on_screen": true,
+     "delivery": "warmly, with a soft laugh"
     }
    ],
    "foley": "rain hammering on an umbrella, heavy downpour on cobblestones, a soft step on wet stone"
@@ -124,8 +127,8 @@
  "creative_brief": {},
  "review_notes": [],
  "sound": {
-  "voices": "qwen",
-  "lipsync": true,
+  "voices": "elevenlabs",
+  "lipsync": false,
   "foley": true,
   "score": true,
   "score_prompt": "tender cinematic score, sparse felt piano and warm cello, soft rain-like texture, 68 bpm, quiet melancholy that warms toward the end",
@@ -133,7 +136,7 @@
   "levels": {
    "dialogue": 1.0,
    "foley": 0.7,
-   "model": 0.0
+   "model": 0.45
   }
  }
 }

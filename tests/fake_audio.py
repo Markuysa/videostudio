@@ -5,7 +5,11 @@ import pathlib
 import subprocess
 import sys
 
-kind, job = sys.argv[1], json.loads(pathlib.Path(sys.argv[2]).read_text(encoding="utf-8"))
+kind = sys.argv[1]
+if kind == "latentsync":             # fake_audio.py latentsync video audio out — рот «перерисован»
+    subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", sys.argv[2], "-c", "copy", sys.argv[4]], check=True)
+    sys.exit(0)
+job = json.loads(pathlib.Path(sys.argv[2]).read_text(encoding="utf-8"))
 
 
 def tone(out: str, seconds: float, freq: int) -> None:
@@ -25,6 +29,12 @@ elif kind == "foley":
         dur = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0",
                               it["video"]], capture_output=True, text=True).stdout.strip()
         tone(it["out"], float(dur), 110)
+elif kind == "vad":
+    for it in job["items"]:          # «речь» LTX в клипах — 1.5–2.5 с, в репликах TTS — с самого начала
+        spans = [[0.0, 0.5]] if it["media"].endswith(".wav") else [[1.5, 2.5]]
+        pathlib.Path(it["out"]).write_text(json.dumps(spans))
+        if it.get("fill"):
+            subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", it["media"], it["fill"]["out"]], check=True)
 elif kind == "music":
     for it in job["items"]:
         tone(it["out"], it["duration"], 523)

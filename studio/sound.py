@@ -21,9 +21,10 @@ import json
 import pathlib
 import re
 
-from .schema import Line, Plan, Shot, clamp_seconds, is_conditioned
+from .schema import SOUND_LEVELS, Line, Plan, Shot, clamp_seconds, is_conditioned, slugify
 
 LINE_PAD = 0.35            # с: воздух после последней реплики до конца сцены
+MIN_SPEECH_SPAN = 0.4      # с: короче — смешок или вздох LTX, а не реплика
 LIPSYNC_MARGIN = 0.3       # с: окно перерисовки губ шире реплик с обеих сторон
 SOUND_DIR = "sound"
 MANIFEST = "sound.json"
@@ -57,13 +58,22 @@ def voice_spec(plan: Plan, name: str) -> dict:
 def voice_key(plan: Plan, name: str) -> str:
     """Ключ голоса: одинаковое описание -> одна и та же проба (в сериале — во всех эпизодах)."""
     spec = voice_spec(plan, name)
-    return f"{re.sub(r'[^a-z0-9]+', '_', name.lower()) or 'voice'}_{_h(spec['description'], spec['sample'], plan.language)}"
+    return f"{slugify(name, 'voice')}_{_h(spec['description'], spec['sample'], plan.language)}"
 
 
 def line_name(plan: Plan, shot: Shot, index: int, engine: str) -> str:
     ln = shot.dialogue[index]
     spec = voice_spec(plan, ln.speaker)
-    return f"line_{shot.id}_{index + 1}_{_h(engine, spec, ln.text, plan.language)}.wav"
+    parts = [engine, spec, ln.text, plan.language] + ([ln.delivery] if ln.delivery and engine == "elevenlabs" else [])
+    return f"line_{shot.id}_{index + 1}_{_h(*parts)}.wav"
+
+
+def line_path(plan: Plan, shot: Shot, index: int, lines_dir: pathlib.Path) -> pathlib.Path:
+    """Файл реплики в sound/lines: запись ElevenLabs, если она есть, иначе Qwen3-TTS (запасной движок)."""
+    eleven = lines_dir / line_name(plan, shot, index, "elevenlabs")
+    if plan.sound and plan.sound.voices == "elevenlabs" and eleven.exists():
+        return eleven
+    return lines_dir / line_name(plan, shot, index, "qwen")
 
 
 def lines(plan: Plan) -> list[tuple[Shot, int, Line]]:
@@ -71,10 +81,12 @@ def lines(plan: Plan) -> list[tuple[Shot, int, Line]]:
 
 
 def tts_job(plan: Plan, lines_dir: pathlib.Path, voices_dir: pathlib.Path, root: pathlib.Path | None = None) -> dict:
-    """Задание для remote/audio/tts_worker.py (движок qwen)."""
+    """Задание для remote/audio/tts_worker.py (движок qwen): все реплики, у которых ещё нет записи."""
     voices, items = {}, []
     lang = plan.language if plan.language in REF_TEXT else "en"
     for s, i, ln in lines(plan):
+        if line_path(plan, s, i, lines_dir).exists():
+            continue
         spec = voice_spec(plan, ln.speaker)
         if ln.speaker not in voices:
             sample = spec["sample"]
@@ -118,6 +130,35 @@ def lipsync_window(shot: Shot, durations: dict[tuple[str, int], float]) -> tuple
         return None
     return (round(max(0.0, min(a for a, _ in spans) - LIPSYNC_MARGIN), 3),
             round(min(shot.seconds, max(b for _, b in spans) + LIPSYNC_MARGIN), 3))
+
+
+def align_to_speech(shot: Shot, spans: list[list[float]], durations: dict[tuple[str, int], float],
+                    leads: dict[tuple[str, int], float] | None = None) -> list[str]:
+    """Ставит реплики туда, где LTX уже нарисовал говорящий рот (spans — речь в звуке клипа, VAD).
+
+    LTX выбирает момент речи сам, по смыслу промпта («смотрит на него, потом говорит»), и в
+    реальном фильме промахивался на 2–2.6 с. Голос поверх закрытого рта не исправит никакой
+    липсинк, поэтому начало речи в TTS (после её собственной тишины `leads`) совмещается с
+    началом речи LTX. Реплики без подходящего отрезка остаются на месте.
+    """
+    notes, used, cursor = [], set(), 0.0
+    speech = [sp for sp in spans if sp[1] - sp[0] >= MIN_SPEECH_SPAN]
+    for i, ln in enumerate(shot.dialogue):
+        dur = durations.get((shot.id, i))
+        if not ln.on_screen or dur is None:
+            continue
+        cand = next((k for k, sp in enumerate(speech) if k not in used and sp[0] >= cursor - 0.2), None)
+        if cand is None:
+            continue
+        used.add(cand)
+        lead = (leads or {}).get((shot.id, i), 0.0)
+        at = max(0.0, min(speech[cand][0] - lead, shot.seconds - dur - 0.1))
+        if abs(at - ln.at) >= 0.05:
+            notes.append(f"сцена {shot.id}: реплика {i + 1} {ln.at:.2f} → {at:.2f} с (рот LTX говорит "
+                         f"{speech[cand][0]:.1f}–{speech[cand][1]:.1f} с)")
+        ln.at = round(at, 2)
+        cursor = ln.at + dur
+    return notes
 
 
 _QUOTED = re.compile(r"[\"“«][^\"”»]*[\"”»]")
@@ -175,7 +216,7 @@ def stems_for(plan: Plan, shot_id: str, sound_dir: pathlib.Path, manifest: dict,
     """Стемы сцены для сборки: {'voices': [(файл, смещение, громкость)], 'foley': [...], 'model': громкость}."""
     snd = plan.sound
     if not snd:
-        return {"voices": [], "foley": [], "model": 1.0}
+        return {"voices": [], "foley": [], "model": 1.0, "mute": []}
     lv = {**snd.levels, **(levels or {})}
     entry = (manifest.get("shots") or {}).get(shot_id) or {}
     voices = [(str(sound_dir / x["file"]), float(x["at"]), float(lv.get("dialogue", 1.0)))
@@ -183,6 +224,8 @@ def stems_for(plan: Plan, shot_id: str, sound_dir: pathlib.Path, manifest: dict,
     foley = []
     if entry.get("foley") and (sound_dir / entry["foley"]).exists():
         foley = [(str(sound_dir / entry["foley"]), 0.0, float(lv.get("foley", 0.7)))]
-    # без фоли звук LTX остаётся (иначе сцена онемеет); с репликами — без чужой «речи» модели
-    model = float(lv.get("model", 0.0)) if foley else (0.15 if voices else 1.0)
-    return {"voices": voices, "foley": foley, "model": model}
+    # звук LTX синхронен картинке по построению — он остаётся подложкой под фоли (без фоли — целиком),
+    # а отрезки, где LTX «говорит» своей невнятной речью, вырезаются: там звучит реплика TTS
+    model = float(lv.get("model", SOUND_LEVELS["model"])) if foley else 1.0
+    mute = [tuple(x) for x in entry.get("model_speech") or []] if entry.get("lines") else []
+    return {"voices": voices, "foley": foley, "model": model, "mute": mute}

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Звуковая студия на Pod: голоса (Qwen3-TTS), фоли (HunyuanVideo-Foley), музыка (ACE-Step 1.5).
+# Звуковая студия на Pod: голоса (Qwen3-TTS), фоли (HunyuanVideo-Foley), музыка (ACE-Step 1.5), липсинк (LatentSync 1.6).
 # Нужно ~70 ГБ на томе (окружения ~44 ГБ, веса ~25 ГБ). Ставится сама при первом фильме со звуковой студией.
 # Каждая модель живёт в своём окружении на сетевом томе, повторный запуск только проверяет установку.
 #   bash /workspace/studio/remote/audio/install.sh [tts] [foley] [music]   # без аргументов — всё
@@ -13,7 +13,7 @@ AUDIO=/workspace/audio; MODELS=/workspace/models/audio; HF=/workspace/ltx-ui/ven
 TORCH_INDEX=https://download.pytorch.org/whl/cu128
 say(){ echo -e "\n\033[1;36m==> $*\033[0m"; }
 fail(){ echo -e "\n\033[1;31mОШИБКА: $*\033[0m"; exit 1; }
-WANT="${*:-tts foley music}"
+WANT="${*:-tts foley music lipsync}"
 want(){ [[ " $WANT " == *" $1 "* ]]; }
 
 command -v uv >/dev/null || pip install -q -U uv 2>/dev/null || pip install -q -U uv --break-system-packages 2>/dev/null \
@@ -27,7 +27,7 @@ if want tts; then
   if [ ! -f "$AUDIO/tts/.ok" ]; then
     [ -x "$AUDIO/tts/venv/bin/python" ] || uv venv --python 3.12 "$AUDIO/tts/venv"
     uv pip install --python "$AUDIO/tts/venv/bin/python" torch torchaudio --index-url "$TORCH_INDEX"
-    uv pip install --python "$AUDIO/tts/venv/bin/python" qwen-tts soundfile
+    uv pip install --python "$AUDIO/tts/venv/bin/python" qwen-tts soundfile silero-vad
     touch "$AUDIO/tts/.ok"
   fi
   for m in Qwen3-TTS-12Hz-1.7B-VoiceDesign Qwen3-TTS-12Hz-1.7B-Base; do
@@ -66,6 +66,26 @@ if want music; then
     touch "$AUDIO/music/.ok"
   fi
   (cd "$REPO" && .venv/bin/python -c "import torch, acestep.inference; assert torch.cuda.is_available(); print('ace-step OK')")
+fi
+
+if want lipsync; then
+  say "Липсинк: LatentSync 1.6 (~8 ГБ)"
+  REPO="$AUDIO/lipsync/LatentSync"
+  [ -d "$REPO/.git" ] || git clone -q https://github.com/bytedance/LatentSync "$REPO"
+  if [ ! -f "$AUDIO/lipsync/.ok" ]; then
+    command -v g++ >/dev/null || { apt-get update -qq && apt-get install -y -qq g++ >/dev/null; }
+    [ -x "$AUDIO/lipsync/venv/bin/python" ] || uv venv --python 3.10 "$AUDIO/lipsync/venv"
+    P="$AUDIO/lipsync/venv/bin/python"
+    # torch из requirements (cu121) не знает Blackwell — ставим cu128, остальное как в репозитории
+    uv pip install --python "$P" torch==2.7.1 torchvision==0.22.1 --index-url "$TORCH_INDEX"
+    grep -vE "^(torch|torchvision|--extra-index-url|gradio)" "$REPO/requirements.txt" > "$AUDIO/lipsync/requirements.txt"
+    uv pip install --python "$P" -r "$AUDIO/lipsync/requirements.txt"
+    touch "$AUDIO/lipsync/.ok"
+  fi
+  "$HF" download ByteDance/LatentSync-1.6 whisper/tiny.pt latentsync_unet.pt --local-dir "$MODELS/LatentSync" >/dev/null \
+    || fail "не скачались веса LatentSync"
+  ln -sfn "$MODELS/LatentSync" "$REPO/checkpoints"
+  (cd "$REPO" && "$AUDIO/lipsync/venv/bin/python" -c "import torch, latentsync; assert torch.cuda.is_available(); print('latentsync OK')")
 fi
 
 say "Звуковая студия готова"

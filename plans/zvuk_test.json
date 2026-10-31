@@ -8,6 +8,7 @@
    "transition": "cut",
    "caption": "Кофейня открывается в 6:00",
    "beat": "Макро: рыжая лапа с силой тянет рычаг эспрессо-машины, взрыв пара в первом солнечном луче, из облака проступает серьёзная морда кота-бариста (подпись: «Кофейня открывается в 6:00»)",
+   "direction": {},
    "foley": "a sharp metallic clack of an espresso lever, a loud burst of steam fading into bubbling espresso, faint birdsong outside"
   },
   {
@@ -17,6 +18,7 @@
    "transition": "cut",
    "caption": "Бариста — профессионал",
    "beat": "Кот держит медный питчер под паровой трубкой, молоко шипит и закручивается, уши подрагивают, солнечный луч медленно ползёт по стойке и зажигает пар",
+   "direction": {},
    "foley": "a milk steaming wand roaring in a metal pitcher, swirling foam, a metal pitcher tick, distant birdsong"
   },
   {
@@ -26,6 +28,7 @@
    "transition": "cut",
    "caption": "Секретный ингредиент — любовь",
    "beat": "Сверху: тонкая струя молока падает в эспрессо, пенка расходится, лапа покачивает питчер, и на поверхности проступает идеальное сердце",
+   "direction": {},
    "foley": "a continuous liquid pour into a ceramic cup, a gentle glug, a clink of copper on the rim, a deep cat purr"
   },
   {
@@ -35,6 +38,7 @@
    "transition": "cut",
    "caption": "Первый гость",
    "beat": "Звякает колокольчик, в дверях в золотом свете появляется сонная девушка в вязаном шарфе, кот поднимает голову и приветственно мурлыкает (подпись: «Первый гость»)",
+   "direction": {},
    "foley": "a brass door bell jingling, a creaking door hinge, birdsong from outside, footsteps on a wooden floor"
   },
   {
@@ -44,7 +48,7 @@
    "transition": "cut",
    "caption": "Утро удалось",
    "beat": "Кот подталкивает чашку, девушка видит сердце на пенке, улыбается, шепчет «Спасибо, Рыжик», делает глоток; кот довольно жмурится, над чашкой вьётся пар — петля к началу (подпись: «Утро удалось»)",
-   "foley": "a ceramic cup sliding on an oak counter, a quiet sip, a deep rumbling cat purr, cozy cafe room tone",
+   "direction": {},
    "dialogue": [
     {
      "speaker": "Первая посетительница",
@@ -52,7 +56,8 @@
      "at": 2.1,
      "on_screen": true
     }
-   ]
+   ],
+   "foley": "a ceramic cup sliding on an oak counter, a quiet sip, a deep rumbling cat purr, cozy cafe room tone"
   }
  ],
  "slug": "zvuk_test",
@@ -109,9 +114,19 @@
  "fade_out": 0.4,
  "request": "Тестовый шортс: рыжий кот-бариста в крошечной кофейне на рассвете готовит латте. Пар над чашкой, первые лучи солнца через окно, уютное тёплое настроение. В конце довольный первый посетитель получает чашку с рисунком на пенке.",
  "version": 2,
+ "creative_brief": {},
+ "review_notes": [],
  "sound": {
   "voices": "qwen",
+  "lipsync": true,
+  "foley": true,
+  "score": true,
   "score_prompt": "gentle lo-fi acoustic morning tune, fingerpicked nylon guitar, soft marimba, brushed light percussion, warm and smiling, unhurried, rising slightly at the end",
-  "bpm": 85
+  "bpm": 85,
+  "levels": {
+   "dialogue": 1.0,
+   "foley": 0.7,
+   "model": 0.45
+  }
  }
 }

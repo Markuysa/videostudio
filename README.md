@@ -90,11 +90,11 @@ to turn it off) the soundtrack is built from separate models instead:
 
 | Stem | How | Model |
 |---|---|---|
-| 🗣 **Dialogue** | Lines live in `shot.dialogue` (`speaker`, `text`, `at`, `on_screen`). Before any video is rendered, each character's voice is **designed from `characters[].voice`** and cached (one voice per character for the whole film or series), then every line is cloned in that voice. A shot that is too short for its lines is lengthened before rendering. | [Qwen3‑TTS](https://github.com/QwenLM/Qwen3-TTS) VoiceDesign + Base on the pod (Apache 2.0), or ElevenLabs (`--voices elevenlabs`, `elevenlabs_voice_id` per character) |
-| 👄 **Lip‑sync** | For speakers visible in frame, LTX re‑renders only the time window of the line with the voice track **frozen**, so the mouth follows the recorded words. | LTX‑2.5 retake (distilled) + modality guidance ×3 (`remote/audio/lipsync.py`) |
-| 👣 **Foley & ambience** | A video‑to‑audio model watches each finished clip and generates synchronized sounds from `shot.foley` (or the sound part of the prompt, with speech removed). | [HunyuanVideo‑Foley](https://github.com/Tencent-Hunyuan/HunyuanVideo-Foley) XXL |
+| 🗣 **Dialogue** | Lines live in `shot.dialogue` (`speaker`, `text`, `at`, `on_screen`, `delivery`). Before any video is rendered, each character's voice is **designed from `characters[].voice`** and cached (one voice per character for the whole film or series), then every line is cloned in that voice. A shot that is too short for its lines is lengthened before rendering. | ElevenLabs `eleven_v4` (`--voices elevenlabs`): the voice is created once by **Voice Design** from the same description and reused; `delivery` per line ("warmly, teasing") goes in as an audio tag. Free fallback: [Qwen3‑TTS](https://github.com/QwenLM/Qwen3-TTS) VoiceDesign + Base on the pod (flatter, no per‑line emotion) |
+| 👄 **Lip‑sync** | LTX decides by itself *when* a character speaks and animates the mouth there. After rendering, speech is detected in the clip's own audio and each on‑screen line is **moved onto the moment the mouth is already talking**, so the natural LTX lips carry the recorded voice. Re‑drawing the mouth (`sound.lipsync: true`) is optional. | Silero VAD; optional LatentSync 1.6 or LTX retake |
+| 👣 **Foley & ambience** | A video‑to‑audio model watches each finished clip and generates synchronized sounds from `shot.foley` (or the sound part of the prompt, with speech removed). Seeing a talking mouth, it also invents mumbling — in dialogue shots that speech is cut out and filled with the neighbouring ambience. | [HunyuanVideo‑Foley](https://github.com/Tencent-Hunyuan/HunyuanVideo-Foley) XXL |
 | 🎵 **Score** | One instrumental track for the whole film from `sound.score_prompt` / `bpm`, unless the plan uses a library track. | [ACE‑Step 1.5](https://github.com/ace-step/ACE-Step-1.5) (MIT) |
-| 🎚 **Mix** | Each stem is leveled to its own target (dialogue −20, Foley −24, music −20 LUFS), then mixed: dialogue on top, music ducks under it, LTX's own audio muted under Foley (kept where Foley failed), one linear gain to the platform level. | ffmpeg |
+| 🎚 **Mix** | Each stem is leveled to its own target (dialogue −20, Foley −24, music −20 LUFS), then mixed: dialogue on top, music ducks under it, LTX's own audio (frame‑accurate by construction) stays as a bed at 0.45 with its mumbled speech cut out, one linear gain to the platform level. | ffmpeg |
 
 Stems and `sound/sound.json` come back with the film, so the balance can be changed without a GPU:
 
@@ -104,12 +104,13 @@ python studio.py assemble films/<slug> --dialogue 1.2 --foley 0.5 --model-audio 
 ```
 
 The models install themselves on the network volume the first time a film uses them (~70 GB, 10–20 minutes,
-`remote/audio/install.sh`). Extra GPU time per film: ~40 s for voices, ~3.5 min per lip‑synced shot,
-~2 min for Foley, ~30 s for the score.
+`remote/audio/install.sh`). Extra GPU time per film: ~40 s for voices, ~2 min for Foley, ~30 s for the score
+(+~70 s per shot if mouth re‑drawing is on).
 
-Honest limits, measured on a real render (2026‑10‑29): lip‑sync clearly improves mouth–speech correlation
-(0.82 vs 0.62 for the raw LTX shot), but the mouth still trails the line by ~0.3 s on a whispered line, and a
-window that covers the whole shot makes it worse — keep lines short and give the speaker a still moment.
+Honest limits, from a real dialogue film (2026‑10‑31): LTX placed speech 2–2.6 s away from where the script put
+the line, which no mouth re‑drawing fixes — aligning the line to LTX's own speech did (mouth–voice correlation
+from −0.48 to +0.40). Re‑drawn mouths (LatentSync, LTX retake) looked shaky and are off by default; the LTX mouth
+moves to its own mumbled phonemes, so timing matches but individual syllables do not.
 HunyuanVideo‑Foley weights are under the Tencent Hunyuan Community License (not valid in the EU, UK and South
 Korea); check it before commercial use.
 

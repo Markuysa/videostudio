@@ -145,7 +145,7 @@ Return JSON exactly in this shape:
    "caption": str|null,               // on-screen caption in the requested language (shorts only), 2-7 words
    "narration": str|null,             // voice-over text in the requested language, or null
    "sfx": [{"file": str, "offset": number, "volume": number}],  // only files from the library, else []
-   "dialogue": [{"speaker": str, "text": str, "at": number, "on_screen": bool}],  // spoken lines (sound studio), else []
+   "dialogue": [{"speaker": str, "text": str, "at": number, "on_screen": bool, "delivery": str}],  // spoken lines (sound studio), else []
    "foley": str,                      // physical sounds and ambience for the Foley model, English, no speech
    "ref": int|null                    // index of a FRAME REFERENCE this shot starts from (only if references exist)
   }, ...]}

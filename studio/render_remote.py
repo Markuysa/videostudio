@@ -171,7 +171,9 @@ def start_pod(rp: RunPod, cfg: dict, name: str, cpu=False) -> tuple[str, Remote]
             "containerDiskInGb": 50, "volumeMountPath": "/workspace",
             "ports": ["8888/http", "22/tcp", "7860/http"], "env": {"PUBLIC_KEY": pub}}
     if cpu:
-        body.update({"computeType": "CPU", "cpuFlavorIds": ["cpu3c", "cpu3g", "cpu5c"], "vcpuCount": 2})
+        # у CPU-подов RunPod диск контейнера не больше 20 ГБ (иначе 500 «Container Disk must be less than…»)
+        body.update({"computeType": "CPU", "cpuFlavorIds": ["cpu3c", "cpu3g", "cpu5c"], "vcpuCount": 2,
+                     "containerDiskInGb": 20})
         pod = rp.create(body)
     else:
         body.update({"gpuTypeIds": gpu_lists(cfg)[0], "gpuCount": 1,

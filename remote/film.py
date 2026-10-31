@@ -309,7 +309,7 @@ def main() -> int:
     score_path = None
     if plan.sound:
         sound_pod.lipsync(plan, done, proj, durations, lipsync_args(), logf, run_lipsync(logf))
-        sound_pod.foley(plan, done, proj, logf)
+        sound_pod.foley(plan, done, proj, logf, durations)
         score_path = sound_pod.score(plan, proj, plan.total_seconds, logf)
     sound_dir = proj / SND.SOUND_DIR
     manifest = sound_pod.write_manifest(plan, done, proj, durations, score_path) if plan.sound else {}
@@ -344,7 +344,7 @@ def main() -> int:
                               transition_seconds=s.transition_seconds, caption=s.caption,
                               sfx=[x for x in sfx if x[0]] + stems["foley"], narration=narration,
                               trim_end=(1 / FPS) if (plan.loop and d.get("loop_closed")) else 0.0,
-                              voices=stems["voices"], audio_volume=stems["model"]))
+                              voices=stems["voices"], audio_volume=stems["model"], mute=stems["mute"]))
         first = False
     loop_closed = bool(plan.loop and clips and done and done[-1].get("loop_closed"))
     if plan.loop and not loop_closed:

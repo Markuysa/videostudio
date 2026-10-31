@@ -226,7 +226,7 @@ def cmd_assemble(args, cfg):
         stems = snd.stems_for(plan, s.id, sound_dir, sound_manifest, levels)
         clips.append(ClipSpec(path=str(clip), shot_id=s.id, transition=tr, transition_seconds=s.transition_seconds,
                               caption=s.caption, sfx=sfx + stems["foley"], narration=str(nar) if nar.exists() else None,
-                              voices=stems["voices"], audio_volume=stems["model"]))
+                              voices=stems["voices"], audio_volume=stems["model"], mute=stems["mute"]))
         first = False
     high = (data["plan"].get("quality") or "fast") == "high"
     w, h = plan.size(high)
