@@ -1,0 +1,139 @@
+{
+ "title": "Последний трамвай",
+ "shots": [
+  {
+   "id": "001",
+   "seconds": 6.042,
+   "prompt": "Wide static shot from across the street: a glass tram shelter glows under a single streetlamp while heavy rain sweeps diagonally through the light. A rainy night tram stop in an old European city, wet cobblestones and steel rails reflecting amber streetlights, cool blue shadows with warm sodium highlights, shot on 35mm film with soft halation and fine grain. The young man in his late twenties with short dark hair, light stubble and a black hooded raincoat stands alone under the shelter, hands in his pockets, watching the empty rails. From frame left the elderly woman with silver hair in a neat bun, a long camel wool coat and a red umbrella walks into the light with slow careful steps and stops beside the shelter. Puddles ripple across the cobblestones. Sound: a loud steady downpour drumming on the shelter roof, water gushing from a drainpipe, her heels clicking on wet stone, a distant car passing.",
+   "transition": "cut",
+   "beat": "Ночь, дождь, пустая остановка",
+   "direction": {},
+   "foley": "loud steady rain drumming on a glass shelter roof, water gushing from a drainpipe, heels clicking on wet cobblestones, a distant car passing"
+  },
+  {
+   "id": "002",
+   "seconds": 6.042,
+   "prompt": "Medium close-up at eye level of the elderly woman with silver hair in a neat bun, a long camel wool coat and a red umbrella, rain dripping from the edge of the umbrella above her. A rainy night tram stop in an old European city, wet cobblestones and steel rails reflecting amber streetlights, cool blue shadows with warm sodium highlights, shot on 35mm film with soft halation and fine grain. She studies the young man for a beat with a kind, knowing look, then says in Russian in a warm raspy voice: \"Последний уже ушёл, сынок.\" A small smile follows. The camera holds still, shallow focus, warm amber streetlight on her face, a cool blue rim of light on the wet umbrella, the streetlamp a soft blur behind her. Sound: heavy rain pattering on the umbrella fabric, her clear warm voice, the steady roar of rain on the street.",
+   "transition": "cut",
+   "beat": "Бабушка: последний ушёл",
+   "direction": {},
+   "dialogue": [
+    {
+     "speaker": "Бабушка",
+     "text": "Последний уже ушёл, сынок.",
+     "at": 1.2,
+     "on_screen": true
+    }
+   ],
+   "foley": "heavy rain pattering on umbrella fabric, steady rain roaring on a street, a drip from the shelter edge"
+  },
+  {
+   "id": "003",
+   "seconds": 6.042,
+   "prompt": "Close-up of the young man in his late twenties with short dark hair, light stubble and a black hooded raincoat, raindrops on his hood, wet strands of hair on his forehead. A rainy night tram stop in an old European city, wet cobblestones and steel rails reflecting amber streetlights, cool blue shadows with warm sodium highlights, shot on 35mm film with soft halation and fine grain. He turns his head toward her, a tired half-smile forming, and says quietly in Russian in a soft baritone: \"Тогда подожду первый.\" He exhales a small cloud of breath. Static camera, cool blue light on one side of his face, warm amber glow on the other. Sound: rain drumming on the shelter roof above him, his calm quiet voice, a deep gust of wind through the street.",
+   "transition": "cut",
+   "beat": "Парень: подожду первый",
+   "direction": {},
+   "dialogue": [
+    {
+     "speaker": "Парень",
+     "text": "Тогда подожду первый.",
+     "at": 1.4,
+     "on_screen": true
+    }
+   ],
+   "foley": "rain drumming on a shelter roof, a deep gust of wind through a street, fabric of a raincoat rustling"
+  },
+  {
+   "id": "004",
+   "seconds": 7.042,
+   "prompt": "Medium two-shot under the shelter: the elderly woman with silver hair in a neat bun, a long camel wool coat and a red umbrella steps closer and lifts the red umbrella so it covers both of them, her face turned to him in three-quarter view. A rainy night tram stop in an old European city, wet cobblestones and steel rails reflecting amber streetlights, cool blue shadows with warm sodium highlights, shot on 35mm film with soft halation and fine grain. She laughs softly and says in Russian: \"Ну и я с тобой подожду.\" The young man in his late twenties with short dark hair, light stubble and a black hooded raincoat looks at her, surprised, then nods and smiles. Slow gentle push-in. Amber streetlight from above, red umbrella glowing in the rain. Sound: rain hammering on the umbrella, her warm chuckle and voice, the rolling roar of the downpour on cobblestones.",
+   "transition": "cut",
+   "beat": "Бабушка делит зонт",
+   "direction": {},
+   "dialogue": [
+    {
+     "speaker": "Бабушка",
+     "text": "Ну и я с тобой подожду.",
+     "at": 1.3,
+     "on_screen": true
+    }
+   ],
+   "foley": "rain hammering on an umbrella, heavy downpour on cobblestones, a soft step on wet stone"
+  },
+  {
+   "id": "005",
+   "seconds": 8.042,
+   "prompt": "Wide shot from across the street, the camera slowly pulling back: the elderly woman with silver hair in a neat bun, a long camel wool coat and a red umbrella and the young man in his late twenties with short dark hair, light stubble and a black hooded raincoat sit side by side on the shelter bench under one red umbrella, small and warm in the dark wet street. A rainy night tram stop in an old European city, wet cobblestones and steel rails reflecting amber streetlights, cool blue shadows with warm sodium highlights, shot on 35mm film with soft halation and fine grain. Far down the rails a single round headlight appears and grows, its beam stretching across the wet cobblestones. Rain falls in bright streaks through the streetlamp. Sound: a heavy steady downpour, the low rumble and metallic squeal of an approaching tram growing louder, a distant tram bell ringing twice.",
+   "transition": "cut",
+   "beat": "Вдвоём на скамейке, вдали огни трамвая",
+   "direction": {},
+   "foley": "heavy steady rain, the low rumble and metallic squeal of an approaching tram on rails, a tram bell ringing twice"
+  }
+ ],
+ "slug": "last_tram",
+ "kind": "film",
+ "format": "16:9",
+ "quality": "high",
+ "seed": 4242,
+ "language": "ru",
+ "logline": "Ночью под дождём старушка и парень, опоздавшие на последний трамвай, решают ждать первый вместе.",
+ "synopsis": "Пустая трамвайная остановка, ливень. Парень ждёт. Подходит пожилая женщина с красным зонтом и говорит, что последний трамвай уже ушёл. Он отвечает, что подождёт первый. Она раскрывает над ним зонт и остаётся ждать вместе с ним. Вдали появляются огни трамвая.",
+ "style": {
+  "anchor": "A rainy night tram stop in an old European city, wet cobblestones and steel rails reflecting amber streetlights, cool blue shadows with warm sodium highlights, shot on 35mm film with soft halation and fine grain.",
+  "visual": "photoreal night rain, 35mm",
+  "palette": "amber, cool blue, red umbrella accent",
+  "lens": "35mm and 50mm",
+  "lighting": "sodium streetlamps, wet reflections",
+  "camera": "mostly static, slow moves",
+  "sound": "heavy rain, city night, warm close voices",
+  "pace": "slow, tender"
+ },
+ "characters": [
+  {
+   "name": "Бабушка",
+   "descriptor": "the elderly woman with silver hair in a neat bun, a long camel wool coat and a red umbrella",
+   "description": "Пожилая, добрая, с иронией.",
+   "voice": "Woman in her seventies, warm slightly raspy low voice, kind and gently teasing, slow unhurried delivery"
+  },
+  {
+   "name": "Парень",
+   "descriptor": "the young man in his late twenties with short dark hair, light stubble and a black hooded raincoat",
+   "description": "Уставший, тихий, вежливый.",
+   "voice": "Man in his late twenties, soft tired baritone, calm and quiet, a slight smile in the voice"
+  }
+ ],
+ "locations": [],
+ "music": {
+  "file": null,
+  "volume": 0.22,
+  "duck": true,
+  "fade_in": 1.0,
+  "fade_out": 2.5,
+  "mood": "tender night piano"
+ },
+ "captions": {
+  "enabled": false,
+  "position": "bottom",
+  "font_size": 0
+ },
+ "fade_in": 0.5,
+ "fade_out": 1.5,
+ "request": "Тестовый фильм звуковой студии: диалог под дождём на трамвайной остановке",
+ "version": 2,
+ "creative_brief": {},
+ "review_notes": [],
+ "sound": {
+  "voices": "qwen",
+  "lipsync": true,
+  "foley": true,
+  "score": true,
+  "score_prompt": "tender cinematic score, sparse felt piano and warm cello, soft rain-like texture, 68 bpm, quiet melancholy that warms toward the end",
+  "bpm": 68,
+  "levels": {
+   "dialogue": 1.0,
+   "foley": 0.7,
+   "model": 0.0
+  }
+ }
+}

@@ -83,6 +83,11 @@ class RunPod:
         code, res = self.call("GET", f"/pods/{pod_id}")
         return res if code == 200 else None
 
+    def gone(self, pod_id: str) -> bool:
+        """Pod точно удалён (404). Сетевые сбои и 5xx API — не повод считать его пропавшим."""
+        code, _ = self.call("GET", f"/pods/{pod_id}")
+        return code == 404
+
     def delete(self, pod_id: str) -> bool:
         code, _ = self.call("DELETE", f"/pods/{pod_id}")
         return code in (200, 202, 204, 404)
@@ -198,7 +203,11 @@ def start_pod(rp: RunPod, cfg: dict, name: str, cpu=False) -> tuple[str, Remote]
                     break
                 if code < 500:
                     raise RenderError(f"RunPod не создал Pod ({code}): {res}")
-                log(f"  нет свободных карт ({label})")
+                if "balance" in str(res).lower():
+                    # RunPod отвечает на пустой баланс кодом 500 — это не «нет карт», ждать бесполезно
+                    raise RenderError("На балансе RunPod не хватает денег, Pod не создаётся. "
+                                      "Пополните счёт: runpod.io -> Billing")
+                log(f"  нет свободных карт ({label}): {str(res)[:120]}")
             if pod is not None:
                 break
             if time.time() > deadline and is_high(cfg) and cfg.get("fallback_to_fast", True):
@@ -431,9 +440,13 @@ def render(plan_path: pathlib.Path, cfg: dict, keep: bool = False, with_clips: b
         r = remote.run(f"{env} bash {REMOTE_STUDIO}/remote/film_night.sh {remote_plan}", check=True)
         night_log = (re.findall(r"tail -f (\S+)", r.stdout) or [""])[0]
         last, t_run = "", time.time()
+        missing = 0
         while True:
             time.sleep(POLL)
-            if rp.get(pod_id) is None:
+            # 2026-10-29 разовый сбой API RunPod приняли за пропажу Pod и удалили его посреди рендера:
+            # теперь пропажа — только три 404 подряд
+            missing = missing + 1 if rp.gone(pod_id) else 0
+            if missing >= 3:
                 raise RenderError("Pod пропал (удалён по лимиту времени или вручную). Готовое лежит на томе: studio fetch")
             if time.time() - t_run > (int(cfg.get("max_hours", 10)) + 1) * 3600:
                 raise RenderError("рендер идёт дольше лимита")

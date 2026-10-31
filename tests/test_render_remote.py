@@ -62,3 +62,24 @@ def test_missing_reference_fails_before_gpu_allocation(tmp_path):
     plan = Plan.from_dict({'title': 'x', 'shots': [{'prompt': 'p' * 40, 'image': 'missing.png'}]})
     with pytest.raises(RenderError, match='опорный кадр'):
         collect_plan_assets(plan, tmp_path / 'x.json', tmp_path)
+
+
+def test_pod_counts_as_gone_only_on_404(monkeypatch):
+    from studio.render_remote import RunPod
+    rp = RunPod("key")
+    for code, gone in ((404, True), (200, False), (500, False), (599, False)):
+        monkeypatch.setattr(rp, "call", lambda *a, c=code: (c, None))
+        assert rp.gone("pod") is gone
+
+
+def test_low_balance_fails_fast_instead_of_waiting_for_gpus(monkeypatch):
+    import pytest
+    from studio import render_remote as rr
+    monkeypatch.setattr(rr, "ensure_key", lambda: "ssh-ed25519 AAAA")
+    rp = rr.RunPod("key")
+    calls = []
+    monkeypatch.setattr(rp, "try_create", lambda body: calls.append(body) or (500, '{"error":"create pod: Your account '
+                        'balance is too low to rent a pod. Please add funds to your account.","status":500}'))
+    with pytest.raises(rr.RenderError, match="баланс"):
+        rr.start_pod(rp, {"network_volume_id": "v", "quality": "high"}, "x")
+    assert len(calls) == 1
